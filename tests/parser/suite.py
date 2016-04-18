@@ -22,7 +22,7 @@ from tempfile import mkdtemp
 from testtools import TestCase
 from multiprocessing import Process
 
-from tosca_parser import Parser
+from aria.parser import Parser
 
 
 class TimeoutTestMixin(TestCase):
@@ -133,7 +133,6 @@ class Template(object):
     BASIC_PLUGIN = (
         '\nplugins:\n'
         '    test_plugin:\n'
-        '        executor: central_deployment_agent\n'
         '        source: dummy\n'
     )
 
@@ -157,7 +156,6 @@ class Template(object):
     PLUGIN_WITH_INSTALL_ARGS = (
         '\nplugins:\n'
         '    test_plugin:\n'
-        '        executor: central_deployment_agent\n'
         '        source: dummy\n'
         '        install_arguments: -r requirements.txt\n'
     )
@@ -248,7 +246,7 @@ def op_struct(
         plugin_name,
         mapping,
         inputs=None,
-        executor=None,
+        executor='local',
         max_retries=None,
         retry_interval=None):
     return {

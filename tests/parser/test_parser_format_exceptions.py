@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from tosca_parser.exceptions import (
+from aria.parser.exceptions import (
     DSLParsingFormatException,
     DSLParsingLogicException,
     ERROR_UNKNOWN_TYPE,
@@ -227,17 +227,6 @@ node_types:
             key:
                 default: "val1_parent2"
     """
-        self.assert_parser_raise_exception(1, DSLParsingFormatException)
-
-    def test_plugin_without_executor_field(self):
-        self.template.version_section('1.0')
-        self.template.node_type_section()
-        self.template.node_template_section()
-        self.template += """
-plugins:
-    test_plugin:
-        source: dummy
-            """
         self.assert_parser_raise_exception(1, DSLParsingFormatException)
 
     def test_plugin_extra_properties(self):

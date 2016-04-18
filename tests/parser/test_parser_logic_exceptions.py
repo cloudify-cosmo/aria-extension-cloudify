@@ -13,16 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from tosca_parser.constants import SCRIPT_PLUGIN_NAME
-from tosca_parser.exceptions import (
+from aria.parser.constants import SCRIPT_PLUGIN_NAME
+from aria.parser.exceptions import (
     DSLParsingLogicException,
     DSLParsingException,
     ERROR_UNKNOWN_TYPE,
     ERROR_VALUE_DOES_NOT_MATCH_TYPE,
     ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
 )
-from tosca_parser.version import parse_dsl_version, DSL_VERSION_1_0
-from tosca_parser import parse
+from aria.parser.version import parse_dsl_version, DSL_VERSION_1_0
+from aria.parser import parse
 
 from .suite import ParserTestCase, TempDirectoryTestCase
 
@@ -96,51 +96,6 @@ node_types:
         circular = ex.circular_dependency
         self.assertEqual(len(circular), 4)
         self.assertEqual(circular[0], circular[-1])
-
-    def test_plugin_with_wrongful_executor_field(self):
-        self.template.version_section('1.0')
-        self.template.node_template_section()
-        self.template += """
-plugins:
-    test_plugin:
-        executor: "bad value"
-        source: dummy
-
-node_types:
-    test_type:
-        properties:
-            key: {}
-        interfaces:
-            test_interface1:
-                install:
-                    implementation: test_plugin.install
-                    inputs: {}
-
-        """
-        self.assert_parser_raise_exception(18, DSLParsingLogicException)
-
-    def test_operation_with_wrongful_executor_field(self):
-        self.template.version_section('1.0')
-        self.template.node_template_section()
-        self.template += """
-plugins:
-    test_plugin:
-        executor: central_deployment_agent
-        source: dummy
-
-node_types:
-    test_type:
-        properties:
-            key: {}
-        interfaces:
-            test_interface1:
-                install:
-                    executor: wrong_executor
-                    implementation: test_plugin.install
-                    inputs: {}
-
-        """
-        self.assert_parser_raise_exception(28, DSLParsingLogicException)
 
     def test_top_level_relationships_relationship_with_undefined_plugin(self):
         self.template.version_section('1.0')
@@ -261,26 +216,6 @@ relationships:
                         """
         self.assert_parser_raise_exception(19, DSLParsingLogicException)
 
-    def test_validate_agent_plugin_on_non_host_node(self):
-        self.template.version_section('1.0')
-        self.template += """
-node_templates:
-    test_node1:
-        type: test_type
-node_types:
-    test_type:
-        interfaces:
-            test_interface:
-                start:
-                    implementation: test_plugin.start
-                    inputs: {}
-plugins:
-    test_plugin:
-        executor: host_agent
-        source: dummy
-        """
-        self.assert_parser_raise_exception(24, DSLParsingLogicException)
-
     def test_ambiguous_plugin_operation_mapping(self):
         self.template.version_section('1.0')
         self.template += """
@@ -294,10 +229,8 @@ node_templates:
                 op: one.two.three.four
 plugins:
     one.two:
-        executor: host_agent
         source: dummy
     one:
-        executor: host_agent
         source: dummy
         """
         self.assert_parser_raise_exception(91, DSLParsingLogicException)
@@ -375,18 +308,18 @@ relationships:
     test_node2:
         type: test_type
         relationships:
-            - type: cloudify.relationships.contained_in
+            - type: tosca.relationships.HostedOn
               target: test_node
             - type: derived_from_contained_in
               target: test_node
 relationships:
-    cloudify.relationships.contained_in: {}
+    tosca.relationships.HostedOn: {}
     derived_from_contained_in:
-        derived_from: cloudify.relationships.contained_in
+        derived_from: tosca.relationships.HostedOn
 """
         ex = self.assert_parser_raise_exception(112, DSLParsingLogicException)
         self.assertEqual(
-            set(['cloudify.relationships.contained_in',
+            set(['tosca.relationships.HostedOn',
                  'derived_from_contained_in']),
             set(ex.relationship_types))
 
@@ -432,26 +365,6 @@ groups:
 """
         self.assert_parser_raise_exception(41, DSLParsingLogicException)
 
-    def test_group_missing_trigger_type(self):
-        self.template.version_section('1.0')
-        self.template.node_type_section()
-        self.template.node_template_section()
-        self.template += """
-policy_types:
-    policy_type:
-        source: source
-groups:
-    group:
-        members: [test_node]
-        policies:
-            policy:
-                type: policy_type
-                triggers:
-                    trigger1:
-                        type: non_existent_trigger
-"""
-        self.assert_parser_raise_exception(42, DSLParsingLogicException)
-
     def test_group_policy_type_undefined_property(self):
         self.template.version_section('1.0')
         self.template.node_type_section()
@@ -490,57 +403,6 @@ groups:
             policy:
                 type: policy_type
                 properties: {}
-"""
-        self.assert_parser_raise_exception(107, DSLParsingLogicException)
-
-    def test_group_policy_trigger_undefined_parameter(self):
-        self.template.version_section('1.0')
-        self.template.node_type_section()
-        self.template.node_template_section()
-        self.template += """
-policy_triggers:
-    trigger:
-        source: source
-policy_types:
-    policy_type:
-        source: source
-groups:
-    group:
-        members: [test_node]
-        policies:
-            policy:
-                type: policy_type
-                triggers:
-                    trigger1:
-                        type: trigger
-                        parameters:
-                            some: undefined
-"""
-        self.assert_parser_raise_exception(106, DSLParsingLogicException)
-
-    def test_group_policy_trigger_missing_parameter(self):
-        self.template.version_section('1.0')
-        self.template.node_type_section()
-        self.template.node_template_section()
-        self.template += """
-policy_triggers:
-    trigger:
-        source: source
-        parameters:
-            param1:
-                description: the description
-policy_types:
-    policy_type:
-        source: source
-groups:
-    group:
-        members: [test_node]
-        policies:
-            policy:
-                type: policy_type
-                triggers:
-                    trigger1:
-                        type: trigger
 """
         self.assert_parser_raise_exception(107, DSLParsingLogicException)
 
@@ -617,7 +479,6 @@ node_types:
         self.template += """
 plugins:
     {0}:
-        executor: central_deployment_agent
         install: false
 node_types:
     type:
@@ -937,7 +798,6 @@ node_templates:
 plugins:
   plugin:
     install: false
-    executor: central_deployment_agent
     {0}: {1}
 """
 

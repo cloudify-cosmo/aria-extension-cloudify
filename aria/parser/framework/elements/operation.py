@@ -29,6 +29,29 @@ class OperationImplementation(Element):
         return self.initial_value if self.initial_value is not None else ''
 
 
+class OperationExecutor(Element):
+    schema = Leaf(type=str)
+    valid_executors = (constants.LOCAL_AGENT,)
+
+    def parse(self, **kwargs):
+        return (super(OperationExecutor, self).parse(**kwargs)
+                or constants.LOCAL_AGENT)
+
+    def validate(self):
+        if self.initial_value is None:
+            return
+        if self.initial_value not in self.valid_executors:
+            full_operation_name = '{0}.{1}'.format(
+                self.ancestor(Interface).name,
+                self.ancestor(Operation).name)
+            raise DSLParsingLogicException(
+                28, "Operation '{0}' has an illegal executor value '{1}'. "
+                    "valid values are {2}"
+                    .format(full_operation_name,
+                            self.initial_value,
+                            self.valid_executors))
+
+
 class NodeTemplateOperationInputs(Element):
     schema = Leaf(type=dict)
 
@@ -81,13 +104,12 @@ class Operation(Element):
         if isinstance(self.initial_value, basestring):
             return {
                 'implementation': self.initial_value,
-                'executor': None,
+                'executor': constants.LOCAL_AGENT,
                 'inputs': {},
                 'max_retries': None,
                 'retry_interval': None,
             }
-        else:
-            return self.build_dict_result()
+        return self.build_dict_result()
 
 
 class NodeTypeOperation(Operation):
@@ -96,6 +118,7 @@ class NodeTypeOperation(Operation):
         {
             'implementation': OperationImplementation,
             'inputs': Schema,
+            'executor': OperationExecutor,
             'max_retries': OperationMaxRetries,
             'retry_interval': OperationRetryInterval,
         },
@@ -108,6 +131,7 @@ class NodeTemplateOperation(Operation):
         {
             'implementation': OperationImplementation,
             'inputs': NodeTemplateOperationInputs,
+            'executor': OperationExecutor,
             'max_retries': OperationMaxRetries,
             'retry_interval': OperationRetryInterval,
         }
@@ -162,8 +186,8 @@ def process_operation(
     operation_mapping = operation_content[mapping_field_name]
     operation_payload = operation_content[payload_field_name]
 
-    # only for node operations
-    operation_executor = operation_content.get('executor', None)
+    operation_executor = (operation_content.get('executor')
+                          or constants.LOCAL_AGENT)
     operation_max_retries = operation_content.get('max_retries', None)
     operation_retry_interval = operation_content.get('retry_interval', None)
 
@@ -177,7 +201,7 @@ def process_operation(
                 plugin_name='',
                 operation_mapping='',
                 operation_inputs={},
-                executor=None,
+                executor=constants.LOCAL_AGENT,
                 max_retries=None,
                 retry_interval=None)
 
@@ -199,7 +223,8 @@ def process_operation(
                 workflow_parameters=operation_payload)
         else:
             if not operation_executor:
-                operation_executor = plugins[plugin_name]['executor']
+                operation_executor = plugins[plugin_name].get(
+                    'executor') or constants.LOCAL_AGENT
             return _operation(
                 name=operation_name,
                 plugin_name=plugin_name,

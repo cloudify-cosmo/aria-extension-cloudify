@@ -15,8 +15,8 @@
 
 from yaml import safe_dump, safe_load
 
-from tosca_parser.constants import DEPLOYMENT_PLUGINS_TO_INSTALL
-from tosca_parser.exceptions import DSLParsingLogicException
+from aria.parser.constants import DEPLOYMENT_PLUGINS_TO_INSTALL
+from aria.parser.exceptions import DSLParsingLogicException
 
 from .suite import ParserTestCase
 
@@ -68,7 +68,7 @@ node_templates:
 node_types:
   type: {}
 """)
-        plugin = {'executor': 'central_deployment_agent'}
+        plugin = {}
         if install is not None:
             plugin['install'] = install
         if source is not None:
@@ -84,7 +84,7 @@ node_types:
                 expected_error_code, DSLParsingLogicException)
         else:
             result = self.parse()
-            plugin = result['nodes'][0][DEPLOYMENT_PLUGINS_TO_INSTALL][0]
+            plugin = result['nodes'][0]['plugins'][0]
             if install is not None:
                 self.assertEqual(install, plugin['install'])
             if source is not None:

@@ -17,12 +17,12 @@ import mock
 import requests
 from testtools import TestCase
 
-from tosca_parser.exceptions import (
+from aria.parser.exceptions import (
     DSLParsingLogicException,
     DefaultResolverValidationException,
 )
-from tosca_parser.import_resolver import DefaultImportResolver
-from tosca_parser.uri_data_reader import MAX_NUMBER_RETRIES
+from aria.parser.import_resolver import DefaultImportResolver
+from aria.parser.uri_data_reader import MAX_NUMBER_RETRIES
 
 ORIGINAL_V1_URL = 'http://www.original_v1.org/cloudify/types.yaml'
 ORIGINAL_V1_PREFIX = 'http://www.original_v1.org'

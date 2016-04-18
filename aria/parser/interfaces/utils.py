@@ -16,12 +16,13 @@
 from ..exceptions import DSLParsingLogicException
 from ..framework import functions
 from .. import utils
+from ..constants import LOCAL_AGENT
 
 
 def operation_mapping(
         implementation,
         inputs,
-        executor='local',
+        executor=LOCAL_AGENT,
         max_retries=None,
         retry_interval=None,
         **kwargs):

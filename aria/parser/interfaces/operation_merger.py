@@ -13,15 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from ..constants import LOCAL_AGENT
 from .utils import operation_mapping, merge_schema_and_instance_inputs
 
 
-NO_OP = operation_mapping(
-    executor=None,
-    implementation='',
-    inputs={},
-    max_retries=None,
-    retry_interval=None)
+NO_OP = operation_mapping(implementation='', inputs={})
 
 
 class OperationMerger(object):
@@ -35,7 +31,7 @@ class OperationMerger(object):
         return operation_mapping(
                 implementation=raw_operation,
                 inputs={},
-                executor=None,
+                executor=LOCAL_AGENT,
                 max_retries=None,
                 retry_interval=None)
 

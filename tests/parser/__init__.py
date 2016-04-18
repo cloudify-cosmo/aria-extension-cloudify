@@ -12,18 +12,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-aria Package
-Path: aria
-
-Methods:
-    * validate - Use the parser.parse method to validate tosca_templates
-    *
-
-"""
-
-from . import parser
-
-__version__ = '0.1.0.0'
-
-validate = parser.parse

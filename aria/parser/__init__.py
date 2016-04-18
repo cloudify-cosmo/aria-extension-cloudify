@@ -28,8 +28,6 @@ Methods:
 from .parser import Parser
 from .extension_tools import ParserExtender
 
-__version__ = '0.1.0.0'
-
 
 default_parser = Parser()
 default_expander = ParserExtender()

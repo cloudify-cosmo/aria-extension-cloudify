@@ -91,6 +91,10 @@ class Element(object):
 
         return message
 
+    def __repr__(self):
+        return '{cls.__name__}({self.path})'.format(
+            cls=self.__class__, self=self)
+
     def validate(self, **kwargs):
         pass
 

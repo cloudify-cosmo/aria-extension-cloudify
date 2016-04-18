@@ -252,7 +252,7 @@ def _traverse_schema(schema, list_nesting=0):
         if len(schema) == 0:
             raise DSLParsingSchemaAPIException(1)
         for value in schema:
-            _traverse_schema(value, list_nesting+1)
+            _traverse_schema(value, list_nesting + 1)
     elif isinstance(schema, ElementType):
         if isinstance(schema, Leaf):
             if not isinstance(schema.type, (type, list, tuple)):

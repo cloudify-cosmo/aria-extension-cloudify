@@ -15,7 +15,7 @@
 
 from unittest import skip
 
-from tosca_parser.exceptions import (
+from aria.parser.exceptions import (
     MissingRequiredInputError,
     UnknownInputError,
     DSLParsingLogicException)
@@ -321,7 +321,6 @@ node_templates:
         self.template += """
 plugins:
     plugin:
-        executor: central_deployment_agent
         source: dummy
 inputs:
     port:
@@ -406,7 +405,6 @@ node_templates:
         self.template += """
 plugins:
     plugin:
-        executor: central_deployment_agent
         source: dummy
 node_types:
     webserver_type: {}
@@ -461,7 +459,6 @@ node_templates:
 plugins:
   plugin:
     install: false
-    executor: central_deployment_agent
 """
         ex = self.assert_parser_raise_exception(107, DSLParsingLogicException)
         self.assertIn('some_input', str(ex))
@@ -486,7 +483,6 @@ node_templates:
 plugins:
   plugin:
     install: false
-    executor: central_deployment_agent
 """
         ex = self.assert_parser_raise_exception(107, DSLParsingLogicException)
         self.assertIn('some_input', str(ex))
