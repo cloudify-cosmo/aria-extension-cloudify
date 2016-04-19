@@ -27,6 +27,14 @@ class Requirement(object):
         self.required = required
         self.predicate = predicate
 
+    def __repr__(self):
+        return (
+            '{cls.__name__}('
+            'name={self.name}, parsed={self.parsed}, '
+            'multiple_results={self.multiple_results}, '
+            'required={self.required}, predicate={self.predicate})'
+            .format(cls=self.__class__, self=self))
+
 
 class Value(Requirement):
     def __init__(self,

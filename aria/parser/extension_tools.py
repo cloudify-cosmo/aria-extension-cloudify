@@ -66,7 +66,6 @@ class IntrinsicFunctionExtension(_BaseFunctionExtension, _ValidatorMixin):
 
 
 class ElementExtension(_BaseElementExtension, _ValidatorMixin):
-    # todo: maybe add replace action and check in add that we don't replace...
     REPLACE_ELEMENT_ACTION = 'replace'
     ADD_ELEMENT_TO_SCHEMA_ACTION = 'schema'
     ACTIONS = (REPLACE_ELEMENT_ACTION, ADD_ELEMENT_TO_SCHEMA_ACTION)
@@ -75,7 +74,9 @@ class ElementExtension(_BaseElementExtension, _ValidatorMixin):
         cls.validate_actions(action)
         cls.validate_type('target_element', target_element, Element)
         cls.validate_type('new_element', new_element, Element)
-        cls.validate_instance('schema_key', schema_key, (NoneType, basestring))
+        cls.validate_instance(
+            'schema_key', schema_key,
+            NoneType if action == cls.REPLACE_ELEMENT_ACTION else basestring)
         return super(ElementExtension, cls).__new__(
             cls, action, target_element, new_element, schema_key)
 
@@ -90,7 +91,7 @@ class ParserExtender(_ValidatorMixin):
         }
         self._element_handlers = {
             ElementExtension.ADD_ELEMENT_TO_SCHEMA_ACTION:
-                self._add_to_schame,
+                self._add_to_schema,
             ElementExtension.REPLACE_ELEMENT_ACTION:
                 self._replace_element,
         }
@@ -109,6 +110,10 @@ class ParserExtender(_ValidatorMixin):
             'element_expansions', element_extensions, (tuple, list))
         self.validate_instance(
             'function_expansions', function_extensions, (tuple, list))
+        if extension_lists:
+            raise TypeError(
+                'extend method get only two keywork arguments, '
+                'got {0} as well'.format(extension_lists))
 
         self.extend_elements(*element_extensions)
         self.extend_intrinsic_functions(*function_extensions)
@@ -142,7 +147,7 @@ class ParserExtender(_ValidatorMixin):
     def _add_function(self, expansion):
         register(expansion.function, name=expansion.name)
 
-    def _add_to_schame(self, expansion):
+    def _add_to_schema(self, expansion):
         expansion.target_element.schema[
             expansion.schema_key] = expansion.new_element
 
@@ -154,7 +159,7 @@ class ParserExtender(_ValidatorMixin):
             try:
                 element = getattr(module, element_name)
                 if all([issubclass(element, Element),
-                        element is not expansion.new_element]):
-                    setattr(module, element_name, expansion.new_element)
+                        element.extend is not expansion.new_element]):
+                    element.extend = expansion.new_element
             except AttributeError:
                 pass

@@ -22,14 +22,14 @@ from ..constants import LOCAL_AGENT
 def operation_mapping(
         implementation,
         inputs,
-        executor=LOCAL_AGENT,
+        executor=None,
         max_retries=None,
         retry_interval=None,
         **kwargs):
     return {
         'implementation': implementation,
         'inputs': inputs,
-        'executor': executor,
+        'executor': executor or LOCAL_AGENT,
         'max_retries': max_retries,
         'retry_interval': retry_interval,
     }

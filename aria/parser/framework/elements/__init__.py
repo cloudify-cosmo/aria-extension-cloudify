@@ -54,6 +54,13 @@ class Element(object):
     required = False
     requires = {}
     provides = []
+    extend = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls.extend:
+            cls.extend.extend = None
+            return cls.extend(*args, **kwargs)
+        return super(Element, cls).__new__(cls, *args, **kwargs)
 
     def __init__(self, context, initial_value, name=None):
         self.context = context

@@ -222,7 +222,8 @@ def process_operation(
                 workflow_mapping=mapping,
                 workflow_parameters=operation_payload)
         else:
-            if not operation_executor:
+            if any((not operation_executor,
+                    operation_executor == constants.LOCAL_AGENT)):
                 operation_executor = plugins[plugin_name].get(
                     'executor') or constants.LOCAL_AGENT
             return _operation(
@@ -272,9 +273,10 @@ def process_operation(
                 workflow_mapping=operation_mapping,
                 workflow_parameters=operation_payload)
         else:
-            if not operation_executor:
-                operation_executor = plugins[constants.SCRIPT_PLUGIN_NAME][
-                    'executor']
+            if any((not operation_executor,
+                    operation_executor == constants.LOCAL_AGENT)):
+                operation_executor = plugins[constants.SCRIPT_PLUGIN_NAME].get(
+                    'executor', constants.LOCAL_AGENT)
             return _operation(
                 name=operation_name,
                 plugin_name=constants.SCRIPT_PLUGIN_NAME,

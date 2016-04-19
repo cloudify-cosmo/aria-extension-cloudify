@@ -216,7 +216,7 @@ class TestDefaultResolver(TestCase):
 
         resolver = DefaultImportResolver(rules=rules)
         with mock.patch('requests.get', new=MockRequestsGet, create=True):
-            with mock.patch('tosca_parser.uri_data_reader.DEFAULT_RETRY_DELAY',
+            with mock.patch('aria.parser.uri_data_reader.DEFAULT_RETRY_DELAY',
                             new=RETRY_DELAY):
                 try:
                     resolver.resolve(import_url=import_url)

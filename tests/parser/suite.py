@@ -181,14 +181,14 @@ class Template(object):
             return version_str
         self.template += version_str
 
-    def node_type_section(self, **kwargs):
+    def node_type_section(self, default='"default"'):
         self.template += (
             '\nnode_types:\n'
             '    test_type:\n'
             '        properties:\n'
             '            key:\n'
-            '                default: "default"\n'
-        )
+            '                default: {0}\n'
+        ).format(default)
 
     def node_template_section(self):
         self.template += self.BASIC_NODE_TEMPLATES_SECTION
@@ -198,6 +198,7 @@ class Template(object):
             properties_first='{}',
             properties_second='{}',
             extras=''):
+
         self.template += (
             '\ndata_types:\n'
             '    pair_type:\n'

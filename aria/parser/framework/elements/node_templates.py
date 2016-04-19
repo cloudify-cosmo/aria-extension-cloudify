@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import copy
+from collections import defaultdict
 
 from ...exceptions import (
     DSLParsingLogicException,
@@ -420,6 +421,7 @@ class NodeTemplates(Element):
     def parse(self, host_types, plugins):
         processed_nodes = dict(
             (node.name, node.value) for node in self.children())
+
         self._process_nodes_plugins(
             processed_nodes=processed_nodes,
             host_types=host_types,
@@ -448,7 +450,8 @@ class NodeTemplates(Element):
     def _process_nodes_plugins(self, processed_nodes, host_types, plugins):
         # extract node plugins based on node operations
         # do we really need node.plugins?
-        nodes_operations = dict.fromkeys(processed_nodes.iterkeys(), [])
+
+        nodes_operations = defaultdict(list)
         for node_name, node in processed_nodes.iteritems():
             node_operations = nodes_operations[node_name]
             node_operations.append(node['operations'])
@@ -463,21 +466,7 @@ class NodeTemplates(Element):
                 processed_plugins=plugins)
 
         for node in processed_nodes.itervalues():
-            # set plugins_to_install property for nodes
-            if node['type'] in host_types:
-                plugins_to_install = {}
-                for another_node in processed_nodes.itervalues():
-                    # going over all other nodes, to accumulate plugins
-                    # from different nodes whose host is the current node
-                    if another_node.get('host_id') == node['id']:
-                        # ok to override here since we assume it is
-                        # the same plugin
-                        for plugin in another_node[constants.PLUGINS]:
-                            if self.check_executor_key(plugin):
-                                plugins_to_install[plugin['name']] = plugin
-                node[constants.PLUGINS_TO_INSTALL] = (
-                    plugins_to_install.values())
-
+            self._set_plugin_to_install(node, host_types, processed_nodes)
             # set deployment_plugins_to_install property for nodes
             deployment_plugins_to_install = {}
             for plugin in node[constants.PLUGINS]:
@@ -488,6 +477,21 @@ class NodeTemplates(Element):
                 deployment_plugins_to_install.values()
 
         self._validate_agent_plugins_on_host_nodes(processed_nodes)
+
+    def _set_plugin_to_install(self, node, host_types, processed_nodes):
+        if node['type'] in host_types:
+            plugins_to_install = {}
+            for another_node in processed_nodes.itervalues():
+                # going over all other nodes, to accumulate plugins
+                # from different nodes whose host is the current node
+                if another_node.get('host_id') == node['id']:
+                    # ok to override here since we assume it is
+                    # the same plugin
+                    for plugin in another_node[constants.PLUGINS]:
+                        if self.check_executor_key(plugin):
+                            plugins_to_install[plugin['name']] = plugin
+            node[constants.PLUGINS_TO_INSTALL] = (
+                plugins_to_install.values())
 
     def _validate_agent_plugins_on_host_nodes(self, processed_nodes):
         for node in processed_nodes.itervalues():
@@ -507,21 +511,19 @@ class NodeTemplates(Element):
                                 plugin['name'],
                                 constants.HOST_AGENT))
 
-    def _get_plugins_from_operations(
-            self, operations_lists, processed_plugins):
+    def _get_plugins_from_operations(self, operations_lists, processed_plugins):
         plugins = {}
         for operations in operations_lists:
             for operation in operations.values():
                 plugin_name = operation['plugin']
                 if not plugin_name:
-                    # no-op
                     continue
                 plugin = processed_plugins[plugin_name]
                 operation_executor = operation['executor']
                 plugin_key = (plugin_name, operation_executor)
-                if plugin_key not in plugins:
-                    plugin = copy.deepcopy(plugin)
-                    plugin['executor'] = operation_executor
-                    plugins[plugin_key] = plugin
+                if plugin_key in plugins:
+                    continue
+                plugin = copy.deepcopy(plugin)
+                plugin['executor'] = operation_executor
+                plugins[plugin_key] = plugin
         return plugins.values()
-

@@ -22,7 +22,7 @@ from .plugins import Plugins
 from .node_types import NodeTypes
 from .relationships import Relationships
 from .node_templates import NodeTemplates
-from .policies import PolicyTypes, PolicyTriggers, Groups
+from .policies import PolicyTypes, Groups
 from .workflows import Workflows
 from .data_types import DataTypes
 from . import Element

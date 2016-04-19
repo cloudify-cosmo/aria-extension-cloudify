@@ -232,7 +232,7 @@ plugins:
 
         # expecting the other plugin to be under test_node rather than
         # test_node2:
-        plugin2_def = nodes[1]['plugins'][1]
+        plugin2_def = nodes[1]['plugins'][0]
         self.assertEquals('test_plugin2', plugin2_def['name'])
 
 
