@@ -14,12 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import os
 from setuptools import setup, find_packages
-from aria import __version__
 
 
-with open('./requirements.txt') as requirements:
+with open('requirements.txt') as requirements:
     install_requires = requirements.readlines()
 try:
     from collections import OrderedDict  # NOQA
@@ -30,8 +29,12 @@ try:
 except ImportError:
     install_requires.append('importlib')
 
+package_name = 'aria'
+__version__ = '0.0.0.1'
+execfile(os.path.join('.', package_name, 'version.py'))
+
 setup(
-    name='aria',
+    name=package_name,
     version=__version__,
     author='aria-core',
     author_email='cosmo-admin@gigaspaces.com',

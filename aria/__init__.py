@@ -23,7 +23,12 @@ Methods:
 """
 
 from . import parser
+from .version import __version__
 
-__version__ = '0.1.0.0'
+__all__ = [
+    '__version__',
+    'parser',
+    'validate_template',
+]
 
-validate = parser.parse
+validate_template = parser.parse

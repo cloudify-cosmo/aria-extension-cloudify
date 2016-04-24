@@ -13,29 +13,20 @@ all:
 release: test docs publish
 
 dev:
-	pip install -rdev-requirements.txt
+	pip install -r dev-requirements.txt
 	python setup.py develop
 
 install:
 	python setup.py install
-
-files:
-	grep '# TODO' -rn * --exclude-dir=docs --exclude-dir=build --exclude=TODO.md | sed 's/: \+#/:    # /g;s/:#/:    # /g' | sed -e 's/^/- /' | grep -v Makefile > TODO.md
-	git log --oneline --decorate --color > CHANGELOG
 
 test:
 	pip install tox==1.6.1
 	tox
 
 docs:
-	pip install sphinx sphinx-rtd-theme
 	cd docs && make html
 	pandoc README.md -f markdown -t rst -s -o README.rst
 
-prepare:
-	python scripts/make-release.py
 
 publish:
 	python setup.py sdist upload
-
-
