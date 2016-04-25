@@ -22,7 +22,7 @@ from .plugins import Plugins
 from .node_types import NodeTypes
 from .relationships import Relationships
 from .node_templates import NodeTemplates
-from .policies import PolicyTypes, Groups
+from .policies import Groups
 from .workflows import Workflows
 from .data_types import DataTypes
 from . import Element
@@ -64,7 +64,6 @@ class Blueprint(Element):
         'node_types': NodeTypes,
         'relationships': Relationships,
         'node_templates': NodeTemplates,
-        'policy_types': PolicyTypes,
         'groups': Groups,
         'workflows': Workflows,
         'outputs': Outputs,
@@ -86,7 +85,6 @@ class Blueprint(Element):
             constants.NODES: self.child(NodeTemplates).value,
             constants.RELATIONSHIPS: self.child(Relationships).value,
             constants.WORKFLOWS: self.child(Workflows).value,
-            constants.POLICY_TYPES: self.child(PolicyTypes).value,
             constants.GROUPS: self.child(Groups).value,
             constants.INPUTS: self.child(Inputs).value,
             constants.OUTPUTS: self.child(Outputs).value,

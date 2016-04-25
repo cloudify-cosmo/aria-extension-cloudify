@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from ...dsl_supported_versions import VersionNumber, VersionStructure
 from ...exceptions import (
     DSLParsingLogicException, ERROR_UNKNOWN_TYPE, ERROR_INVALID_TYPE_NAME)
 from ... import constants, utils
@@ -82,10 +83,6 @@ class SchemaPropertyRequired(Element):
         ToscaDefinitionsVersion: ['version'],
         'inputs': ['validate_version'],
     }
-
-    def validate(self, version, validate_version):
-        if validate_version:
-            self.validate_version(version, (1, 2))
 
 
 class SchemaProperty(Element):
@@ -195,10 +192,6 @@ class DataTypes(Types):
         ToscaDefinitionsVersion: ['version'],
         'inputs': ['validate_version'],
     }
-
-    def validate(self, version, validate_version):
-        if validate_version:
-            self.validate_version(version, (1, 2))
 
 
 # source: element describing data_type name

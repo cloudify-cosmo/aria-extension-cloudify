@@ -15,11 +15,10 @@
 
 from aria.parser.framework.functions import template_functions
 from aria.parser.framework.elements.blueprint import Blueprint
+from aria.parser.dsl_supported_versions import supported_versions
 from aria.parser.extension_tools import (
-    Element,
-    ElementExtension,
-    Function,
-    IntrinsicFunctionExtension,
+    Element, Function,
+    ElementExtension, IntrinsicFunctionExtension,
 )
 from aria.parser import extend
 from .suite import ParserTestCase, TestCase
@@ -65,7 +64,9 @@ class TestExtensions(ParserTestCase):
             action=ElementExtension.REPLACE_ELEMENT_ACTION,
             target_element=Blueprint,
             new_element=_TestBlueprint)
-        extend(element_extensions=[blueprint_extension])
+        extend(
+            version_structure=supported_versions.base_version,
+            element_extensions=[blueprint_extension])
 
         self.template.version_section('1.0')
         self.template.node_type_section()
@@ -79,7 +80,9 @@ class TestExtensions(ParserTestCase):
             target_element=Blueprint,
             new_element=_TestElement,
             schema_key='test')
-        extend(element_extensions=[blueprint_extension])
+        extend(
+            version_structure=supported_versions.base_version,
+            element_extensions=[blueprint_extension])
 
         self.template.version_section('1.0')
         self.template.node_type_section()
@@ -95,7 +98,9 @@ test: {}
             action=IntrinsicFunctionExtension.ADD_FUNCTION_ACTION,
             name='get_true',
             function=_GetTrueFunction)
-        extend(function_extensions=[get_true_function_extension])
+        extend(
+            version_structure=supported_versions.base_version,
+            function_extensions=[get_true_function_extension])
 
         self.template.version_section('1.0')
         self.template.node_type_section(
@@ -117,7 +122,9 @@ test: {}
             action=IntrinsicFunctionExtension.REMOVE_FUNCTION_ACTION,
             name='get_true',
             function=_GetTrueFunction)
-        extend(function_extensions=[get_true_function_extension])
+        extend(
+            version_structure=supported_versions.base_version,
+            function_extensions=[get_true_function_extension])
         self.assertTrue('get_true' not in template_functions.keys())
         self.assertTrue(_GetTrueFunction not in template_functions.values())
 

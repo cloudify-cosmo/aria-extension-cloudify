@@ -362,8 +362,9 @@ node_templates:
 """
         prepared = prepare_deployment_plan(self.parse())
 
-        node_template = \
-            [x for x in prepared['nodes'] if x['name'] == 'webserver'][0]
+        node_template = [
+            x for x in prepared['nodes']
+            if x['name'] == 'webserver'][0]
         op = node_template['operations']['lifecycle.configure']
         self.assertEqual(8080, op['inputs']['port'])
         op = node_template['operations']['configure']
@@ -382,8 +383,9 @@ node_templates:
 
         prepared = prepare_deployment_plan(self.parse(),
                                            inputs={'port': 8000})
-        node_template = \
-            [x for x in prepared['nodes'] if x['name'] == 'webserver'][0]
+        node_template = [
+            x for x in prepared['nodes']
+            if x['name'] == 'webserver'][0]
         op = node_template['operations']['lifecycle.configure']
         self.assertEqual(8000, op['inputs']['port'])
         op = node_template['operations']['configure']

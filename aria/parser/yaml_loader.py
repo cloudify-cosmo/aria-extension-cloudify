@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from functools import partial
 
+import yaml
 from yaml.reader import Reader
 from yaml.scanner import Scanner
 from yaml.composer import Composer
@@ -27,7 +29,7 @@ from .holder import Holder
 
 def load(raw_yaml, error_message, filename=None):
     try:
-        result = MarkedLoader(raw_yaml, filename).get_single_data()
+        result = yaml.load(raw_yaml, partial(MarkedLoader, filename=filename))
         return result or Holder.of({}, filename=filename)
     except ParserError, ex:
         raise DSLParsingFormatException(

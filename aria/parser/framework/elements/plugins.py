@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from ...exceptions import DSLParsingLogicException
-from ... import constants
+from ...dsl_supported_versions import supported_versions
 from .version import ToscaDefinitionsVersion
 from . import Element, Leaf, Dict, DictElement
 
@@ -36,41 +36,39 @@ class PluginVersionValidatedElement(Element):
         ToscaDefinitionsVersion: ['version'],
         'inputs': ['validate_version'],
     }
-    min_version = None
 
-    def validate(self, version, validate_version):
-        if not self.min_version:
+    def validate_version(self, version):
+        if not self.supported_version:
             raise RuntimeError('Illegal state, please specify min_version')
-        if validate_version:
-            self.validate_version(version, self.min_version)
+        super(PluginVersionValidatedElement, self).validate_version(version)
 
 
 class PluginInstallArguments(PluginVersionValidatedElement):
-    min_version = (1, 1)
+    supported_version = supported_versions.base_version
 
 
 class PluginPackageName(PluginVersionValidatedElement):
-    min_version = (1, 2)
+    supported_version = supported_versions.base_version
 
 
 class PluginPackageVersion(PluginVersionValidatedElement):
-    min_version = (1, 2)
+    supported_version = supported_versions.base_version
 
 
 class PluginSupportedPlatform(PluginVersionValidatedElement):
-    min_version = (1, 2)
+    supported_version = supported_versions.base_version
 
 
 class PluginDistribution(PluginVersionValidatedElement):
-    min_version = (1, 2)
+    supported_version = supported_versions.base_version
 
 
 class PluginDistributionVersion(PluginVersionValidatedElement):
-    min_version = (1, 2)
+    supported_version = supported_versions.base_version
 
 
 class PluginDistributionRelease(PluginVersionValidatedElement):
-    min_version = (1, 2)
+    supported_version = supported_versions.base_version
 
 
 class Plugin(DictElement):
@@ -86,7 +84,7 @@ class Plugin(DictElement):
         'distribution_release': PluginDistributionRelease,
     }
 
-    def validate(self):
+    def validate(self, **kwargs):
         if not self.child(PluginInstall).value:
             return
         if (self.child(PluginSource).value or

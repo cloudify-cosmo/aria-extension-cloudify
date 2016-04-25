@@ -194,7 +194,7 @@ class NodeTemplateRelationshipTarget(Element):
     required = True
     schema = Leaf(type=str)
 
-    def validate(self):
+    def validate(self, **kwargs):
         relationship_type = self.sibling(NodeTemplateRelationshipType).name
         node_name = self.ancestor(NodeTemplate).name
         node_template_names = self.ancestor(NodeTemplates).initial_value.keys()
@@ -244,7 +244,7 @@ class NodeTemplateInstancesDeploy(Element):
     required = True
     schema = Leaf(type=int)
 
-    def validate(self):
+    def validate(self, **kwargs):
         if self.initial_value < 0:
             raise DSLParsingFormatException(
                 1, 'deploy instances must be a non-negative number')
@@ -296,7 +296,7 @@ class NodeTemplateRelationships(Element):
     schema = List(type=NodeTemplateRelationship)
     provides = ['contained_in']
 
-    def validate(self):
+    def validate(self, **kwargs):
         contained_in_relationships = []
         contained_in_targets = []
         for relationship in self.children():
@@ -435,7 +435,7 @@ class NodeTemplates(Element):
         }
 
     @staticmethod
-    def check_executor_key(plugin):
+    def should_install_plugin_on_compute_node(plugin):
         return plugin[constants.PLUGIN_EXECUTOR_KEY] == constants.LOCAL_AGENT
 
     def _deployment_plugins(self):
@@ -488,7 +488,7 @@ class NodeTemplates(Element):
                     # ok to override here since we assume it is
                     # the same plugin
                     for plugin in another_node[constants.PLUGINS]:
-                        if self.check_executor_key(plugin):
+                        if self.should_install_plugin_on_compute_node(plugin):
                             plugins_to_install[plugin['name']] = plugin
             node[constants.PLUGINS_TO_INSTALL] = (
                 plugins_to_install.values())

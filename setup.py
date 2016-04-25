@@ -18,12 +18,12 @@ import os
 from setuptools import setup, find_packages
 
 
-with open('requirements.txt') as requirements:
-    install_requires = requirements.readlines()
 try:
-    from collections import OrderedDict  # NOQA
-except ImportError, e:
-    install_requires.append('ordereddict==1.1')
+    with open('requirements.txt') as requirements:
+        install_requires = requirements.readlines()
+except IOError:
+    install_requires = []
+
 try:
     import importlib  # NOQA
 except ImportError:

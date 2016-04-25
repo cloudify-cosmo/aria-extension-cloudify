@@ -657,9 +657,7 @@ data_types:
             i:
                 type: integer
 """
-        self.assert_parser_raise_exception(
-            ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
-            DSLParsingException)
+        self.parse()
 
     def test_implicit_default_value(self):
         self.template.version_section('1.2')

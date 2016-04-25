@@ -37,10 +37,11 @@ def unregister(name):
 
 
 class RuntimeEvaluationStorage(object):
-    def __init__(self,
-                 get_node_instances_method,
-                 get_node_instance_method,
-                 get_node_method):
+    def __init__(
+            self,
+            get_node_instances_method,
+            get_node_instance_method,
+            get_node_method):
         self._get_node_instances_method = get_node_instances_method
         self._get_node_instance_method = get_node_instance_method
         self._get_node_method = get_node_method
@@ -71,6 +72,7 @@ class RuntimeEvaluationStorage(object):
 class Function(object):
     __metaclass__ = abc.ABCMeta
     name = 'function'
+    supported_version = None
 
     def __init__(self, args, scope=None, context=None, path=None, raw=None):
         self.scope = scope
@@ -94,6 +96,15 @@ class Function(object):
     @abc.abstractmethod
     def evaluate_runtime(self, storage):
         pass
+
+    def validate_version(self, version):
+        if self.supported_version is None:
+            return
+        if version.definitions_version.number < self.supported_version.number:
+            raise FunctionEvaluationError(
+                'Using {0} requires using dsl version 1_1 or '
+                'greater, but found: {1} in {2}.'
+                .format(self.name, version, self.path))
 
 
 @register(name='get_input')
@@ -301,17 +312,12 @@ class Concat(Function):
                 .format(self.name, args))
 
     def validate(self, plan):
-        if plan.version.definitions_version < (1, 1):
-            raise FunctionEvaluationError(
-                'Using {0} requires using dsl version 1_1 or '
-                'greater, but found: {1} in {2}.'
-                .format(self.name, plan.version, self.path))
+        self.validate_version(plan.version)
         if self.scope not in [scan.NODE_TEMPLATE_SCOPE,
                               scan.NODE_TEMPLATE_RELATIONSHIP_SCOPE,
                               scan.OUTPUTS_SCOPE]:
-            raise ValueError('{0} cannot be used in {1}.'
-                             .format(self.name,
-                                     self.path))
+            raise ValueError('{0} cannot be used in {1}.'.format(
+                self.name, self.path))
 
     def evaluate(self, plan):
         for joined_value in self.joined:
@@ -544,5 +550,3 @@ def _handler(evaluator, **evaluator_kwargs):
             scanned = True
         return evaluated_value
     return handler
-
-import pkg_resources

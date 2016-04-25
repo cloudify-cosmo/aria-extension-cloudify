@@ -44,7 +44,7 @@ class DerivedFrom(Element):
     schema = Leaf(type=str)
     descriptor = ''
 
-    def validate(self):
+    def validate(self, **kwargs):
         if self.initial_value is None:
             return
 

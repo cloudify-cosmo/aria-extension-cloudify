@@ -13,28 +13,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ...dsl_supported_versions import (
+from .database import database
+from .manager import (
     VERSION,
-    process_dsl_version,
-    parse_dsl_version,
+    BASE_VERSION_PROFILE,
+    VersionNumber,
+    VersionStructure,
+    SupportedVersions,
 )
-from ...exceptions import DSLParsingLogicException
-from ...models import Version
-from . import Element, Leaf
+
+supported_versions = SupportedVersions(database)
 
 
-class ToscaDefinitionsVersion(Element):
-    schema = Leaf(type=str)
-    provides = ['version']
+def add_version_to_database(profile, version_structure):
+    database[profile].add(version_structure)
 
-    def validate(self, **kwargs):
-        if self.initial_value is None:
-            raise DSLParsingLogicException(
-                27, '{0} field must appear in the main blueprint file'
-                    .format(VERSION))
 
-    def parse(self):
-        return Version(process_dsl_version(self.initial_value))
+def parse_dsl_version(version_name):
+    version_structure = supported_versions.create_version_structure(version_name)
+    supported_versions.validate_dsl_version(version_structure)
+    return version_structure
 
-    def calculate_provided(self):
-        return {'version': parse_dsl_version(self.initial_value)}
+
+def process_dsl_version(dsl_version):
+    version_structure = parse_dsl_version(dsl_version)
+    return {
+        'raw': version_structure.name,
+        'definitions_name': version_structure.profile,
+        'definitions_version': version_structure,
+    }

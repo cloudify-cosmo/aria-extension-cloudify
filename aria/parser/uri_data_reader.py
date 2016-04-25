@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 import requests
 from requests.exceptions import HTTPError
 from retrying import retry
@@ -47,6 +49,14 @@ def read_from_url(dsl_url):
             'status code: {0}, url: {1}'.format(response.status_code, dsl_url),
             response=response)
     return response.raw.read()
+
+
+def uri_exists(uri):
+    try:
+        response = requests.get(uri)
+        return response.status_code == 200
+    except IOError:
+        return os.path.exists(uri)
 
 
 _READ_HANDLERS_FROM_URI_SCHEMES = {

@@ -16,33 +16,16 @@
 import os
 from uuid import uuid4
 from shutil import rmtree
-from functools import wraps, partial
 from itertools import imap
 from tempfile import mkdtemp
 from testtools import TestCase
-from multiprocessing import Process
 
 from aria.parser import Parser
-
-
-class TimeoutTestMixin(TestCase):
-    def timeout_decorator(self, func=None, seconds=10):
-        if not func:
-            return partial(self.timeout_decorator, seconds=seconds)
-
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            process = Process(target=func, args=args, kwargs=kwargs)
-            process.start()
-            process.join(seconds)
-            if process.exitcode != 0:
-                process.terminate()
-                self.fail(
-                    'timeout decorator timedout, process exitcode: {0}'
-                        .format(process.exitcode))
-
-        return wrapper
-    timeout_decorator = staticmethod(timeout_decorator)
+from aria.parser.dsl_supported_versions import (
+    supported_versions,
+    BASE_VERSION_PROFILE,
+    add_version_to_database,
+)
 
 
 class TempDirectoryTestCase(TestCase):
@@ -173,10 +156,14 @@ class Template(object):
     def clear(self):
         self.template = ''
 
-    def version_section(self, version, raw=False):
+    def version_section(self, version, raw=False, support=True):
+        version_structure = supported_versions.create_version_structure(
+            '_'.join((BASE_VERSION_PROFILE, version.replace('.', '_'))))
         version_str = (
-            '\ntosca_definitions_version: cloudify_dsl_{0}\n'
-            .format(version.replace('.', '_')))
+            '\ntosca_definitions_version: {0}\n'.format(
+                version_structure.name))
+        if support:
+            add_version_to_database(BASE_VERSION_PROFILE, version_structure)
         if raw:
             return version_str
         self.template += version_str

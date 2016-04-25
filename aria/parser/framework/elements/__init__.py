@@ -13,14 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import copy
-import requests
-from requests.exceptions import InvalidSchema, MissingSchema
 
 from ... import exceptions
 from ... import holder
-from ...version import version_description
 
 PRIMITIVE_TYPES = (list, bool, int, float, long, basestring, dict)
 
@@ -55,6 +51,7 @@ class Element(object):
     requires = {}
     provides = []
     extend = None
+    supported_version = None
 
     def __new__(cls, *args, **kwargs):
         if cls.extend:
@@ -104,6 +101,17 @@ class Element(object):
 
     def validate(self, **kwargs):
         pass
+
+    def validate_version(self, version):
+        if self.initial_value is None or self.supported_version is None:
+            return
+        if version.number < self.supported_version.number:
+            raise exceptions.DSLParsingLogicException(
+                exceptions.ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
+                '{0} not supported in version {1}, it was added in {2}'.format(
+                    self.name,
+                    version,
+                    self.supported_version.name))
 
     def parse(self, **kwargs):
         return self.initial_value
@@ -192,15 +200,6 @@ class Element(object):
     def sibling(self, element_type):
         return self.parent().child(element_type)
 
-    def validate_version(self, version, min_version):
-        if self.initial_value is not None and version < min_version:
-            raise exceptions.DSLParsingLogicException(
-                exceptions.ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
-                '{0} not supported in version {1}, it was added in {2}'.format(
-                    self.name,
-                    version_description(version),
-                    version_description(min_version)))
-
 
 class DictElement(Element):
     def parse(self, **kwargs):
@@ -213,11 +212,3 @@ class UnknownSchema(object):
 
 class UnknownElement(Element):
     schema = UnknownSchema()
-
-
-def uri_exists(uri):
-    try:
-        response = requests.get(uri)
-        return response.status_code == 200
-    except (InvalidSchema, MissingSchema):
-        return os.path.exists(uri)

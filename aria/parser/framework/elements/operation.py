@@ -15,11 +15,12 @@
 
 import copy
 
+from ...uri_data_reader import uri_exists
 from ...exceptions import DSLParsingLogicException
 from ... import constants
 from .data_types import Schema
 from .version import ToscaDefinitionsVersion
-from . import DictElement, Element, Leaf, Dict, uri_exists
+from . import DictElement, Element, Leaf, Dict
 
 
 class OperationImplementation(Element):
@@ -37,7 +38,7 @@ class OperationExecutor(Element):
         return (super(OperationExecutor, self).parse(**kwargs)
                 or constants.LOCAL_AGENT)
 
-    def validate(self):
+    def validate(self, **kwargs):
         if self.initial_value is None:
             return
         if self.initial_value not in self.valid_executors:
@@ -66,12 +67,10 @@ class OperationMaxRetries(Element):
         'inputs': ['validate_version'],
     }
 
-    def validate(self, version, validate_version):
+    def validate(self, **kwargs):
         value = self.initial_value
         if value is None:
             return
-        if validate_version:
-            self.validate_version(version, (1, 1))
         if value < -1:
             raise ValueError(
                 "'{0}' value must be either -1 to specify "
@@ -87,12 +86,10 @@ class OperationRetryInterval(Element):
         'inputs': ['validate_version'],
     }
 
-    def validate(self, version, validate_version):
+    def validate(self, **kwargs):
         value = self.initial_value
         if value is None:
             return
-        if validate_version:
-            self.validate_version(version, (1, 1))
         if value is not None and value < 0:
             raise ValueError(
                 "'{0}' value must be a non negative number but "

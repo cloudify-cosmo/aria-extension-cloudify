@@ -21,6 +21,7 @@ from ..exceptions import (
     DSLParsingLogicException, DSLParsingSchemaAPIException,
     ERROR_CODE_CYCLE,
 )
+from ..models import Version
 from .elements import (
     Element, ElementType, UnknownElement,
     UnknownSchema, Dict, Leaf, List,
@@ -336,6 +337,13 @@ def _validate_schema(schema, strict, value, element):
 def _process_element(element):
     required_args = _extract_element_requirements(element)
     element.validate(**required_args)
+    if required_args.get('validate_version'):
+        try:
+            version = required_args['version'].definitions_version
+        except AttributeError:
+            version = required_args['version']
+        element.validate_version(version)
+
     element.value = element.parse(**required_args)
     element.provided = element.calculate_provided(**required_args)
 
@@ -432,7 +440,6 @@ def _inputs_required_handler(required_args, requirements, context):
                 1, "Missing required input '{0}'. Existing inputs: "
                    .format(input.name))
         required_args[input.name] = context.inputs.get(input.name)
-
 
 
 def _expected_type_message(value, expected_type):

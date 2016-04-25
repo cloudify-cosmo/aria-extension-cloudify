@@ -14,17 +14,18 @@
 # limitations under the License.
 
 import os
-import yaml
 from urllib import pathname2url
 
 from mock import patch
 from requests.exceptions import HTTPError
 
 from aria.parser import models, default_parser
-from aria.parser.version import parse_dsl_version
-from aria.parser.exceptions import (
-    DSLParsingLogicException, DSLParsingException,
+from aria.parser.dsl_supported_versions import (
+    parse_dsl_version,
+    BASE_VERSION_PROFILE,
+    VersionNumber,
 )
+from aria.parser.exceptions import DSLParsingException
 from aria.parser.interfaces.operation_merger import NO_OP
 from aria.parser.interfaces.utils import operation_mapping
 from aria.parser.constants import (
@@ -39,7 +40,6 @@ from aria.parser.constants import (
     PLUGIN_DISTRIBUTION,
     PLUGIN_DISTRIBUTION_VERSION,
     PLUGIN_DISTRIBUTION_RELEASE,
-    CENTRAL_DEPLOYMENT_AGENT,
     TYPE_HIERARCHY,
     SCRIPT_PLUGIN_NAME,
     SCRIPT_PLUGIN_RUN_TASK,
@@ -375,36 +375,6 @@ imports:
         self.template += top_level_yaml
         result = self.parse()
         self._assert_blueprint(result)
-
-    def test_version_1_2_and_above_input_imports(self):
-        importable = """
-inputs:
-    test_input2:
-        default: value
-"""
-        self._verify_1_2_and_below_non_mergeable_imports(importable, 'inputs')
-        self._verify_1_3_and_above_mergeable_imports(importable)
-
-    def test_version_1_2_and_above_node_template_imports(self):
-        importable = """
-node_templates:
-    test_node2:
-        type: test_type
-        properties:
-            key: "val"
-"""
-        self._verify_1_2_and_below_non_mergeable_imports(
-            importable, 'node_templates')
-        self._verify_1_3_and_above_mergeable_imports(importable)
-
-    def test_version_1_2_and_above_output_imports(self):
-        importable = """
-outputs:
-    test_output2:
-        value: value
-"""
-        self._verify_1_2_and_below_non_mergeable_imports(importable, 'outputs')
-        self._verify_1_3_and_above_mergeable_imports(importable)
 
     def test_node_get_type_properties_including_overriding_properties(self):
         self.template.version_section('1.0')
@@ -865,10 +835,10 @@ imports:
     def test_import_from_file_uri(self):
         self.template.node_type_section()
         self.template.node_template_section()
-        yaml = self.create_yaml_with_imports([str(self.template)], True)
+        data = self.create_yaml_with_imports([str(self.template)], True)
         self.template.clear()
         self.template.version_section('1.0')
-        self.template += yaml
+        self.template += data
         result = self.parse()
         self._assert_minimal_blueprint(result)
 
@@ -2451,196 +2421,6 @@ workflows:
                      'type': 'string'}},
             workflow['parameters'])
 
-    def test_policy_type_properties_empty_properties(self):
-        policy_types = dict(
-            policy_types=dict(
-                policy_type=dict(
-                    source='the_source',
-                    properties={})))
-        self.template.version_section('1.0')
-        self.template.node_type_section()
-        self.template.plugin_section()
-        self.template.node_template_section()
-        self.template += '\n' + yaml.safe_dump(policy_types)
-        result = self.parse()
-        self.assertEqual(result['policy_types'], policy_types['policy_types'])
-
-    def test_policy_type_properties_empty_property(self):
-        policy_types = dict(
-            policy_types=dict(
-                policy_type=dict(
-                    source='the_source',
-                    properties=dict(
-                        property=dict()))))
-        self.template.version_section('1.0')
-        self.template.node_type_section()
-        self.template.plugin_section()
-        self.template.node_template_section()
-        self.template += '\n' + yaml.safe_dump(policy_types)
-        result = self.parse()
-        self.assertEqual(result['policy_types'], policy_types['policy_types'])
-
-    def test_policy_type_properties_property_with_description_only(self):
-        policy_types = dict(
-            policy_types=dict(
-                policy_type=dict(
-                    source='the_source',
-                    properties=dict(
-                        property=dict(
-                            description='property description')))))
-        self.template.version_section('1.0')
-        self.template.node_type_section()
-        self.template.plugin_section()
-        self.template.node_template_section()
-        self.template += '\n' + yaml.safe_dump(policy_types)
-        result = self.parse()
-        self.assertEqual(result['policy_types'], policy_types['policy_types'])
-
-    def test_policy_type_properties_property_with_default_only(self):
-        policy_types = dict(
-            policy_types=dict(
-                policy_type=dict(
-                    source='the_source',
-                    properties=dict(
-                        property=dict(default='default_value')
-                    ))))
-        self.template.version_section('1.0')
-        self.template.node_type_section()
-        self.template.plugin_section()
-        self.template.node_template_section()
-        self.template += '\n' + yaml.safe_dump(policy_types)
-        result = self.parse()
-        self.assertEqual(result['policy_types'], policy_types['policy_types'])
-
-    def test_policy_type_properties_standard_property(self):
-        policy_types = dict(
-            policy_types=dict(
-                policy_type=dict(
-                    source='the_source',
-                    properties=dict(
-                        property=dict(
-                            default='default_value',
-                            description='property description',
-                            type='string')))))
-        self.template.version_section('1.0')
-        self.template.node_type_section()
-        self.template.plugin_section()
-        self.template.node_template_section()
-        self.template += '\n' + yaml.safe_dump(policy_types)
-        result = self.parse()
-        self.assertEqual(result['policy_types'], policy_types['policy_types'])
-
-    def test_policy_type_imports(self):
-        policy_types = [
-            dict(policy_types={'policy_type{0}'.format(i): dict(
-                source='the_source',
-                properties=dict(
-                    property=dict(
-                        default='default_value',
-                        description='property description')))})
-            for i in range(2)
-        ]
-        for i in range(2):
-            policy_types.append(dict(
-                policy_types={
-                    'policy_type{0}'.format(i): dict(
-                        source='the_source',
-                        properties=dict(
-                            property=dict(
-                                default='default_value',
-                                description='property description')))}))
-
-        template = self.template.version_section('1.0', raw=True)
-        self.template.node_type_section()
-        self.template.plugin_section()
-        self.template.node_template_section()
-        self.template.template = template + self.create_yaml_with_imports([
-            str(self.template),
-            yaml.safe_dump(policy_types[0]),
-            yaml.safe_dump(policy_types[1]),
-        ])
-
-        expected_result = dict(policy_types=policy_types[0]['policy_types'])
-        expected_result['policy_types'].update(policy_types[1]['policy_types'])
-
-        result = self.parse()
-        self.assertEqual(
-            result['policy_types'], expected_result['policy_types'])
-
-    def test_groups_schema_properties_merge(self):
-        self.template.version_section('1.0')
-        self.template.node_type_section()
-        self.template.plugin_section()
-        self.template.node_template_section()
-        self.template += """
-policy_types:
-    policy_type:
-        properties:
-            key1:
-                default: value1
-            key2:
-                description: key2 description
-            key3:
-                default: value3
-        source: source
-groups:
-    group:
-        members: [test_node]
-        policies:
-            policy:
-                type: policy_type
-                properties:
-                    key2: group_value2
-                    key3: group_value3
-"""
-        result = self.parse()
-        groups = result['groups']
-        self.assertEqual(1, len(groups))
-        group = groups['group']
-        self.assertEqual(['test_node'], group['members'])
-        self.assertEqual(1, len(group['policies']))
-        policy = group['policies']['policy']
-        self.assertEqual('policy_type', policy['type'])
-        self.assertEqual({
-            'key1': 'value1',
-            'key2': 'group_value2',
-            'key3': 'group_value3'
-        }, policy['properties'])
-
-    def test_groups_imports(self):
-        groups = [
-            dict(groups={
-                'group{0}'.format(i): dict(
-                    members=['test_node'],
-                    policies=dict(
-                        policy=dict(
-                            type='policy_type',
-                            properties={},
-                            triggers={})))})
-            for i in range(2)
-        ]
-        policy_types = """
-policy_types:
-    policy_type:
-        properties: {}
-        source: source
-"""
-        template = self.template.version_section('1.0', raw=True)
-        self.template.node_type_section()
-        self.template.plugin_section()
-        self.template.node_template_section()
-        self.template.template = template + self.create_yaml_with_imports([
-            str(self.template),
-            policy_types,
-            yaml.safe_dump(groups[0]),
-            yaml.safe_dump(groups[1])])
-
-        expected_result = dict(groups=groups[0]['groups'])
-        expected_result['groups'].update(groups[1]['groups'])
-
-        result = self.parse()
-        self.assertEqual(result['groups'], expected_result['groups'])
-
     def test_operation_mapping_with_properties_injection(self):
         self.template.version_section('1.0')
         self.template.node_template_section()
@@ -2963,23 +2743,24 @@ node_templates:
             self.template.node_template_section()
             version = self.parse()['version']
             version = models.Version(version)
-            self.assertEqual(version.definitions_name, 'cloudify_dsl')
-            self.assertEqual(version.definitions_version, expected)
+            self.assertEqual(version.definitions_name, BASE_VERSION_PROFILE)
+            self.assertEqual(version.definitions_version.number, expected)
 
         self.template.version_section('1.0')
-        assertion(expected=(1, 0))
+        assertion(expected=VersionNumber(1, 0))
         self.template.clear()
         self.template.version_section('1.1')
-        assertion(expected=(1, 1))
+        assertion(expected=VersionNumber(1, 1))
         self.template.clear()
         self.template.version_section('1.2')
-        assertion(expected=(1, 2))
+        assertion(expected=VersionNumber(1, 2))
         self.template.clear()
 
     def test_version_comparison(self):
 
         def parse_version(version):
-            parsed = parse_dsl_version('cloudify_dsl_{0}'.format(version))
+            parsed = parse_dsl_version('{0}_{1}'.format(
+                BASE_VERSION_PROFILE, version)).number
             major, minor, micro = parsed
             if micro is None:
                 micro = 0
@@ -2988,12 +2769,6 @@ node_templates:
         versions = [
             (1, '1_0'),
             (1, '1_0_0'),
-            (2, '1_0_1'),
-            (3, '1_1'),
-            (3, '1_1_0'),
-            (4, '1_2'),
-            (4, '1_2_0'),
-            (5, '2_0'),
         ]
 
         for ord1, ver1 in versions:
@@ -3238,8 +3013,6 @@ node_templates:
   node:
     type: type
 """
-        self.assertRaises(DSLParsingException, self.parse,
-                          validate_version=True)
         self.parse(validate_version=False)
 
     def test_validate_version_false_different_versions_in_imports(self):
@@ -3281,49 +3054,14 @@ node_templates:
         self.assertEquals('test_plugin', plugin_props[PLUGIN_NAME_KEY])
         operations = node['operations']
         self.assertEquals(
-            op_struct('test_plugin', 'install',
-                       executor='local'),
+            op_struct('test_plugin', 'install', executor='local'),
             operations['install'])
         self.assertEquals(
-            op_struct('test_plugin', 'install',
-                       executor='local'),
+            op_struct('test_plugin', 'install', executor='local'),
             operations['test_interface1.install'])
         self.assertEquals(
-            op_struct('test_plugin', 'terminate',
-                       executor='local'),
+            op_struct('test_plugin', 'terminate', executor='local'),
             operations['terminate'])
         self.assertEquals(
-            op_struct('test_plugin', 'terminate',
-                       executor='local'),
+            op_struct('test_plugin', 'terminate', executor='local'),
             operations['test_interface1.terminate'])
-
-    def _create_importable_yaml_for_version_1_3_and_above(self, importable):
-        old_template = str(self.template)
-        self.template.template = self.template.BASIC_TYPE
-        self.template.plugin_section()
-        self.template += importable
-        imported_yaml = self.make_yaml_file(str(self.template))
-        self.template.template = old_template
-        self.template += """
-imports:
-    -   {0}""".format(imported_yaml)
-        self.template.node_template_section()
-        self.template.input_section()
-        self.template.output_section()
-
-    def _verify_1_2_and_below_non_mergeable_imports(
-            self, importable, import_type):
-        self.template.clear()
-        self.template.version_section('1.2')
-        self._create_importable_yaml_for_version_1_3_and_above(importable)
-        ex = self.assertRaises(DSLParsingLogicException, self.parse)
-        self.assertIn(
-            "Import failed: non-mergeable field: '{0}'".format(import_type),
-            str(ex))
-
-    def _verify_1_3_and_above_mergeable_imports(self, importable):
-        self.template.clear()
-        self.template.version_section('1.3')
-        self._create_importable_yaml_for_version_1_3_and_above(importable)
-        result = self.parse()
-        self._assert_blueprint(result)

@@ -21,14 +21,15 @@ from aria.parser.exceptions import (
     ERROR_VALUE_DOES_NOT_MATCH_TYPE,
     ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
 )
-from aria.parser.version import parse_dsl_version, DSL_VERSION_1_0
+from aria.parser.dsl_supported_versions import (
+    parse_dsl_version, supported_versions, database,
+)
 from aria.parser import parse
 
 from .suite import ParserTestCase, TempDirectoryTestCase
 
 
 class TestParserLogicExceptions(ParserTestCase, TempDirectoryTestCase):
-
     def test_parse_dsl_from_file_bad_path(self):
         self.assertRaises(EnvironmentError, parse, 'fake-file.yaml')
 
@@ -300,7 +301,7 @@ relationships:
         ex = self.assert_parser_raise_exception(107, DSLParsingLogicException)
         self.assertEquals('should_implement', ex.property)
 
-    def test_instance_relationship_more_than_one_contained_in(self):
+    def test_instance_relationship_more_than_one_hosted_on(self):
         self.template.version_section('1.0')
         self.template.node_type_section()
         self.template.node_template_section()
@@ -343,68 +344,6 @@ groups:
                 properties: {}
 """
         self.assert_parser_raise_exception(40, DSLParsingLogicException)
-
-    def test_group_missing_policy_type(self):
-        self.template.version_section('1.0')
-        self.template.node_type_section()
-        self.template.node_template_section()
-        self.template += """
-policy_types:
-    policy_type:
-        properties:
-            metric:
-                default: 100
-        source: source
-groups:
-    group:
-        members: [test_node]
-        policies:
-            policy:
-                type: non_existent_policy_type
-                properties: {}
-"""
-        self.assert_parser_raise_exception(41, DSLParsingLogicException)
-
-    def test_group_policy_type_undefined_property(self):
-        self.template.version_section('1.0')
-        self.template.node_type_section()
-        self.template.node_template_section()
-        self.template += """
-policy_types:
-    policy_type:
-        properties: {}
-        source: source
-groups:
-    group:
-        members: [test_node]
-        policies:
-            policy:
-                type: policy_type
-                properties:
-                    key: value
-"""
-        self.assert_parser_raise_exception(106, DSLParsingLogicException)
-
-    def test_group_policy_type_missing_property(self):
-        self.template.version_section('1.0')
-        self.template.node_type_section()
-        self.template.node_template_section()
-        self.template += """
-policy_types:
-    policy_type:
-        properties:
-            key:
-                description: a key
-        source: source
-groups:
-    group:
-        members: [test_node]
-        policies:
-            policy:
-                type: policy_type
-                properties: {}
-"""
-        self.assert_parser_raise_exception(107, DSLParsingLogicException)
 
     def test_properties_schema_invalid_values_for_types(self):
         def test_type_with_value(prop_type, prop_val):
@@ -468,11 +407,13 @@ node_types:
         self.template.node_template_section()
         self.assert_parser_raise_exception(28, DSLParsingLogicException)
 
-    def test_unsupported_version(self):
-        self.template.version_section('unsupported_version')
+    def test_parse_wrong_dsl_version_format(self):
+        self.template += """
+tosca_definitions_version: unsupported_version
+        """
         self.template.node_type_section()
         self.template.node_template_section()
-        self.assert_parser_raise_exception(29, DSLParsingLogicException)
+        self.assert_parser_raise_exception(73, DSLParsingLogicException)
 
     def test_script_mapping_illegal_script_path_override(self):
         self.template.version_section('1.0')
@@ -521,14 +462,6 @@ node_templates:
         exc = self.assertRaises(DSLParsingLogicException, parse, yaml_path)
         self.assertEqual(61, exc.err_code)
 
-    def test_plugin_with_install_args_wrong_dsl_version(self):
-        self.template.version_section('1.0')
-        self.template.node_template_section()
-        self.template += self.template.PLUGIN_WITH_INSTALL_ARGS
-        self.template += self.template.BASIC_TYPE
-        self.assert_parser_raise_exception(
-            ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH, DSLParsingException)
-
     def test_parse_empty_or_none_dsl_version(self):
         expected_err_msg = 'tosca_definitions_version is missing or empty'
         self.assertRaisesRegex(DSLParsingLogicException,
@@ -546,50 +479,44 @@ node_templates:
                                parse_dsl_version, [1])
 
     def test_parse_wrong_dsl_version_format(self):
-        expected_err_msg = "Invalid tosca_definitions_version: '{0}', " \
-                           "expected a value following this format: '{1}'"\
-            .format('1_0', DSL_VERSION_1_0)
-        self.assertRaisesRegex(DSLParsingLogicException,
-                               expected_err_msg,
-                               parse_dsl_version, '1_0')
-
-        expected_err_msg = "Invalid tosca_definitions_version: '{0}', " \
-                           "expected a value following this format: '{1}'" \
-            .format('cloudify_dsl_1.0', DSL_VERSION_1_0)
-        self.assertRaisesRegex(DSLParsingLogicException,
-                               expected_err_msg,
-                               parse_dsl_version,
-                               'cloudify_dsl_1.0')
-
         expected_err_msg = (
             "Invalid tosca_definitions_version: '{0}', "
-            "major version is 'a' while expected to be a"
-            " number"
-            .format('cloudify_dsl_a_0', DSL_VERSION_1_0))
-        self.assertRaisesRegex(DSLParsingLogicException,
-                               expected_err_msg,
-                               parse_dsl_version,
-                               'cloudify_dsl_a_0')
+            "expected a value following this format:"
+        )
 
-        expected_err_msg = (
-            "Invalid tosca_definitions_version: '{0}', "
-            "minor version is 'a' while expected to be a"
-            " number"
-            .format('cloudify_dsl_1_a', DSL_VERSION_1_0))
-        self.assertRaisesRegex(DSLParsingLogicException,
-                               expected_err_msg,
-                               parse_dsl_version,
-                               'cloudify_dsl_1_a')
+        self.assertRaisesRegex(
+            DSLParsingLogicException,
+            expected_err_msg.format('1_0'),
+            parse_dsl_version,
+            '1_0')
 
-        expected_err_msg = (
-            "Invalid tosca_definitions_version: '{0}', "
-            "micro version is 'a' while expected to be a"
-            " number"
-            .format('cloudify_dsl_1_1_a', DSL_VERSION_1_0))
-        self.assertRaisesRegex(DSLParsingLogicException,
-                               expected_err_msg,
-                               parse_dsl_version,
-                               'cloudify_dsl_1_1_a')
+        self.assertRaisesRegex(
+            DSLParsingLogicException,
+            expected_err_msg.format('tosca_aria_yaml_1.0'),
+            parse_dsl_version,
+            'tosca_aria_yaml_1.0')
+
+    def test_parse_wrong_dsl_version_number(self):
+        self.assertRaisesRegex(
+            DSLParsingLogicException,
+            "Invalid tosca_definitions_version: 'tosca_aria_yaml_a_0', "
+            "major version is 'a' while expected to be a number",
+            parse_dsl_version,
+            'tosca_aria_yaml_a_0')
+
+        self.assertRaisesRegex(
+            DSLParsingLogicException,
+            "Invalid tosca_definitions_version: 'tosca_aria_yaml_1_a', "
+            "minor version is 'a' while expected to be a number",
+            parse_dsl_version,
+            'tosca_aria_yaml_1_a')
+
+        self.assertRaisesRegex(
+            DSLParsingLogicException,
+            "Invalid tosca_definitions_version: 'tosca_aria_yaml_1_1_a', "
+            "micro version is 'a' while expected to be a number",
+            parse_dsl_version,
+            'tosca_aria_yaml_1_1_a')
 
     def test_max_retries_version_validation(self):
         self.template.version_section('1.1')
@@ -612,34 +539,7 @@ node_templates:
                 my_operation:
                     max_retries: 1
 """
-        self.assert_parser_raise_exception(
-            ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
-            DSLParsingLogicException)
-
-    def test_retry_interval_version_validation(self):
-        self.template.version_section('1.1')
-        self.template.node_type_section()
-        self.template.node_template_section()
-        self.template += """
-        interfaces:
-            my_interface:
-                my_operation:
-                    retry_interval: 1
-"""
         self.parse()
-        self.template.clear()
-        self.template.version_section('1.0')
-        self.template.node_type_section()
-        self.template.node_template_section()
-        self.template += """
-        interfaces:
-            my_interface:
-                my_operation:
-                    retry_interval: 1
-"""
-        self.assert_parser_raise_exception(
-            ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
-            DSLParsingLogicException)
 
     def test_dsl_definitions_version_validation(self):
         self.template.version_section('1.2')
@@ -659,8 +559,6 @@ node_templates:
         self.parse()
         self.template.clear()
         self.template.version_section('1.1')
-        self.template.node_type_section()
-        self.template.node_template_section()
         self.template += """
 dsl_definitions:
     def: &def
@@ -674,13 +572,9 @@ node_templates:
     node:
         type: type
 """
-        self.assert_parser_raise_exception(
-            ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
-            DSLParsingLogicException)
+        self.parse()
         self.template.clear()
         self.template.version_section('1.0')
-        self.template.node_type_section()
-        self.template.node_template_section()
         self.template += """
 dsl_definitions:
     def: &def
@@ -694,9 +588,7 @@ node_templates:
     node:
         type: type
 """
-        self.assert_parser_raise_exception(
-            ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
-            DSLParsingLogicException)
+        self.parse()
 
     def test_blueprint_description_version_validation(self):
         self.template.version_section('1.2')
@@ -713,9 +605,7 @@ description: sample description
         self.template += """
 description: sample description
         """
-        self.assert_parser_raise_exception(
-            ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
-            DSLParsingLogicException)
+        self.parse()
         self.template.clear()
         self.template.version_section('1.0')
         self.template.node_type_section()
@@ -723,53 +613,7 @@ description: sample description
         self.template += """
 description: sample description
         """
-        self.assert_parser_raise_exception(
-            ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
-            DSLParsingLogicException)
-
-    def test_required_property_version_validation(self):
-        self.template.version_section('1.2')
-        self.template += """
-node_types:
-  type:
-    properties:
-      property:
-        required: false
-node_templates:
-  node:
-    type: type
-"""
         self.parse()
-        self.template.clear()
-        self.template.version_section('1.1')
-        self.template += """
-node_types:
-  type:
-    properties:
-      property:
-        required: false
-node_templates:
-  node:
-    type: type
-"""
-        self.assert_parser_raise_exception(
-            ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
-            DSLParsingLogicException)
-        self.template.clear()
-        self.template.version_section('1.0')
-        self.template += """
-node_types:
-  type:
-    properties:
-      property:
-        required: false
-node_templates:
-  node:
-    type: type
-"""
-        self.assert_parser_raise_exception(
-            ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
-            DSLParsingLogicException)
 
     def test_missing_required_property(self):
         self.template.version_section('1.2')
@@ -784,47 +628,3 @@ node_templates:
     type: type
 """
         self.assert_parser_raise_exception(107, DSLParsingLogicException)
-
-    def test_plugin_fields_version_validation(self):
-        base_yaml = """
-node_types:
-  type:
-    properties:
-      prop:
-        default: value
-node_templates:
-  node:
-    type: type
-plugins:
-  plugin:
-    install: false
-    {0}: {1}
-"""
-
-        def test_field(key, value):
-            self.template.clear()
-            self.template.version_section('1.2')
-            self.template += base_yaml.format(key, value)
-            self.parse()
-            self.template.clear()
-            self.template.version_section('1.1')
-            self.template += base_yaml.format(key, value)
-            self.assert_parser_raise_exception(
-                ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
-                DSLParsingLogicException)
-            self.template.clear()
-            self.template.version_section('1.0')
-            self.template += base_yaml.format(key, value)
-            self.assert_parser_raise_exception(
-                ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
-                DSLParsingLogicException)
-        fields = {
-            'package_name': 'name',
-            'package_version': 'version',
-            'supported_platform': 'any',
-            'distribution': 'dist',
-            'distribution_version': 'version',
-            'distribution_release': 'release'
-        }
-        for key, value in fields.items():
-            test_field(key, value)
