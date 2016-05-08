@@ -18,6 +18,7 @@ import copy
 from ...uri_data_reader import uri_exists
 from ...exceptions import DSLParsingLogicException
 from ... import constants
+from ...interfaces.utils import operation, workflow_operation, no_op_operation
 from .data_types import Schema
 from .version import ToscaDefinitionsVersion
 from . import DictElement, Element, Leaf, Dict
@@ -193,14 +194,7 @@ def process_operation(
             raise RuntimeError('Illegal state. workflow mapping should always'
                                'be defined (enforced by schema validation)')
         else:
-            return _operation(
-                name=operation_name,
-                plugin_name='',
-                operation_mapping='',
-                operation_inputs={},
-                executor=constants.LOCAL_AGENT,
-                max_retries=None,
-                retry_interval=None)
+            return no_op_operation(operation_name=operation_name)
 
     candidate_plugins = [
         p for p in plugins.keys()
@@ -214,7 +208,7 @@ def process_operation(
         plugin_name = candidate_plugins[0]
         mapping = operation_mapping[len(plugin_name) + 1:]
         if is_workflows:
-            return _workflow_operation(
+            return workflow_operation(
                 plugin_name=plugin_name,
                 workflow_mapping=mapping,
                 workflow_parameters=operation_payload)
@@ -223,7 +217,7 @@ def process_operation(
                     operation_executor == constants.LOCAL_AGENT)):
                 operation_executor = plugins[plugin_name].get(
                     'executor') or constants.LOCAL_AGENT
-            return _operation(
+            return operation(
                 name=operation_name,
                 plugin_name=plugin_name,
                 operation_mapping=mapping,
@@ -265,7 +259,7 @@ def process_operation(
                     operation_name))
 
         if is_workflows:
-            return _workflow_operation(
+            return workflow_operation(
                 plugin_name=constants.SCRIPT_PLUGIN_NAME,
                 workflow_mapping=operation_mapping,
                 workflow_parameters=operation_payload)
@@ -274,7 +268,7 @@ def process_operation(
                     operation_executor == constants.LOCAL_AGENT)):
                 operation_executor = plugins[constants.SCRIPT_PLUGIN_NAME].get(
                     'executor', constants.LOCAL_AGENT)
-            return _operation(
+            return operation(
                 name=operation_name,
                 plugin_name=constants.SCRIPT_PLUGIN_NAME,
                 operation_mapping=operation_mapping,
@@ -297,32 +291,3 @@ def process_operation(
 
 def _resource_exists(resource_base, resource_name):
     return uri_exists('{0}/{1}'.format(resource_base, resource_name))
-
-
-def _operation(name,
-               plugin_name,
-               operation_mapping,
-               operation_inputs,
-               executor,
-               max_retries,
-               retry_interval):
-    return {
-        'name': name,
-        'plugin': plugin_name,
-        'operation': operation_mapping,
-        'executor': executor,
-        'inputs': operation_inputs,
-        'has_intrinsic_functions': False,
-        'max_retries': max_retries,
-        'retry_interval': retry_interval,
-    }
-
-
-def _workflow_operation(plugin_name,
-                        workflow_mapping,
-                        workflow_parameters):
-    return {
-        'plugin': plugin_name,
-        'operation': workflow_mapping,
-        'parameters': workflow_parameters,
-    }

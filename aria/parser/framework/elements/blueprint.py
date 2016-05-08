@@ -22,7 +22,7 @@ from .plugins import Plugins
 from .node_types import NodeTypes
 from .relationships import Relationships
 from .node_templates import NodeTemplates
-from .policies import Groups
+from .policies import Groups, Policies
 from .workflows import Workflows
 from .data_types import DataTypes
 from . import Element
@@ -65,17 +65,21 @@ class Blueprint(Element):
         'relationships': Relationships,
         'node_templates': NodeTemplates,
         'groups': Groups,
+        'policies': Policies,
         'workflows': Workflows,
         'outputs': Outputs,
         'data_types': DataTypes,
     }
     requires = {
-        NodeTemplates: ['deployment_plugins_to_install'],
-        Workflows: ['workflow_plugins_to_install'],
+        NodeTemplates: [constants.DEPLOYMENT_PLUGINS_TO_INSTALL],
+        Workflows: [constants.WORKFLOW_PLUGINS_TO_INSTALL],
+        Policies: [constants.SCALING_GROUPS],
     }
 
-    def parse(
-            self, workflow_plugins_to_install, deployment_plugins_to_install):
+    def parse(self,
+              workflow_plugins_to_install,
+              deployment_plugins_to_install,
+              scaling_groups=None):
         return models.Plan({
             constants.DEPLOYMENT_PLUGINS_TO_INSTALL:
                 deployment_plugins_to_install,
@@ -85,7 +89,9 @@ class Blueprint(Element):
             constants.NODES: self.child(NodeTemplates).value,
             constants.RELATIONSHIPS: self.child(Relationships).value,
             constants.WORKFLOWS: self.child(Workflows).value,
+            constants.POLICIES: self.child(Policies).value,
             constants.GROUPS: self.child(Groups).value,
+            constants.SCALING_GROUPS: scaling_groups or {},
             constants.INPUTS: self.child(Inputs).value,
             constants.OUTPUTS: self.child(Outputs).value,
             constants.VERSION: self.child(ToscaDefinitionsVersion).value,

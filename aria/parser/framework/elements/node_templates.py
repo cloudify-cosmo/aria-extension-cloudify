@@ -20,6 +20,7 @@ from ...exceptions import (
     DSLParsingLogicException,
     DSLParsingFormatException,
     DSLParsingElementMatchException,
+    ERROR_INSTANCES_DEPLOY_AND_CAPABILITIES,
 )
 from ...interfaces import (
     merge_relationship_type_and_instance_interfaces,
@@ -33,7 +34,65 @@ from .data_types import DataTypes
 from .operation import NodeTemplateInterfaces
 from .plugins import Plugins
 from .operation import process_interface_operations
+from .scalable import Properties
+from .version import ToscaDefinitionsVersion
 from . import Element, Dict, DictElement, Leaf, List
+
+
+# TODO: Capabilities should be implemented according to TOSCA as generic types
+class NodeTemplateCapabilitiesScalable(DictElement):
+    schema = {'properties': Properties}
+
+    def parse(self):
+        if self.initial_value is None:
+            return {'properties': Properties.DEFAULT.copy()}
+        return {'properties': self.child(Properties).value}
+
+
+def _instances_predicate(source, target):
+    return source.ancestor(NodeTemplate) is target.ancestor(NodeTemplate)
+
+
+class NodeTemplateInstancesDeploy(Element):
+    required = True
+    schema = Leaf(type=int)
+
+    def validate(self, **kwargs):
+        if self.initial_value < 0:
+            raise DSLParsingFormatException(
+                1, 'deploy instances must be a non-negative number')
+
+
+class NodeTemplateCapabilities(DictElement):
+    schema = {'scalable': NodeTemplateCapabilitiesScalable}
+    requires = {
+        ToscaDefinitionsVersion: ['version'],
+        'inputs': ['validate_version'],
+        NodeTemplateInstancesDeploy: [
+            Value('instances_deploy',
+                  required=False,
+                  predicate=_instances_predicate)],
+    }
+
+    def validate(self, version, validate_version, instances_deploy):
+        if instances_deploy is not None and self.initial_value is not None:
+            raise DSLParsingLogicException(
+                ERROR_INSTANCES_DEPLOY_AND_CAPABILITIES,
+                "Node '{0}' defines both instances.deploy and "
+                "capabilities.scalable (Note: instances.deploy is deprecated)"
+                .format(self.ancestor(NodeTemplate).name))
+
+    def parse(self, instances_deploy, **kwargs):
+        if self.initial_value is None:
+            properties = Properties.DEFAULT.copy()
+            if instances_deploy is not None:
+                for key in properties:
+                    if key not in ['min_instances', 'max_instances']:
+                        properties[key] = instances_deploy
+            return {'scalable': {'properties': properties}}
+        return {
+            'scalable': self.child(NodeTemplateCapabilitiesScalable).value,
+        }
 
 
 def _node_template_relationship_type_predicate(source, target):
@@ -240,16 +299,6 @@ class NodeTemplateRelationshipProperties(Element):
             node_name=self.ancestor(NodeTemplate).name)
 
 
-class NodeTemplateInstancesDeploy(Element):
-    required = True
-    schema = Leaf(type=int)
-
-    def validate(self, **kwargs):
-        if self.initial_value < 0:
-            raise DSLParsingFormatException(
-                1, 'deploy instances must be a non-negative number')
-
-
 class NodeTemplateInstances(DictElement):
     schema = {'deploy': NodeTemplateInstancesDeploy}
 
@@ -342,6 +391,7 @@ class NodeTemplate(Element):
     schema = {
         'type': NodeTemplateType,
         'instances': NodeTemplateInstances,
+        'capabilities': NodeTemplateCapabilities,
         'interfaces': NodeTemplateInterfaces,
         'relationships': NodeTemplateRelationships,
         'properties': NodeTemplateProperties,

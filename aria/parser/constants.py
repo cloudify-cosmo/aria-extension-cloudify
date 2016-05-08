@@ -32,6 +32,11 @@ INPUTS = 'inputs'
 OUTPUTS = 'outputs'
 DERIVED_FROM = 'derived_from'
 DATA_TYPES = 'data_types'
+POLICIES = 'policies'
+
+# todo: move to cloudify and change the name to tosca based
+SCALING_POLICY = 'cloudify.policies.scaling'
+SCALING_GROUPS = 'scaling_groups'
 
 CENTRAL_DEPLOYMENT_AGENT = 'central_deployment_agent'
 HOST_AGENT = 'host_agent'
@@ -72,5 +77,10 @@ USER_PRIMITIVE_TYPES = ['string', 'integer', 'float', 'boolean']
 NODE_TEMPLATE_SCOPE = 'node_template'
 NODE_TEMPLATE_RELATIONSHIP_SCOPE = 'node_template_relationship'
 OUTPUTS_SCOPE = 'outputs'
+POLICIES_SCOPE = 'policies'
+SCALING_GROUPS_SCOPE = 'scaling_groups'
 
 DEFAULT_RESLOVER_RULES_KEY = 'rules'
+
+UNBOUNDED_LITERAL = 'UNBOUNDED'
+UNBOUNDED = -1

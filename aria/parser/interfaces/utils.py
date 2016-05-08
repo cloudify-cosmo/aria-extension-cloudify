@@ -45,9 +45,51 @@ def merge_schema_and_instance_inputs(schema_inputs, instance_inputs):
     return merged_inputs
 
 
+def no_op_operation(operation_name):
+    return operation(
+        name=operation_name,
+        plugin_name='',
+        operation_mapping='',
+        operation_inputs={},
+        executor=LOCAL_AGENT,
+        max_retries=None,
+        retry_interval=None,
+    )
+
+
+def operation(
+        name,
+        plugin_name,
+        operation_mapping,
+        operation_inputs,
+        executor,
+        max_retries,
+        retry_interval):
+    return {
+        'name': name,
+        'plugin': plugin_name,
+        'operation': operation_mapping,
+        'executor': executor,
+        'inputs': operation_inputs,
+        'has_intrinsic_functions': False,
+        'max_retries': max_retries,
+        'retry_interval': retry_interval,
+    }
+
+
+def workflow_operation(
+        plugin_name,
+        workflow_mapping,
+        workflow_parameters):
+    return {
+        'plugin': plugin_name,
+        'operation': workflow_mapping,
+        'parameters': workflow_parameters,
+    }
+
+
 def _validate_missing_inputs(inputs, schema_inputs):
     """Check that all inputs defined in schema_inputs exist in inputs"""
-
     missing_inputs = set(schema_inputs) - set(inputs)
     if missing_inputs:
         if len(missing_inputs) == 1:

@@ -17,6 +17,8 @@ from .constants import (
     NODE_TEMPLATE_SCOPE,
     NODE_TEMPLATE_RELATIONSHIP_SCOPE,
     OUTPUTS_SCOPE,
+    POLICIES_SCOPE,
+    SCALING_GROUPS_SCOPE,
 )
 
 
@@ -128,6 +130,14 @@ def scan_service_template(plan, handler, replace=False):
             context=node_template,
             path='{0}.properties'.format(node_template['name']),
             replace=replace)
+        for name, capability in node_template.get('capabilities', {}).items():
+            scan_properties(
+                capability.get('properties', {}),
+                handler,
+                scope=NODE_TEMPLATE_SCOPE,
+                context=node_template,
+                path='{0}.capabilities.{1}'.format(node_template['name'], name),
+                replace=replace)
         scan_node_operation_properties(node_template, handler, replace=replace)
 
     for output_name, output in plan.outputs.iteritems():
@@ -137,6 +147,23 @@ def scan_service_template(plan, handler, replace=False):
             scope=OUTPUTS_SCOPE,
             context=plan.outputs,
             path='outputs.{0}'.format(output_name),
+            replace=replace)
+
+    for policy_name, policy in plan.get('policies', {}).items():
+        scan_properties(
+            policy.get('properties', {}),
+            handler,
+            scope=POLICIES_SCOPE,
+            context=policy,
+            path='policies.{0}.properties'.format(policy_name),
+            replace=replace)
+    for group_name, scaling_group in plan.get('scaling_groups', {}).items():
+        scan_properties(
+            scaling_group.get('properties', {}),
+            handler,
+            scope=SCALING_GROUPS_SCOPE,
+            context=scaling_group,
+            path='scaling_groups.{0}.properties'.format(group_name),
             replace=replace)
 
 

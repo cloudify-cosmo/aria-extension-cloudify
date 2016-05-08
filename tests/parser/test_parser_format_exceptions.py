@@ -831,24 +831,6 @@ groups:
 """
         self.assert_parser_raise_exception(1, DSLParsingFormatException)
 
-    def test_groups_missing_policies(self):
-        self.template.version_section('1.0')
-        self.template += """
-node_types:
-    test_type: {}
-node_templates:
-    member:
-        type: test_type
-policy_types:
-    type:
-        properties: {}
-        source: source
-groups:
-    group:
-        members: [member]
-"""
-        self.assert_parser_raise_exception(1, DSLParsingFormatException)
-
     def test_groups_extra_property(self):
         self.template.version_section('1.0')
         self.template += """

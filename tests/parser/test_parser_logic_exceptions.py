@@ -16,14 +16,10 @@
 from aria.parser.constants import SCRIPT_PLUGIN_NAME
 from aria.parser.exceptions import (
     DSLParsingLogicException,
-    DSLParsingException,
     ERROR_UNKNOWN_TYPE,
     ERROR_VALUE_DOES_NOT_MATCH_TYPE,
-    ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
 )
-from aria.parser.dsl_supported_versions import (
-    parse_dsl_version, supported_versions, database,
-)
+from aria.parser.dsl_supported_versions import parse_dsl_version
 from aria.parser import parse
 
 from .suite import ParserTestCase, TempDirectoryTestCase

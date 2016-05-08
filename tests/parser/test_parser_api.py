@@ -2101,10 +2101,8 @@ node_types:
         self.assertEquals('test_node', node1['id'])
         self.assertEquals('test_type', node1['type'])
         self.assertEquals('val', node1['properties']['key'])
-        self.assertEquals(1, node1['instances']['deploy'])
         self.assertEquals('test_node2', node2['id'])
         self.assertEquals('test_type2', node2['type'])
-        self.assertEquals(1, node2['instances']['deploy'])
 
     def test_relationship_operation_mapping_with_properties_injection(self):
         self.template.version_section('1.0')
@@ -3041,7 +3039,6 @@ node_templates:
         self.assertEquals('test_node', node['name'])
         self.assertEquals(expected_type, node['type'])
         self.assertEquals('val', node['properties']['key'])
-        self.assertEquals(1, node['instances']['deploy'])
 
     def _assert_blueprint(self, result):
         node = result['nodes'][0]

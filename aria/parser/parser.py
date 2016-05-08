@@ -70,6 +70,9 @@ class Parser(object):
         version = validate_version_schema(
             parsed_dsl_holder, self.validate_version)
 
+        if dsl_location and not os.path.isdir(dsl_location):
+            dsl_location = os.path.dirname(dsl_location)
+
         resource_base, merged_blueprint_holder = handle_imports(
             parsed_dsl_holder,
             dsl_location,
