@@ -86,21 +86,6 @@ class DSLParsingSchemaAPIException(DSLParsingException):
     pass
 
 
-class IllegalConnectedToConnectionType(Exception):
-    pass
-
-
-class UnsupportedRelationship(Exception):
-    pass
-
-
-class IllegalAllToOneState(Exception):
-    pass
-
-
-class UnsupportedAllToOneInGroup(Exception):
-    pass
-
 ERROR_CODE_CYCLE = 100
 ERROR_CODE_ILLEGAL_VALUE_ACCESS = 101
 ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH = 102

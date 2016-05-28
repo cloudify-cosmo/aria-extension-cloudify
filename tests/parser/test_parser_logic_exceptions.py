@@ -22,7 +22,7 @@ from aria.parser.exceptions import (
 from aria.parser.dsl_supported_versions import parse_dsl_version
 from aria.parser import parse
 
-from .suite import ParserTestCase, TempDirectoryTestCase
+from ..suite import ParserTestCase, TempDirectoryTestCase
 
 
 class TestParserLogicExceptions(ParserTestCase, TempDirectoryTestCase):
@@ -32,7 +32,9 @@ class TestParserLogicExceptions(ParserTestCase, TempDirectoryTestCase):
     def test_no_type_definition(self):
         self.template.version_section('1.0')
         self.template.node_template_section()
-        self.assert_parser_raise_exception(7, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=7,
+            exception_types=DSLParsingLogicException)
 
     def test_explicit_interface_with_missing_plugin(self):
         self.template.version_section('1.0')
@@ -54,7 +56,9 @@ node_types:
                 default: 'false'
             key: {}
 """
-        self.assert_parser_raise_exception(10, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=10,
+            exception_types=DSLParsingLogicException)
 
     def test_type_derive_non_from_none_existing(self):
         self.template.version_section('1.0')
@@ -65,7 +69,8 @@ node_types:
         derived_from: "non_existing_type_parent"
         """
         self.assert_parser_raise_exception(
-            ERROR_UNKNOWN_TYPE, DSLParsingLogicException)
+            error_code=ERROR_UNKNOWN_TYPE,
+            exception_types=DSLParsingLogicException)
 
     def test_import_bad_path(self):
         self.template.version_section('1.0')
@@ -73,7 +78,9 @@ node_types:
 imports:
     -   fake-file.yaml
         """
-        self.assert_parser_raise_exception(13, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=13,
+            exception_types=DSLParsingLogicException)
 
     def test_cyclic_dependency(self):
         self.template.version_section('1.0')
@@ -89,7 +96,9 @@ node_types:
     test_type_grandparent:
         derived_from: "test_type"
     """
-        ex = self.assert_parser_raise_exception(100, DSLParsingLogicException)
+        ex = self.assert_parser_raise_exception(
+            error_code=100,
+            exception_types=DSLParsingLogicException)
         circular = ex.circular_dependency
         self.assertEqual(len(circular), 4)
         self.assertEqual(circular[0], circular[-1])
@@ -107,7 +116,9 @@ relationships:
                     implementation: no_plugin.op
                     inputs: {}
                         """
-        self.assert_parser_raise_exception(19, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=19,
+            exception_types=DSLParsingLogicException)
 
     def test_workflow_mapping_no_plugin(self):
         self.template.version_section('1.0')
@@ -118,7 +129,9 @@ relationships:
 workflows:
     workflow1: test_plugin2.workflow1
 """
-        self.assert_parser_raise_exception(21, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=21,
+            exception_types=DSLParsingLogicException)
 
     def test_top_level_relationships_import_same_name_relationship(self):
         self.template.node_type_section()
@@ -133,7 +146,9 @@ relationships:
             """
         self.template.version_section('1.0')
         self.template += yaml
-        self.assert_parser_raise_exception(4, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=4,
+            exception_types=DSLParsingLogicException)
 
     def test_top_level_relationships_circular_inheritance(self):
         self.template.version_section('1.0')
@@ -148,7 +163,9 @@ relationships:
     test_relationship3:
         derived_from: test_relationship1
         """
-        self.assert_parser_raise_exception(100, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=100,
+            exception_types=DSLParsingLogicException)
 
     def test_instance_relationships_bad_target_value(self):
         self.template.version_section('1.0')
@@ -163,7 +180,9 @@ relationships:
 relationships:
     test_relationship: {}
             """
-        self.assert_parser_raise_exception(25, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=25,
+            exception_types=DSLParsingLogicException)
 
     def test_instance_relationships_bad_type_value(self):
         self.template.version_section('1.0')
@@ -178,7 +197,9 @@ relationships:
 relationships:
     test_relationship: {}
             """
-        self.assert_parser_raise_exception(26, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=26,
+            exception_types=DSLParsingLogicException)
 
     def test_instance_relationships_same_source_and_target(self):
         self.template.version_section('1.0')
@@ -193,7 +214,9 @@ relationships:
 relationships:
     test_relationship: {}
             """
-        self.assert_parser_raise_exception(23, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=23,
+            exception_types=DSLParsingLogicException)
 
     def test_instance_relationship_with_undefined_plugin(self):
         self.template.version_section('1.0')
@@ -211,7 +234,9 @@ relationships:
 relationships:
     test_relationship: {}
                         """
-        self.assert_parser_raise_exception(19, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=19,
+            exception_types=DSLParsingLogicException)
 
     def test_ambiguous_plugin_operation_mapping(self):
         self.template.version_section('1.0')
@@ -230,7 +255,9 @@ plugins:
     one:
         source: dummy
         """
-        self.assert_parser_raise_exception(91, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=91,
+            exception_types=DSLParsingLogicException)
 
     def test_node_set_non_existing_property(self):
         self.template.version_section('1.0')
@@ -240,7 +267,9 @@ plugins:
 node_types:
     test_type: {}
 """
-        ex = self.assert_parser_raise_exception(106, DSLParsingLogicException)
+        ex = self.assert_parser_raise_exception(
+            error_code=106,
+            exception_types=DSLParsingLogicException)
         self.assertEquals('key', ex.property)
 
     def test_node_doesnt_implement_schema_mandatory_property(self):
@@ -254,7 +283,9 @@ node_types:
             key: {}
             mandatory: {}
 """
-        ex = self.assert_parser_raise_exception(107, DSLParsingLogicException)
+        ex = self.assert_parser_raise_exception(
+            error_code=107,
+            exception_types=DSLParsingLogicException)
         self.assertEquals('mandatory', ex.property)
 
     def test_relationship_instance_set_non_existing_property(self):
@@ -274,7 +305,9 @@ node_types:
 relationships:
     test_relationship: {}
 """
-        ex = self.assert_parser_raise_exception(106, DSLParsingLogicException)
+        ex = self.assert_parser_raise_exception(
+            error_code=106,
+            exception_types=DSLParsingLogicException)
         self.assertEquals('do_not_exist', ex.property)
 
     def test_relationship_instance_doesnt_implement_schema_mandatory_property(self):  # NOQA
@@ -294,7 +327,9 @@ relationships:
         properties:
             should_implement: {}
 """
-        ex = self.assert_parser_raise_exception(107, DSLParsingLogicException)
+        ex = self.assert_parser_raise_exception(
+            error_code=107,
+            exception_types=DSLParsingLogicException)
         self.assertEquals('should_implement', ex.property)
 
     def test_instance_relationship_more_than_one_hosted_on(self):
@@ -314,7 +349,9 @@ relationships:
     derived_from_contained_in:
         derived_from: tosca.relationships.HostedOn
 """
-        ex = self.assert_parser_raise_exception(112, DSLParsingLogicException)
+        ex = self.assert_parser_raise_exception(
+            error_code=112,
+            exception_types=DSLParsingLogicException)
         self.assertEqual(
             set(['tosca.relationships.HostedOn',
                  'derived_from_contained_in']),
@@ -339,7 +376,9 @@ groups:
                 type: policy_type
                 properties: {}
 """
-        self.assert_parser_raise_exception(40, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=40,
+            exception_types=DSLParsingLogicException)
 
     def test_properties_schema_invalid_values_for_types(self):
         def test_type_with_value(prop_type, prop_val):
@@ -358,8 +397,8 @@ node_types:
                 type: {1}
         """.format(prop_val, prop_type)
             self.assert_parser_raise_exception(
-                ERROR_VALUE_DOES_NOT_MATCH_TYPE,
-                DSLParsingLogicException)
+                error_code=ERROR_VALUE_DOES_NOT_MATCH_TYPE,
+                exception_types=DSLParsingLogicException)
 
         test_type_with_value('boolean', 'not-a-boolean')
         test_type_with_value('boolean', '"True"')
@@ -383,7 +422,8 @@ node_types:
         self.template.node_type_section()
         self.template.node_template_section()
         self.assert_parser_raise_exception(
-            27, DSLParsingLogicException)
+            error_code=27,
+            exception_types=DSLParsingLogicException)
 
     def test_no_version_field_in_main_blueprint_file(self):
         self.template.version_section('1.0')
@@ -393,7 +433,9 @@ node_types:
         self.template += imported_yaml_filename
         self.template.node_type_section()
         self.template.node_template_section()
-        self.assert_parser_raise_exception(27, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=27,
+            exception_types=DSLParsingLogicException)
 
     def test_mismatching_version_in_import(self):
         self.template.version_section('1.0')
@@ -401,15 +443,19 @@ node_types:
             [self.template.version_section('1.1', raw=True)])
         self.template.node_type_section()
         self.template.node_template_section()
-        self.assert_parser_raise_exception(28, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=28,
+            exception_types=DSLParsingLogicException)
 
-    def test_parse_wrong_dsl_version_format(self):
+    def test_unsupported_version(self):
         self.template += """
 tosca_definitions_version: unsupported_version
         """
         self.template.node_type_section()
         self.template.node_template_section()
-        self.assert_parser_raise_exception(73, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=73,
+            exception_types=DSLParsingLogicException)
 
     def test_script_mapping_illegal_script_path_override(self):
         self.template.version_section('1.0')
@@ -623,4 +669,6 @@ node_templates:
   node:
     type: type
 """
-        self.assert_parser_raise_exception(107, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=107,
+            exception_types=DSLParsingLogicException)

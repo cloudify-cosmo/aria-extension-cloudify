@@ -20,9 +20,8 @@ from aria.parser.exceptions import (
     ERROR_CODE_CYCLE,
     ERROR_VALUE_DOES_NOT_MATCH_TYPE,
     ERROR_INVALID_TYPE_NAME,
-    ERROR_CODE_DSL_DEFINITIONS_VERSION_MISMATCH,
 )
-from .suite import ParserTestCase, TempDirectoryTestCase, get_node_by_name
+from ..suite import ParserTestCase, TempDirectoryTestCase, get_node_by_name
 
 
 class TestDataTypes(ParserTestCase, TempDirectoryTestCase):
@@ -33,7 +32,8 @@ class TestDataTypes(ParserTestCase, TempDirectoryTestCase):
         self.template.data_types_section(
             properties_first='\n               type: unknown-type\n')
         self.assert_parser_raise_exception(
-            ERROR_UNKNOWN_TYPE, DSLParsingLogicException)
+            error_code=ERROR_UNKNOWN_TYPE,
+            exception_types=DSLParsingLogicException)
 
     def test_simple(self):
         self.template.version_section('1.2')
@@ -74,7 +74,8 @@ class TestDataTypes(ParserTestCase, TempDirectoryTestCase):
             '                    head: 1\n'
         )
         self.assert_parser_raise_exception(
-            ERROR_CODE_CYCLE, DSLParsingLogicException)
+            error_code=ERROR_CODE_CYCLE,
+            exception_types=DSLParsingLogicException)
 
     def test_definitions_with_default_error(self):
         extras = (
@@ -93,7 +94,9 @@ class TestDataTypes(ParserTestCase, TempDirectoryTestCase):
         self.template.node_type_section()
         self.template.node_template_section()
         self.template.data_types_section(extras=extras)
-        self.assert_parser_raise_exception(106, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=106,
+            exception_types=DSLParsingLogicException)
 
     def test_unknown_type_in_datatype(self):
         self.template.version_section('1.2')
@@ -101,7 +104,8 @@ class TestDataTypes(ParserTestCase, TempDirectoryTestCase):
         self.template.data_types_section(
             properties_first='\n               type: unknown-type\n')
         self.assert_parser_raise_exception(
-            ERROR_UNKNOWN_TYPE, DSLParsingLogicException)
+            error_code=ERROR_UNKNOWN_TYPE,
+            exception_types=DSLParsingLogicException)
 
     def test_nested_validation(self):
         self.template.version_section('1.2')
@@ -136,7 +140,8 @@ data_types:
                 type: pair_type
 """
         self.assert_parser_raise_exception(
-            ERROR_VALUE_DOES_NOT_MATCH_TYPE, DSLParsingException)
+            error_code=ERROR_VALUE_DOES_NOT_MATCH_TYPE,
+            exception_types=DSLParsingException)
 
     def test_nested_defaults(self):
         self.template.version_section('1.2')
@@ -253,8 +258,8 @@ data_types:
 
 """
         ex = self.assert_parser_raise_exception(
-            ERROR_VALUE_DOES_NOT_MATCH_TYPE,
-            DSLParsingException)
+            error_code=ERROR_VALUE_DOES_NOT_MATCH_TYPE,
+            exception_types=DSLParsingException)
         self.assertIn('a.b.c.d', ex.message)
 
     def test_unknown_parent(self):
@@ -270,7 +275,8 @@ data_types:
                 type: integer
 """
         self.assert_parser_raise_exception(
-            ERROR_UNKNOWN_TYPE, DSLParsingLogicException)
+            error_code=ERROR_UNKNOWN_TYPE,
+            exception_types=DSLParsingLogicException)
 
     def test_redefine_primitive(self):
         self.template.version_section('1.0')
@@ -284,7 +290,8 @@ data_types:
                 type: string
 """
         self.assert_parser_raise_exception(
-            ERROR_INVALID_TYPE_NAME, DSLParsingLogicException)
+            error_code=ERROR_INVALID_TYPE_NAME,
+            exception_types=DSLParsingLogicException)
 
     def test_subtype_override_field_type(self):
         self.template.version_section('1.2')
@@ -344,7 +351,8 @@ data_types:
                 type: integer
 """
         self.assert_parser_raise_exception(
-            ERROR_VALUE_DOES_NOT_MATCH_TYPE, DSLParsingException)
+            error_code=ERROR_VALUE_DOES_NOT_MATCH_TYPE,
+            exception_types=DSLParsingException)
 
     def test_nested_merging(self):
         self.template.version_section('1.2')
@@ -575,7 +583,9 @@ node_templates:
   node:
     type: type
 """
-        self.assert_parser_raise_exception(107, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=107,
+            exception_types=DSLParsingLogicException)
 
     def test_additional_fields_validation(self):
         self.template.version_section('1.2')
@@ -596,7 +606,9 @@ node_templates:
   node:
     type: type
 """
-        self.assert_parser_raise_exception(106, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=106,
+            exception_types=DSLParsingLogicException)
 
     def test_nested_required_false(self):
         self.template.version_section('1.2')
@@ -616,7 +628,9 @@ node_templates:
   node1:
     type: type
 """
-        self.assert_parser_raise_exception(107, DSLParsingLogicException)
+        self.assert_parser_raise_exception(
+            error_code=107,
+            exception_types=DSLParsingLogicException)
 
     def test_nested_merge_with_inheritance(self):
         self.template.version_section('1.2')

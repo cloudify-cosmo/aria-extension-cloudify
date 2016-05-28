@@ -23,8 +23,8 @@ from ..exceptions import UnknownInputError, FunctionEvaluationError
 
 def _get_relationships_type():
     # TODO: ugly huck for now..., sort the imports when you have time
-    from .elements.node_templates import NodeTemplateRelationships
-    return NodeTemplateRelationships.CONTAINED_IN_REL_TYPE
+    from .elements.relationships import RelationshipMapping
+    return RelationshipMapping().contained_in_relationship_type
 
 
 SELF, SOURCE, TARGET = 'SELF', 'SOURCE', 'TARGET'

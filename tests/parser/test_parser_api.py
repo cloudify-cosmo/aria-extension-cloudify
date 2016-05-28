@@ -47,7 +47,7 @@ from aria.parser.constants import (
     LOCAL_AGENT,
 )
 
-from .suite import (
+from ..suite import (
     ParserTestCase,
     TempDirectoryTestCase,
     get_node_by_name,

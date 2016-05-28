@@ -13,32 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Aria's parser Package
-Path: aria.parser
+from aria.parser.framework.parser import parse
+from aria.parser.framework.elements import Element
+from aria.parser.framework.elements.data_types import DataTypes
+from aria.parser.framework.elements.version import ToscaDefinitionsVersion
 
-Methods:
-    * default_parser - Parser class instance with default values
-    * default_expander - ParserExpander class instance with default values
-    * parse - default_parser.parse method
-    * expand - default parser language expansion method
 
-"""
-
-from .parser import Parser
-from .extension_tools import ParserExtender
-
-__all__ = [
-    'Parser',
-    'default_parser',
-    'ParserExtender',
-    'default_expander',
-    'parse',
-    'extend',
-]
-
-default_parser = Parser()
-default_expander = ParserExtender()
-
-parse = default_parser.parse
-extend = default_expander.extend
+def validate(obj, element_cls):
+    schema = {
+        'tosca_definitions_version': ToscaDefinitionsVersion,
+        'test': element_cls,
+        'data_types': DataTypes,
+    }
+    parse(
+        value={'tosca_definitions_version': 'tosca_aria_yaml_1_0', 'test': obj},
+        element_cls=type('TestElement', (Element,), {'schema': schema}),
+        inputs={'validate_version': True},
+        strict=True)

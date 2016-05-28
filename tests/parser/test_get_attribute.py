@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest import skip
 from collections import defaultdict
 
 from testtools import TestCase
@@ -22,80 +21,9 @@ from aria.parser.exceptions import (
     FunctionEvaluationError,
 )
 from aria.parser.framework.functions import evaluate_functions
-from aria.parser.framework.elements.node_templates import NodeTemplateRelationships
-# from dsl_parser.tasks import prepare_deployment_plan
+from aria.parser.framework.elements.relationships import RelationshipMapping
 
-CONTAINED_IN_REL_TYPE = NodeTemplateRelationships.CONTAINED_IN_REL_TYPE
-
-
-class TestGetAttribute(TestCase):
-    @skip('is not implemented yet')
-    def test_has_intrinsic_functions_property(self):
-        yaml = """
-relationships:
-    cloudify.relationships.contained_in: {}
-plugins:
-    p:
-        executor: central_deployment_agent
-        install: false
-node_types:
-    webserver_type: {}
-node_templates:
-    node:
-        type: webserver_type
-    webserver:
-        type: webserver_type
-        interfaces:
-            test:
-                op_with_no_get_attribute:
-                    implementation: p.p
-                    inputs:
-                        a: 1
-                op_with_get_attribute:
-                    implementation: p.p
-                    inputs:
-                        a: { get_attribute: [SELF, a] }
-        relationships:
-            -   type: cloudify.relationships.contained_in
-                target: node
-                source_interfaces:
-                    test:
-                        op_with_no_get_attribute:
-                            implementation: p.p
-                            inputs:
-                                a: 1
-                        op_with_get_attribute:
-                            implementation: p.p
-                            inputs:
-                                a: { get_attribute: [SOURCE, a] }
-                target_interfaces:
-                    test:
-                        op_with_no_get_attribute:
-                            implementation: p.p
-                            inputs:
-                                a: 1
-                        op_with_get_attribute:
-                            implementation: p.p
-                            inputs:
-                                a: { get_attribute: [TARGET, a] }
-"""
-        parsed = prepare_deployment_plan(self.parse(yaml))
-        webserver_node = None
-        for node in parsed.node_templates:
-            if node['id'] == 'webserver':
-                webserver_node = node
-                break
-        self.assertIsNotNone(webserver_node)
-
-        def assertion(operations):
-            op = operations['test.op_with_no_get_attribute']
-            self.assertIs(False, op.get('has_intrinsic_functions'))
-            op = operations['test.op_with_get_attribute']
-            self.assertIs(True, op.get('has_intrinsic_functions'))
-
-        assertion(webserver_node['operations'])
-        assertion(webserver_node['relationships'][0]['source_operations'])
-        assertion(webserver_node['relationships'][0]['target_operations'])
+CONTAINED_IN_REL_TYPE = RelationshipMapping().contained_in_relationship_type
 
 
 class TestEvaluateFunctions(TestCase):
@@ -306,11 +234,12 @@ class TestEvaluateFunctions(TestCase):
 
         nodes = {}
         for node_instance in node_instances.values():
-            nodes[node_instance.node_id] = Node(
-                {'relationships': [
+            nodes[node_instance.node_id] = Node({
+                'relationships': [
                     {'target_id': r['target_name'],
                      'type_hierarchy': [CONTAINED_IN_REL_TYPE]}
-                    for r in node_instance.get('relationships', ())]})
+                    for r in node_instance.get('relationships', ())]
+            })
 
         def get_node_instances(node_id):
             return node_to_node_instances[node_id]

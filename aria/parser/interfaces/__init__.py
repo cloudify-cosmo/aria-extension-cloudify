@@ -27,7 +27,8 @@ TARGET_INTERFACES = 'target_interfaces'
 
 
 def merge_node_type_interfaces(
-        overriding_interfaces, overridden_interfaces):
+        overriding_interfaces,
+        overridden_interfaces):
     return InterfacesMerger(
         overriding_interfaces=overriding_interfaces,
         overridden_interfaces=overridden_interfaces,
@@ -36,7 +37,8 @@ def merge_node_type_interfaces(
 
 
 def merge_node_type_and_node_template_interfaces(
-        node_type_interfaces, node_template_interfaces):
+        node_type_interfaces,
+        node_template_interfaces):
     return InterfacesMerger(
         overriding_interfaces=node_template_interfaces,
         overridden_interfaces=node_type_interfaces,
@@ -45,7 +47,8 @@ def merge_node_type_and_node_template_interfaces(
 
 
 def merge_relationship_type_interfaces(
-        overriding_interfaces, overridden_interfaces):
+        overriding_interfaces,
+        overridden_interfaces):
     return InterfacesMerger(
         overriding_interfaces=overriding_interfaces,
         overridden_interfaces=overridden_interfaces,
@@ -54,7 +57,8 @@ def merge_relationship_type_interfaces(
 
 
 def merge_relationship_type_and_instance_interfaces(
-        relationship_type_interfaces, relationship_instance_interfaces):
+        relationship_type_interfaces,
+        relationship_instance_interfaces):
     return InterfacesMerger(
         overriding_interfaces=relationship_instance_interfaces,
         overridden_interfaces=relationship_type_interfaces,

@@ -29,7 +29,8 @@ from ...exceptions import (
 )
 from ...constants import SCALING_POLICY, RELATIONSHIPS
 from ..requirements import Value
-from .node_templates import NodeTemplates, NodeTemplateRelationships
+from .node_templates import NodeTemplates
+from .relationships import RelationshipMapping
 from .scalable import Properties
 from .version import ToscaDefinitionsVersion
 from . import DictElement, Element, Leaf, List, Dict
@@ -156,9 +157,8 @@ class Policies(DictElement):
         return {'scaling_groups': scaling_groups}
 
     def _create_scaling_groups(self, groups):
-        policies = self.value
         scaling_policies = [
-            policy for policy in policies.values()
+            policy for policy in self.value.itervalues()
             if policy['type'] == SCALING_POLICY]
         scaling_groups = {}
         for policy in scaling_policies:
@@ -167,13 +167,15 @@ class Policies(DictElement):
                 group = groups[target]
                 scaling_groups[target] = {
                     'members': group['members'],
-                    'properties': properties
+                    'properties': properties,
                 }
         return scaling_groups
 
     def _validate_and_update_groups(self, scaling_groups, node_templates):
         member_graph = networkx.DiGraph()
-        for group_name, group in scaling_groups.items():
+        relationship_map = RelationshipMapping()
+        contained_in_relationship_type = relationship_map.contained_in_relationship_type
+        for group_name, group in scaling_groups.iteritems():
             for member in group['members']:
                 member_graph.add_edge(member, group_name)
 
@@ -181,8 +183,7 @@ class Policies(DictElement):
         for node in node_templates:
             node_graph.add_node(node['id'])
             for rel in node.get(RELATIONSHIPS, ()):
-                if (NodeTemplateRelationships.CONTAINED_IN_REL_TYPE in
-                        rel['type_hierarchy']):
+                if contained_in_relationship_type in rel['type_hierarchy']:
                     node_graph.add_edge(node['id'], rel['target_id'])
 
         self._validate_no_group_cycles(member_graph)

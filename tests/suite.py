@@ -16,6 +16,7 @@
 import os
 from uuid import uuid4
 from shutil import rmtree
+from yaml import safe_dump
 from itertools import imap
 from tempfile import mkdtemp
 from testtools import TestCase
@@ -26,6 +27,8 @@ from aria.parser.dsl_supported_versions import (
     BASE_VERSION_PROFILE,
     add_version_to_database,
 )
+from aria.exceptions import DSLParsingException
+from aria.deployment import prepare_deployment_plan
 
 
 class TempDirectoryTestCase(TestCase):
@@ -84,22 +87,53 @@ class ParserTestCase(TestCase):
         self.template = None
         super(ParserTestCase, self).tearDown()
 
-    def parse(self,
-              import_resolver=None,
-              validate_version=True,
-              dsl_location=None):
+    def parse(
+            self,
+            import_resolver=None,
+            validate_version=True,
+            dsl_location=None,
+            template_inputs=None):
         parser = Parser(import_resolver=import_resolver,
                         validate_version=validate_version)
-        return parser.parse_from_string(
-            str(self.template), dsl_location=dsl_location)
+        if template_inputs:
+            template = str(self.template) % template_inputs
+        else:
+            template = str(self.template)
+        return parser.parse_from_string(template, dsl_location=dsl_location)
 
     def assert_parser_raise_exception(
-            self, error_code, exception_types, extra_tests=()):
+            self,
+            exception_types=DSLParsingException,
+            error_code=None,
+            extra_tests=()):
         try:
             self.parse()
             self.fail()
         except exception_types as exc:
-            self.assertEquals(error_code, exc.err_code)
+            if error_code:
+                self.assertEquals(error_code, exc.err_code)
+            for test in extra_tests:
+                test(exc)
+        return exc
+
+
+class PrepareDeploymentPlanTestCase(ParserTestCase):
+    def prepare_deployment_plan(self, parse_kwargs=None, deployment_kwargs=None):
+        plan = self.parse(**parse_kwargs or {})
+        return prepare_deployment_plan(plan, **deployment_kwargs or {})
+
+    def assert_prepare_deployment_raise_exception(
+            self,
+            exception_types,
+            extra_tests=(),
+            parse_kwargs=None,
+            deployment_kwargs=None):
+        try:
+            self.prepare_deployment_plan(
+                parse_kwargs=parse_kwargs or {},
+                deployment_kwargs=deployment_kwargs or {})
+            self.fail()
+        except exception_types as exc:
             for test in extra_tests:
                 test(exc)
         return exc
@@ -152,6 +186,51 @@ class Template(object):
     def __iadd__(self, other):
         self.template += other
         return self
+
+    def from_members(
+            self,
+            groups=None,
+            nodes=None,
+            policies=None,
+            policy_types=None,
+            version=None):
+        groups = groups or {}
+        nodes = nodes or {'node': None}
+        version = 'tosca_aria_yaml_{0}'.format(version or '1_0')
+
+        node_templates = {}
+        for node, contained_in in nodes.iteritems():
+            node_template = {'type': 'type'}
+            if contained_in:
+                node_template['relationships'] = [
+                    {'type': 'tosca.relationships.HostedOn',
+                     'target': contained_in}
+                ]
+            node_templates[node] = node_template
+
+        blueprint_groups = dict(
+            (group, item if isinstance(item, dict) else {'members': item})
+            for group, item in groups.iteritems())
+
+        blueprint = {
+            'tosca_definitions_version': version,
+            'node_types': {'type': {}},
+            'relationships': {'tosca.relationships.HostedOn': {}},
+            'node_templates': node_templates,
+            'groups': blueprint_groups,
+        }
+
+        if policies:
+            blueprint['policies'] = policies
+        if policy_types is not None:
+            blueprint['policy_types'] = policy_types
+
+        self.clear()
+        self.template += safe_dump(blueprint)
+
+    def from_blouprint_dict(self, blueprint):
+        self.clear()
+        self.template += safe_dump(blueprint)
 
     def clear(self):
         self.template = ''

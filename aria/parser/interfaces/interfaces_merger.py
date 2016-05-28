@@ -13,39 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .operation_merger import OperationMerger
-
-
-class InterfaceMerger(object):
-    def __init__(self,
-                 overriding_interface,
-                 overridden_interface,
-                 operation_merger=OperationMerger):
-        self.overriding_interface = overriding_interface
-        self.overridden_interface = overridden_interface
-        self.operation_merger = operation_merger
-
-    def merge(self):
-        merged_interface = {}
-
-        for overridden_name, overridden in self.overridden_interface.items():
-            overriding = self.overriding_interface.get(overridden_name, None)
-            merger = self.operation_merger(
-                overriding_operation=overriding,
-                overridden_operation=overridden)
-            merged_operation = merger.merge()
-            merged_interface[overridden_name] = merged_operation
-
-        for overriding_name, overriding in self.overriding_interface.items():
-            overridden = self.overridden_interface.get(
-                overriding_name, None)
-            merger = self.operation_merger(
-                overriding_operation=overriding,
-                overridden_operation=overridden)
-            merged_operation = merger.merge()
-            merged_interface[overriding_name] = merged_operation
-
-        return merged_interface
+from itertools import chain
 
 
 class InterfacesMerger(object):
@@ -56,26 +24,25 @@ class InterfacesMerger(object):
         self.overriding_interfaces = overriding_interfaces
         self.overridden_interfaces = overridden_interfaces
         self.operation_merger = operation_merger
-        self.interface_merger = InterfaceMerger
 
     def merge(self):
         merged_interfaces = {}
-
-        for overridden_name, overridden in self.overridden_interfaces.items():
-            overriding = self.overriding_interfaces.get(overridden_name, {})
-            interface_merger = self.interface_merger(
-                overriding_interface=overriding,
-                overridden_interface=overridden,
-                operation_merger=self.operation_merger)
-            merged_interface = interface_merger.merge()
-            merged_interfaces[overridden_name] = merged_interface
-
-        for overriding_name, overriding in self.overriding_interfaces.items():
-            overridden = self.overridden_interfaces.get(overriding_name, {})
-            interface_merger = self.interface_merger(
-                overriding_interface=overriding,
-                overridden_interface=overridden,
-                operation_merger=self.operation_merger)
-            merged_interface = interface_merger.merge()
-            merged_interfaces[overriding_name] = merged_interface
+        for name, overriding, overridden in self._merge_dicts_iter(
+                self.overriding_interfaces, self.overridden_interfaces, default={}):
+            merged_interface = self.merge_interface(overriding, overridden)
+            merged_interfaces[name] = merged_interface
         return merged_interfaces
+
+    def merge_interface(self, overriding_dict, overridden_dict):
+        merged_interface = {}
+        for name, overriding, overridden in self._merge_dicts_iter(
+                overriding_dict, overridden_dict):
+            merged_operation = self.operation_merger(
+                overriding_operation=overriding,
+                overridden_operation=overridden).merge()
+            merged_interface[name] = merged_operation
+        return merged_interface
+
+    def _merge_dicts_iter(self, overriding_dict, overridden_dict, default=None):
+        for key in set(chain(overriding_dict.iterkeys(), overridden_dict.iterkeys())):
+            yield key, overriding_dict.get(key, default), overridden_dict.get(key, default)

@@ -28,7 +28,7 @@ from ...interfaces import (
 )
 from ... import utils, constants
 from .. import Value, Requirement
-from .relationships import Relationships, Relationship
+from .relationships import Relationships, Relationship, RelationshipMapping
 from .node_types import NodeTypes, NodeType
 from .data_types import DataTypes
 from .operation import NodeTemplateInterfaces
@@ -341,20 +341,18 @@ class NodeTemplateRelationship(Element):
 
 
 class NodeTemplateRelationships(Element):
-    CONTAINED_IN_REL_TYPE = 'tosca.relationships.HostedOn'
     schema = List(type=NodeTemplateRelationship)
     provides = ['contained_in']
+    _relationship_mapping = RelationshipMapping()
 
     def validate(self, **kwargs):
         contained_in_relationships = []
         contained_in_targets = []
         for relationship in self.children():
-            relationship_target = relationship.child(
-                NodeTemplateRelationshipTarget).value
-            relationship_type = relationship.child(
-                NodeTemplateRelationshipType).value
+            relationship_target = relationship.child(NodeTemplateRelationshipTarget).value
+            relationship_type = relationship.child(NodeTemplateRelationshipType).value
             type_hierarchy = relationship.value[constants.TYPE_HIERARCHY]
-            if self.CONTAINED_IN_REL_TYPE in type_hierarchy:
+            if self._relationship_mapping.contained_in_relationship_type in type_hierarchy:
                 contained_in_relationships.append(relationship_type)
                 contained_in_targets.append(relationship_target)
 
@@ -365,7 +363,7 @@ class NodeTemplateRelationships(Element):
                 "derived from '{1}' relationship. Found: {2} for targets:"
                 " {3}"
                 .format(self.ancestor(NodeTemplate).name,
-                        self.CONTAINED_IN_REL_TYPE,
+                        self._relationship_mapping.contained_in_relationship_type,
                         contained_in_relationships,
                         contained_in_targets))
             ex.relationship_types = contained_in_relationships
@@ -380,7 +378,7 @@ class NodeTemplateRelationships(Element):
         contained_in_list = [
             r.child(NodeTemplateRelationshipTarget).value
             for r in self.children()
-            if self.CONTAINED_IN_REL_TYPE in r.value[
+            if self._relationship_mapping.contained_in_relationship_type in r.value[
                 constants.TYPE_HIERARCHY]
         ]
         contained_in = contained_in_list[0] if contained_in_list else None
@@ -420,14 +418,13 @@ class NodeTemplate(Element):
             constants.TYPE_HIERARCHY: node_type[constants.TYPE_HIERARCHY]
         })
 
-        node[constants.INTERFACES] = (
-            merge_node_type_and_node_template_interfaces(
-                node_type_interfaces=node_type[constants.INTERFACES],
-                node_template_interfaces=node[constants.INTERFACES]))
+        node[constants.INTERFACES] = merge_node_type_and_node_template_interfaces(
+            node_type_interfaces=node_type[constants.INTERFACES],
+            node_template_interfaces=node[constants.INTERFACES])
 
         node['operations'] = _process_operations(
-            partial_error_message="in node '{0}' of type '{1}'"
-                                  .format(node['id'], node['type']),
+            partial_error_message="in node '{0}' of type '{1}'".format(
+                node['id'], node['type']),
             interfaces=node[constants.INTERFACES],
             plugins=plugins,
             error_code=10,
@@ -442,11 +439,12 @@ class NodeTemplate(Element):
             plugins=plugins,
             resource_base=resource_base)
 
-        contained_in = self.child(
-            NodeTemplateRelationships).provided['contained_in']
         if self.child(NodeTemplateType).value in host_types:
             node['host_id'] = self.name
-        elif contained_in:
+            return node
+
+        contained_in = self.child(NodeTemplateRelationships).provided['contained_in']
+        if contained_in:
             containing_node = [
                 n for n in related_node_templates
                 if n['name'] == contained_in][0]

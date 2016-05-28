@@ -20,7 +20,33 @@ from .plugins import Plugins
 from .types import Type, Types, RelationshipDerivedFrom, derived_from_predicate
 from .data_types import SchemaWithInitialDefault, DataTypes
 from .operation import NodeTypeInterfaces, process_interface_operations
-from . import Dict
+from . import Dict, Element
+
+
+class RelationshipMapping(Element):
+    types = {
+        'depens_on_relationship_type': 'tosca.relationships.DependsOn',
+        'contained_in_relationship_type': 'tosca.relationships.HostedOn',
+        'contained_to_relationship_type': 'tosca.relationships.ConnectsTo',
+        'group_contained_in_relationship_type': '__group_contained_in__',
+        'connection_type': 'connection_type',
+    }
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __getattr__(self, item):
+        try:
+            if self.extend:
+                return self.extend.types[item]
+            return self.types[item]
+        except KeyError:
+            return super(RelationshipMapping, self).__getattribute__(item)
+
+    def __getitem__(self, item):
+        if self.extend:
+            return self.extend.types[item]
+        return self.types[item]
 
 
 class Relationship(Type):

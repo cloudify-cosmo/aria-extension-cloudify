@@ -21,7 +21,7 @@ from aria.parser.extension_tools import (
     ElementExtension, IntrinsicFunctionExtension,
 )
 from aria.parser import extend
-from .suite import ParserTestCase, TestCase
+from ..suite import ParserTestCase, TestCase
 
 
 class _TestBlueprint(Blueprint):

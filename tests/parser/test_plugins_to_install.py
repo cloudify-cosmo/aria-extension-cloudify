@@ -15,7 +15,7 @@
 
 from aria.parser.constants import DEPLOYMENT_PLUGINS_TO_INSTALL
 
-from .suite import ParserTestCase, op_struct, get_nodes_by_names
+from ..suite import ParserTestCase, op_struct, get_nodes_by_names
 
 
 class NodePluginsToInstallTest(ParserTestCase):

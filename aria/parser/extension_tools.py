@@ -195,8 +195,9 @@ class ParserExtender(_ValidatorMixin):
 
     def _replace_element(self, expansion, version_structure):
         element_name = expansion.target_element.__name__
+        base_package = __package__.split('.')[0]
         for module in sys.modules.itervalues():
-            if not module or not module.__name__.startswith(__package__):
+            if not module or not module.__name__.startswith(base_package):
                 continue
             try:
                 element = getattr(module, element_name)

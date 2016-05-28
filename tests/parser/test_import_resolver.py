@@ -16,9 +16,7 @@
 from testtools import TestCase
 
 from aria.parser.exceptions import ResolverInstantiationError
-from aria.parser.utils import (
-    create_import_resolver,
-)
+from aria.parser.utils import create_import_resolver
 from aria.parser.constants import (
     RESOLVER_IMPLEMENTATION_KEY,
     RESLOVER_PARAMETERS_KEY,

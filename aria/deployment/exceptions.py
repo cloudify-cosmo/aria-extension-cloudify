@@ -13,32 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Aria's parser Package
-Path: aria.parser
 
-Methods:
-    * default_parser - Parser class instance with default values
-    * default_expander - ParserExpander class instance with default values
-    * parse - default_parser.parse method
-    * expand - default parser language expansion method
+class MissingRequiredInputError(Exception):
+    """
+    An error raised when a deployment is created and a required input
+    was not specified on its creation.
+    """
+    pass
 
-"""
 
-from .parser import Parser
-from .extension_tools import ParserExtender
+class UnsupportedAllToOneInGroup(Exception):
+    pass
 
-__all__ = [
-    'Parser',
-    'default_parser',
-    'ParserExtender',
-    'default_expander',
-    'parse',
-    'extend',
-]
 
-default_parser = Parser()
-default_expander = ParserExtender()
+class IllegalAllToOneState(Exception):
+    pass
 
-parse = default_parser.parse
-extend = default_expander.extend
+
+class UnsupportedRelationship(Exception):
+    pass
+
+
+class IllegalConnectedToConnectionType(Exception):
+    pass

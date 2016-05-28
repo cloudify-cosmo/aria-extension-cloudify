@@ -15,10 +15,9 @@
 
 from yaml import safe_dump, safe_load
 
-from aria.parser.constants import DEPLOYMENT_PLUGINS_TO_INSTALL
 from aria.parser.exceptions import DSLParsingLogicException
 
-from .suite import ParserTestCase
+from ..suite import ParserTestCase
 
 
 class PluginsTest(ParserTestCase):
@@ -81,7 +80,8 @@ node_types:
         self.template += safe_dump(raw_parsed_yaml)
         if expected_error_code:
             self.assert_parser_raise_exception(
-                expected_error_code, DSLParsingLogicException)
+                error_code=expected_error_code,
+                exception_types=DSLParsingLogicException)
         else:
             result = self.parse()
             plugin = result['nodes'][0]['plugins'][0]

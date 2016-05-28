@@ -15,7 +15,7 @@
 
 from aria.parser.import_resolver import AbstractImportResolver
 
-from .suite import ParserTestCase
+from ..suite import ParserTestCase
 
 BLUEPRINT_1 = """
 node_types:
