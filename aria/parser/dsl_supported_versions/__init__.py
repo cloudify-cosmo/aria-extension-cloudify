@@ -22,7 +22,7 @@ from .manager import (
     SupportedVersions,
 )
 
-supported_versions = SupportedVersions(database)
+supported_versions = SupportedVersions(database)  # pylint: disable=invalid-name
 
 
 def add_version_to_database(profile, version_structure):

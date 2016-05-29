@@ -35,7 +35,7 @@ class NodeType(Type):
         DataTypes: [Value('data_types')],
     }
 
-    def parse(self, super_type, data_types):
+    def parse(self, super_type, data_types, **_):
         node_type = self.build_dict_result()
         if not node_type.get('derived_from'):
             node_type.pop('derived_from', None)
@@ -55,13 +55,14 @@ class NodeType(Type):
 
 class NodeTypes(Types):
     HOST_TYPE = 'tosca.nodes.Compute'
-    schema = Dict(type=NodeType)
+    schema = Dict(obj_type=NodeType)
     provides = ['host_types']
 
     def calculate_provided(self):
         return {'host_types': self._types_derived_from(self.HOST_TYPE)}
 
     def _types_derived_from(self, derived_from):
-        return set(type_name
-                   for type_name, _type in self.value.items()
-                   if derived_from in _type[constants.TYPE_HIERARCHY])
+        return set(
+            type_name
+            for type_name, _type in self.value.iteritems()  # pylint: disable=no-member
+            if derived_from in _type[constants.TYPE_HIERARCHY])

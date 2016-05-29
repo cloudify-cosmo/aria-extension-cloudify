@@ -15,7 +15,7 @@
 
 from itertools import chain
 
-from . import BaseTestMultiInstance
+from ...suite import BaseTestMultiInstance
 
 
 class TestMultiInstanceModify(BaseTestMultiInstance):

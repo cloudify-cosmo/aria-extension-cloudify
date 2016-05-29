@@ -25,8 +25,8 @@ Methods:
 from ..parser.models import Plan
 from ..parser.exceptions import UnknownInputError
 from ..parser.scan import scan_service_template
+from ..parser.framework.functions import plan_evaluation_handler
 
-from .intrinsic_function import plan_evaluation_handler
 from .exceptions import MissingRequiredInputError
 from .multi_instance import (
     create_deployment_plan,
@@ -100,7 +100,7 @@ def prepare_deployment_plan(plan, inputs=None):
     """
     if not isinstance(plan, dict):
         raise TypeError(
-            'plan arg mast be a dict or Plan type, got: {0} [{0}]'.format(
+            'plan arg mast be a dict or Plan type, got: {0} [{1}]'.format(
                 plan, type(plan)))
     if not isinstance(plan, Plan):
         plan = Plan(plan)

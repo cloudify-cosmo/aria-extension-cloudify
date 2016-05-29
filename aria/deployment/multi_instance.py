@@ -63,7 +63,7 @@ def modify_deployment(
     previous_plan_node_graph = build_node_graph(
         nodes=previous_nodes,
         scaling_groups=scaling_groups)
-    previous_deployment_node_graph, previous_deployment_contained_graph = (
+    previous_deployment_node_graph, previous_deployment_contained_graph = (  # pylint: disable=invalid-name
         build_previous_deployment_node_graph(
             plan_node_graph=previous_plan_node_graph,
             previous_node_instances=previous_node_instances))

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-class Requirement(object):
+class Requirement(object):  # pylint: disable=too-few-public-methods
     def __init__(self,
                  name,
                  parsed=False,
@@ -36,7 +36,7 @@ class Requirement(object):
             .format(cls=self.__class__, self=self))
 
 
-class Value(Requirement):
+class Value(Requirement):  # pylint: disable=too-few-public-methods
     def __init__(self,
                  name,
                  multiple_results=False,

@@ -27,7 +27,7 @@ def read_import(import_url):
         return read_data_from_uri(import_url)
     except Exception as exc:
         raise DSLParsingLogicException(
-                13, '{0} {1}; {2}'.format(error_str, import_url, exc))
+            13, '{0} {1}; {2}'.format(error_str, import_url, exc))
 
 
 class AbstractImportResolver(object):

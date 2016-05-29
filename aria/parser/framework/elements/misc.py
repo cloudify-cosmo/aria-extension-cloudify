@@ -19,11 +19,11 @@ from . import PRIMITIVE_TYPES, Element, Leaf, DictElement, Dict
 
 
 class OutputDescription(Element):
-    schema = Leaf(type=str)
+    schema = Leaf(obj_type=str)
 
 
 class OutputValue(Element):
-    schema = Leaf(type=PRIMITIVE_TYPES)
+    schema = Leaf(obj_type=PRIMITIVE_TYPES)
     required = True
 
 
@@ -35,7 +35,7 @@ class Output(Element):
 
 
 class Outputs(DictElement):
-    schema = Dict(type=Output)
+    schema = Dict(obj_type=Output)
 
 
 class Inputs(Schema):
@@ -43,7 +43,7 @@ class Inputs(Schema):
 
 
 class DSLDefinitions(Element):
-    schema = Leaf(type=[dict, list])
+    schema = Leaf(obj_type=[dict, list])
     requires = {
         ToscaDefinitionsVersion: ['version'],
         'inputs': ['validate_version'],
@@ -51,7 +51,7 @@ class DSLDefinitions(Element):
 
 
 class Description(Element):
-    schema = Leaf(type=str)
+    schema = Leaf(obj_type=str)
     requires = {
         ToscaDefinitionsVersion: ['version'],
         'inputs': ['validate_version'],

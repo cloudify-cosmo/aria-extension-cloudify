@@ -20,7 +20,7 @@ from .utils import operation_mapping, merge_schema_and_instance_inputs
 NO_OP = operation_mapping()
 
 
-class OperationMerger(object):
+class OperationMerger(object):  # pylint: disable=too-few-public-methods
     def __init__(self, overriding_operation, overridden_operation):
         self._create_operation_handlers = {
             str: self._create_operation_from_string,
@@ -34,11 +34,11 @@ class OperationMerger(object):
 
     def _create_operation_from_string(self, raw_operation):
         return operation_mapping(
-                implementation=raw_operation,
-                inputs={},
-                executor=LOCAL_AGENT,
-                max_retries=None,
-                retry_interval=None)
+            implementation=raw_operation,
+            inputs={},
+            executor=LOCAL_AGENT,
+            max_retries=None,
+            retry_interval=None)
 
     def _create_operation_from_dict(self, raw_operation):
         return operation_mapping(**raw_operation)
@@ -49,7 +49,7 @@ class OperationMerger(object):
         return self._create_operation_handlers[type(raw_operation)](raw_operation)
 
 
-class NodeTemplateNodeTypeOperationMerger(OperationMerger):
+class NodeTemplateNodeTypeOperationMerger(OperationMerger):  # pylint: disable=too-few-public-methods
     def merge(self):
         if self.overridden_operation is None:
             # the operation is not defined in the type
@@ -122,7 +122,7 @@ class NodeTemplateNodeTypeOperationMerger(OperationMerger):
         return self.overridden_operation[field_name]
 
 
-class NodeTypeNodeTypeOperationMerger(OperationMerger):
+class NodeTypeNodeTypeOperationMerger(OperationMerger):  # pylint: disable=too-few-public-methods
     def merge(self):
         if self.overriding_operation is None:
             return self.overridden_operation

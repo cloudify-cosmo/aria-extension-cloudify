@@ -13,5 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .parser.exceptions import *
-from .deployment.exceptions import *
+"""
+Aria exceptions module.
+ Every sub-package in Aria have a module with his Exceptions.
+ aria.exceptions module is a center for all exceptions.
+"""
+
+from .parser.exceptions import *        # pylint: disable=W0401, W0614
+from .deployment.exceptions import *    # pylint: disable=W0401, W0614

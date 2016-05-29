@@ -22,13 +22,13 @@ from . import DictElement, Element, Leaf, Dict
 
 class WorkflowMapping(Element):
     required = True
-    schema = Leaf(type=str)
+    schema = Leaf(obj_type=str)
 
 
 class Workflow(Element):
     required = True
     schema = [
-        Leaf(type=str),
+        Leaf(obj_type=str),
         {'mapping': WorkflowMapping, 'parameters': Schema},
     ]
     requires = {
@@ -36,10 +36,12 @@ class Workflow(Element):
         Plugins: [Value('plugins')],
     }
 
-    def parse(self, plugins, resource_base):
+    def parse(self, plugins, resource_base, **_):
         if isinstance(self.initial_value, str):
-            operation_content = {'mapping': self.initial_value,
-                                 'parameters': {}}
+            operation_content = {
+                'mapping': self.initial_value,
+                'parameters': {},
+            }
         else:
             operation_content = self.build_dict_result()
         return process_operation(
@@ -53,14 +55,14 @@ class Workflow(Element):
 
 
 class Workflows(DictElement):
-    schema = Dict(type=Workflow)
+    schema = Dict(obj_type=Workflow)
     requires = {Plugins: [Value('plugins')]}
     provides = ['workflow_plugins_to_install']
 
-    def calculate_provided(self, plugins):
+    def calculate_provided(self, plugins, **_):
         workflow_plugins = []
         workflow_plugin_names = set()
-        for workflow, op_struct in self.value.items():
+        for op_struct in self.value.itervalues():  # pylint: disable=no-member
             if op_struct['plugin'] not in workflow_plugin_names:
                 plugin_name = op_struct['plugin']
                 workflow_plugins.append(plugins[plugin_name])

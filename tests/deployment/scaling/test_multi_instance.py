@@ -23,7 +23,7 @@ from aria.exceptions import (
     UnsupportedRelationship,
     UnsupportedAllToOneInGroup,
 )
-from . import BaseTestMultiInstance
+from ...suite import BaseTestMultiInstance
 
 
 class TestMultiInstance(BaseTestMultiInstance):
@@ -544,7 +544,7 @@ groups:
         members: [node1, node2]
 policies:
     policy:
-        type: cloudify.policies.scaling
+        type: tosca.policies.Scaling
         targets: [group]
 """
         self.assert_prepare_deployment_raise_exception(

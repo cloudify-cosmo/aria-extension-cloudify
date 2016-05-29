@@ -24,14 +24,14 @@ from . import Element, Leaf
 
 
 class ToscaDefinitionsVersion(Element):
-    schema = Leaf(type=str)
+    schema = Leaf(obj_type=str)
     provides = ['version']
 
     def validate(self, **kwargs):
         if self.initial_value is None:
             raise DSLParsingLogicException(
-                27, '{0} field must appear in the main blueprint file'
-                    .format(VERSION))
+                27,
+                '{0} field must appear in the main blueprint file'.format(VERSION))
 
     def parse(self):
         return Version(process_dsl_version(self.initial_value))

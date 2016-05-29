@@ -116,7 +116,7 @@ class SupportedVersions(object):
                         VERSION, version_name, micro))
 
         return VersionStructure(
-            profile=prefix,
+            profile=prefix,  # pylint: disable=undefined-loop-variable
             number=VersionNumber(int(major), int(minor), int(micro)))
 
     def validate_dsl_version(self, version_structure):

@@ -34,8 +34,6 @@ DERIVED_FROM = 'derived_from'
 DATA_TYPES = 'data_types'
 POLICIES = 'policies'
 
-# todo: move to cloudify and change the name to tosca based
-SCALING_POLICY = 'cloudify.policies.scaling'
 SCALING_GROUPS = 'scaling_groups'
 
 CENTRAL_DEPLOYMENT_AGENT = 'central_deployment_agent'

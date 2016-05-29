@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from aria.parser.framework.functions import template_functions
+from aria.parser.framework.functions import _template_functions
 from aria.parser.framework.elements.blueprint import Blueprint
 from aria.parser.dsl_supported_versions import supported_versions
 from aria.parser.extension_tools import (
@@ -113,8 +113,8 @@ test: {}
         )
         self.parse()
         self.assertTrue(_GetTrueFunction.called)
-        self.assertIn('get_true', template_functions.keys())
-        self.assertIn(_GetTrueFunction, template_functions.values())
+        self.assertIn('get_true', _template_functions.keys())
+        self.assertIn(_GetTrueFunction, _template_functions.values())
 
     def test_remove_function_extension(self):
         self.test_add_function_extension()
@@ -125,8 +125,8 @@ test: {}
         extend(
             version_structure=supported_versions.base_version,
             function_extensions=[get_true_function_extension])
-        self.assertTrue('get_true' not in template_functions.keys())
-        self.assertTrue(_GetTrueFunction not in template_functions.values())
+        self.assertTrue('get_true' not in _template_functions.keys())
+        self.assertTrue(_GetTrueFunction not in _template_functions.values())
 
 
 class TestExtensionValidation(TestCase):

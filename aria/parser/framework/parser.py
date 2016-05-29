@@ -21,7 +21,6 @@ from ..exceptions import (
     DSLParsingLogicException, DSLParsingSchemaAPIException,
     ERROR_CODE_CYCLE,
 )
-from ..models import Version
 from .elements import (
     Element, ElementType, UnknownElement,
     UnknownSchema, Dict, Leaf, List,
@@ -44,9 +43,9 @@ def parse(value,
         try:
             _validate_element_schema(element, strict=strict)
             _process_element(element)
-        except DSLParsingException as e:
-            if not e.element:
-                e.element = element
+        except DSLParsingException as exc:
+            if not exc.element:
+                exc.element = element
             raise
     return context.parsed_value
 
@@ -84,8 +83,7 @@ class Context(object):
                 return
             if len(predecessors) > 1:
                 raise DSLParsingFormatException(
-                    1, 'More than 1 parent found for {0}'
-                       .format(element))
+                    1, 'More than 1 parent found for {0}'.format(element))
             current_element = predecessors[0]
             yield current_element
 
@@ -131,7 +129,7 @@ class Context(object):
             raise ValueError('Illegal state should have been identified'
                              ' by schema API validation')
 
-    def _traverse_dict_schema(self, schema,  parent_element):
+    def _traverse_dict_schema(self, schema, parent_element):
         if not isinstance(parent_element.initial_value, dict):
             return
 
@@ -246,27 +244,29 @@ def _traverse_schema(schema, list_nesting=0):
             if not isinstance(key, basestring):
                 raise DSLParsingSchemaAPIException(1)
             validate_schema_api(value)
+
     elif isinstance(schema, list):
-        if list_nesting > 0:
-            raise DSLParsingSchemaAPIException(1)
-        if len(schema) == 0:
+        if list_nesting > 0 or len(schema) == 0:
             raise DSLParsingSchemaAPIException(1)
         for value in schema:
             _traverse_schema(value, list_nesting + 1)
+
     elif isinstance(schema, ElementType):
         if isinstance(schema, Leaf):
             if not isinstance(schema.type, (type, list, tuple)):
                 raise DSLParsingSchemaAPIException(1)
-            if (isinstance(schema.type, (list, tuple)) and
-                (not schema.type or
-                 not all([isinstance(i, type) for i in schema.type]))):
+            # TODO: need to clean up
+            if (isinstance(schema.type, (list, tuple))
+                    and (not schema.type or not all(
+                        isinstance(cls, type) for cls in schema.type))):
                 raise DSLParsingSchemaAPIException(1)
-        elif isinstance(schema, Dict):
+
+        elif isinstance(schema, (Dict, List)):
             validate_schema_api(schema.type)
-        elif isinstance(schema, List):
-            validate_schema_api(schema.type)
+
         else:
             raise DSLParsingSchemaAPIException(1)
+
     else:
         raise DSLParsingSchemaAPIException(1)
 
@@ -275,8 +275,7 @@ def _validate_element_schema(element, strict):
     value = element.initial_value
     if element.required and value is None:
         raise DSLParsingFormatException(
-            1, "'{0}' key is required but it is currently missing"
-               .format(element.name))
+            1, "'{0}' key is required but it is currently missing".format(element.name))
 
     if value is None:
         return
@@ -288,8 +287,8 @@ def _validate_element_schema(element, strict):
     for schema_item in element.schema:
         try:
             _validate_schema(schema_item, strict, value, element)
-        except DSLParsingFormatException as e:
-            last_error = e
+        except DSLParsingFormatException as exc:
+            last_error = exc
         else:
             break
     else:
@@ -306,30 +305,28 @@ def _validate_schema(schema, strict, value, element):
         for key in value.keys():
             if not isinstance(key, basestring):
                 raise DSLParsingFormatException(
-                    1, "Dict keys must be strings but"
-                       " found '{0}' of type '{1}'"
-                       .format(key, _py_type_to_user_type(type(key))))
+                    1,
+                    "Dict keys must be strings but found '{0}' of type '{1}'".format(
+                        key, _py_type_to_user_type(type(key))))
 
     if strict and isinstance(schema, dict):
-        for key in value.keys():
+        for key in value:
             if key not in schema:
                 ex = DSLParsingFormatException(
-                    1, "'{0}' is not in schema. "
-                       "Valid schema values: {1}"
-                       .format(key, schema.keys()))
+                    1,
+                    "'{0}' is not in schema. Valid schema values: {1}".format(
+                        key, schema.keys()))
                 for child_element in element.children():
                     if child_element.name == key:
                         ex.element = child_element
                         break
                 raise ex
 
-    if (isinstance(schema, List) and
-            not isinstance(value, list)):
+    if isinstance(schema, List) and not isinstance(value, list):
         raise DSLParsingFormatException(
             1, _expected_type_message(value, list))
 
-    if (isinstance(schema, Leaf) and
-            not isinstance(value, schema.type)):
+    if isinstance(schema, Leaf) and not isinstance(value, schema.type):
         raise DSLParsingFormatException(
             1, _expected_type_message(value, schema.type))
 
@@ -377,15 +374,15 @@ def _extract_element_requirements(element):
 
 
 def _requirements_setup(required_type, requirements, element_type):
-    required_type = (
-        element_type if required_type == 'self' else required_type)
+    required_type = element_type if required_type == 'self' else required_type
     try:
         required_type = required_type.extend or required_type
     except AttributeError:
         pass
     return required_type, [
-        Requirement(r) if isinstance(r, basestring) else r
-        for r in requirements]
+        Requirement(requirement) if isinstance(requirement, basestring)
+        else requirement
+        for requirement in requirements]
 
 
 def _search_for_requirements(
@@ -394,8 +391,7 @@ def _search_for_requirements(
         requirement,
         element):
     for required_element in required_type_elements:
-        if requirement.predicate and not requirement.predicate(
-                element, required_element):
+        if requirement.predicate and not requirement.predicate(element, required_element):
             continue
         if requirement.parsed:
             result.append(required_element.value)
@@ -407,10 +403,10 @@ def _search_for_requirements(
                 1,
                 "Required value '{0}' is not "
                 "provided by '{1}'. Provided values "
-                "are: {2}"
-                .format(requirement.name,
-                        required_element.name,
-                        required_element.provided.keys()))
+                "are: {2}".format(
+                    requirement.name,
+                    required_element.name,
+                    required_element.provided.keys()))
         result.append(required_element.provided[requirement.name])
 
 
@@ -421,31 +417,30 @@ def _sort_requirements_result(result, requirement):
     if len(result) != 1:
         if requirement.required:
             raise DSLParsingFormatException(
-                1, "Expected exactly one result for "
-                   "requirement '{0}' but found {1}"
-                   .format(requirement.name,
-                           'none' if not result else result))
+                1,
+                "Expected exactly one result for requirement '{0}' but found {1}".format(
+                    requirement.name, 'none' if not result else result))
         if not result:
-            result = [None]
-        else:
-            raise ValueError('Illegal state')
+            return None
+        raise ValueError('Illegal state')
 
-    return result[0] if not requirement.multiple_results else result
+    return result[0]
 
 
 def _inputs_required_handler(required_args, requirements, context):
-    for input in requirements:
-        if input.name not in context.inputs and input.required:
+    for input_element in requirements:
+        if input_element.name not in context.inputs and input_element.required:
             raise DSLParsingFormatException(
-                1, "Missing required input '{0}'. Existing inputs: "
-                   .format(input.name))
-        required_args[input.name] = context.inputs.get(input.name)
+                1,
+                "Missing required input '{0}'. "
+                "Existing inputs: ".format(input_element.name))
+        required_args[input_element.name] = context.inputs.get(input_element.name)
 
 
 def _expected_type_message(value, expected_type):
-    return ("Expected '{0}' type but found '{1}' type"
-            .format(_py_type_to_user_type(expected_type),
-                    _py_type_to_user_type(type(value))))
+    return ("Expected '{0}' type but found '{1}' type".format(
+        _py_type_to_user_type(expected_type),
+        _py_type_to_user_type(type(value))))
 
 
 def _py_type_to_user_type(_type):

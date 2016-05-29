@@ -55,22 +55,23 @@ def scan_properties(
 
 
 def scan_dict_properties(
-        value,
+        value_dict,
         handler,
         scope=None,
         context=None,
         path='',
         replace=False):
-    for k, v in value.iteritems():
-        current_path = '{0}.{1}'.format(path, k)
-        result = handler(v, scope, context, current_path)
-        if replace and result != v:
-            value[k] = result
-        scan_properties(v, handler,
-                        scope=scope,
-                        context=context,
-                        path=current_path,
-                        replace=replace)
+    for key, value in value_dict.iteritems():
+        current_path = '{0}.{1}'.format(path, key)
+        result = handler(value, scope, context, current_path)
+        if replace and result != value:
+            value_dict[key] = result
+        scan_properties(
+            value, handler,
+            scope=scope,
+            context=context,
+            path=current_path,
+            replace=replace)
 
 
 def scan_list_properties(

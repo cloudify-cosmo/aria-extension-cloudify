@@ -47,7 +47,7 @@ class Holder(object):
             .format(name=self.__class__.__name__, self=self))
 
     def __contains__(self, key):
-        key_holder, value_holder = self.get_item(key)
+        _, value_holder = self.get_item(key)
         return value_holder is not None
 
     def get_item(self, key):
@@ -72,20 +72,24 @@ class Holder(object):
             return self.value
 
     @classmethod
-    def of(cls, obj, filename=None):
+    def from_object(cls, obj, filename=None):
         if isinstance(obj, Holder):
             return obj
         if isinstance(obj, dict):
-            result = dict((cls.of(key, filename=filename),
-                           cls.of(value, filename=filename))
-                          for key, value in obj.iteritems())
-        elif isinstance(obj, list):
-            result = [cls.of(item, filename=filename) for item in obj]
-        elif isinstance(obj, set):
-            result = set((cls.of(item, filename=filename) for item in obj))
-        else:
-            result = obj
-        return cls(result, filename=filename)
+            return cls(
+                dict((cls.from_object(key, filename=filename),
+                      cls.from_object(value, filename=filename))
+                     for key, value in obj.iteritems()),
+                filename=filename)
+        if isinstance(obj, list):
+            return cls(
+                [cls.from_object(item, filename=filename) for item in obj],
+                filename=filename)
+        if isinstance(obj, set):
+            return cls(
+                set(cls.from_object(item, filename=filename) for item in obj),
+                filename=filename)
+        return cls(obj, filename=filename)
 
     def copy(self):
         return self.__class__(

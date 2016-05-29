@@ -40,26 +40,25 @@ _BaseElementExtension = namedtuple(
 
 
 class _ValidatorMixin(object):
-    _ACTION_EXTENSION_MESSAGE = 'action arg options: {actions}, got {action}'
-    _ARGUMENT_TYPE_EXTENSION_MESSAGE = (
-        '{name} argument mast be {type} based, got {arg!r}')
+    _ARGUMENT_TYPE_MESSAGE = '{name} argument must be {type} based, got {arg!r}'
+    _ACTION_MESSAGE = 'action arg options: {actions}, got {action}'
 
     @classmethod
     def validate_actions(cls, action):
         if action not in cls.ACTIONS:
-            raise TypeError(cls._ACTION_EXTENSION_MESSAGE.format(
+            raise TypeError(cls._ACTION_MESSAGE.format(
                 actions=cls.ACTIONS, action=action))
 
     @classmethod
     def validate_type(cls, argument_name, argument, expected_type):
         if not issubclass(argument, expected_type):
-            raise TypeError(cls._ARGUMENT_TYPE_EXTENSION_MESSAGE.format(
+            raise TypeError(cls._ARGUMENT_TYPE_MESSAGE.format(
                 name=argument_name, type=expected_type, arg=argument))
 
     @classmethod
     def validate_instance(cls, argument_name, argument, expected_type):
         if not isinstance(argument, expected_type):
-            raise TypeError(cls._ARGUMENT_TYPE_EXTENSION_MESSAGE.format(
+            raise TypeError(cls._ARGUMENT_TYPE_MESSAGE.format(
                 name=argument_name, type=expected_type, arg=argument))
 
 
@@ -181,7 +180,7 @@ class ParserExtender(_ValidatorMixin):
         add_version_to_database(version_structure.profile, version_structure)
         element.supported_version = version_structure
 
-    def _remove_function(self, expansion, version_structure):
+    def _remove_function(self, expansion, version_structure):  # pylint: disable=W0613
         unregister(name=expansion.name)
 
     def _add_function(self, expansion, version_structure):

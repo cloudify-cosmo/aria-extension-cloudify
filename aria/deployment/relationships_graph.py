@@ -15,7 +15,7 @@
 
 import copy
 from random import randrange
-from itertools import product
+from itertools import product, izip, tee
 from collections import namedtuple, deque, defaultdict
 
 import networkx
@@ -39,15 +39,15 @@ Container = namedtuple(
         'current_host_instance_id',
     ])
 
-relationship_types = RelationshipMapping()
+_relationship_types = RelationshipMapping()  # pylint: disable=invalid-name
 
 
-def build_node_graph(nodes, scaling_groups):
+def build_node_graph(nodes, scaling_groups):  # pylint: disable=too-many-locals
     graph, groups_graph = networkx.DiGraph(), networkx.DiGraph()
     node_ids = set()
     contained_in_group = {}
-    group_contained_in_type = relationship_types.group_contained_in_relationship_type
-    contained_in_type = relationship_types.contained_in_relationship_type
+    group_contained_in_type = _relationship_types.group_contained_in_relationship_type
+    contained_in_type = _relationship_types.contained_in_relationship_type
 
     for node in nodes:
         node_id = node['id']
@@ -64,12 +64,11 @@ def build_node_graph(nodes, scaling_groups):
         graph.add_node(node_id, node=node, scale_properties=scale_properties)
 
     for group_name, group in scaling_groups.iteritems():
-        scale_properties = group['properties']
         groups_graph.add_node(group_name)
         graph.add_node(
             group_name,
             node={'id': group_name, 'group': True},
-            scale_properties=scale_properties)
+            scale_properties=group['properties'])
 
     for group_name, group in scaling_groups.iteritems():
         for member in group['members']:
@@ -96,8 +95,9 @@ def build_node_graph(nodes, scaling_groups):
                     index=index)
                 continue
             group_name = contained_in_group[node_id]
-            relationship['target_id'] = group_name
-            relationship['replaced'] = target_id
+            relationship.update(
+                target_id=group_name,
+                replaced=target_id)
             graph.add_edge(
                 node_id, group_name,
                 relationship=relationship,
@@ -106,7 +106,8 @@ def build_node_graph(nodes, scaling_groups):
                 groups_graph,
                 nbunch=[group_name])[-1]
             graph.add_edge(
-                top_level_group_name, target_id,
+                top_level_group_name,
+                target_id,
                 relationship={
                     'type': group_contained_in_type,
                     'type_hierarchy': [group_contained_in_type],
@@ -115,11 +116,8 @@ def build_node_graph(nodes, scaling_groups):
     return graph
 
 
-def build_previous_deployment_node_graph(
-        plan_node_graph, previous_node_instances):
+def build_previous_deployment_node_graph(plan_node_graph, previous_node_instances):  # pylint: disable=too-many-locals
     graph, contained_graph = networkx.DiGraph(), networkx.DiGraph()
-    contained_in_type = relationship_types.contained_in_relationship_type
-    group_contained_in_type = relationship_types.group_contained_in_relationship_type
 
     for node_instance in previous_node_instances:
         node_instance_id = node_instance['id']
@@ -128,8 +126,11 @@ def build_previous_deployment_node_graph(
         contained_graph.add_node(node_instance_id, node=node_instance)
         for scaling_group in node_instance.get('scaling_groups') or ():
             group_id = scaling_group['id']
-            group_name = scaling_group['name']
-            node = {'id': group_id, 'name': group_name, 'group': True}
+            node = {
+                'id': group_id,
+                'name': scaling_group['name'],
+                'group': True,
+            }
             if node_instance_host_id:
                 node['host_id'] = node_instance_host_id
             graph.add_node(group_id, node=node)
@@ -140,9 +141,9 @@ def build_previous_deployment_node_graph(
         node_id = _node_id_from_node_instance(node_instance)
         scaling_groups = node_instance.get('scaling_groups')
         contained_in_target_id = contained_in_target_name = None
-        for index, rel in enumerate(node_instance.get('relationships', ())):
-            target_id = rel['target_id']
-            target_name = rel['target_name']
+        for index, relationship in enumerate(node_instance.get('relationships', ())):
+            target_id = relationship['target_id']
+            target_name = relationship['target_name']
             # if the original relationship does not exist in the plan node
             # graph, it means it was a contained_in relationship that was
             # replaced by a scaling group
@@ -152,20 +153,24 @@ def build_previous_deployment_node_graph(
                 # for the purpose of containment, only the first group
                 # is relevant
                 scaling_group = scaling_groups[0]
-                rel['target_id'] = scaling_group['id']
-                rel['target_name'] = scaling_group['name']
-                rel['replaced'] = True
-                graph.add_edge(node_instance_id, scaling_group['id'],
-                               relationship=rel,
-                               index=index)
+                relationship.update(
+                    target_id=scaling_group['id'],
+                    target_name=scaling_group['name'],
+                    replaced=True,
+                )
+                graph.add_edge(
+                    node_instance_id, scaling_group['id'],
+                    relationship=relationship,
+                    index=index)
                 contained_graph.add_edge(node_instance_id, scaling_group['id'])
                 continue
-            graph.add_edge(node_instance_id, target_id,
-                           relationship=rel,
-                           index=index)
-            if _relationship_type_hierarchy_includes_one_of(
+            graph.add_edge(
+                node_instance_id, target_id,
+                relationship=relationship,
+                index=index)
+            if _is_type_in_relationship_type_hierarchy(
                     plan_node_graph[node_id][target_name]['relationship'],
-                    [contained_in_type]):
+                    [_relationship_types.contained_in_relationship_type]):
                 contained_graph.add_edge(node_instance_id, target_id)
 
         if not scaling_groups:
@@ -181,15 +186,17 @@ def build_previous_deployment_node_graph(
                 'id': node_instance_id,
                 'name': node_id})
 
-        scaling_groups = list(scaling_groups)
-        for index in xrange(len(scaling_groups) - 1):
-            scaling_group = scaling_groups[index]
-            next_scaling_group = scaling_groups[index + 1]
+        (scaling_groups_first_iter,
+         scaling_groups_second_iter) = tee(iter(scaling_groups))
+        next(scaling_groups_second_iter)
+
+        for scaling_group, next_scaling_group in izip(
+                scaling_groups_first_iter, scaling_groups_second_iter):
             graph.add_edge(
                 scaling_group['id'],
                 next_scaling_group['id'],
                 relationship={
-                    'type': group_contained_in_type,
+                    'type': _relationship_types.group_contained_in_relationship_type,
                     'target_id': next_scaling_group['id'],
                     'target_name': next_scaling_group['name']
                 },
@@ -200,7 +207,7 @@ def build_previous_deployment_node_graph(
     return graph, contained_graph
 
 
-def build_deployment_node_graph(
+def build_deployment_node_graph(  # pylint: disable=invalid-name
         plan_node_graph,
         previous_deployment_node_graph=None,
         previous_deployment_contained_graph=None,
@@ -228,14 +235,14 @@ def build_deployment_node_graph(
     return deployment_node_graph, ctx
 
 
-def extract_node_instances(
+def extract_node_instances(  # pylint: disable=too-many-locals
         node_instances_graph,
         ctx,
         copy_instances=False,
         contained_graph=None):
     contained_graph = contained_graph or ctx.deployment_contained_graph
     node_instances = []
-    group_contained_in_type = relationship_types.group_contained_in_relationship_type
+    group_contained_in_type = _relationship_types.group_contained_in_relationship_type
 
     for node_instance_id, data in node_instances_graph.nodes_iter(data=True):
         node_instance = data['node']
@@ -256,26 +263,26 @@ def extract_node_instances(
             group_rel = relationship_instance['type'] == group_contained_in_type
             replaced = relationship_instance.pop('replaced', None)
             if replaced or group_rel:
-                group_name = relationship_instance['target_name']
-                group_id = relationship_instance['target_id']
-                scaling_groups = [{'name': group_name, 'id': group_id}]
+                scaling_groups = [{
+                    'name': relationship_instance['target_name'],
+                    'id': relationship_instance['target_id'],
+                }]
                 containing_groups, parent = ctx.containing_group_instances(
-                    instance_id=group_id,
+                    instance_id=relationship_instance['target_id'],
                     contained_graph=contained_graph)
                 scaling_groups += containing_groups
                 node_instance['scaling_groups'] = scaling_groups
                 if replaced:
-                    target_node_instance = parent
-                    target_name = target_node_instance['name']
-                    target_id = target_node_instance['id']
-                    relationship_instance['target_name'] = target_name
-                    relationship_instance['target_id'] = target_id
+                    relationship_instance['target_name'] = parent['name']
+                    relationship_instance['target_id'] = parent['id']
             if not group_rel:
                 indexed_relationship_instances.append(
                     (relationship_index, relationship_instance))
         indexed_relationship_instances.sort(key=lambda (index, _): index)
-        relationship_instances = [r for _, r in indexed_relationship_instances]
-        node_instance[RELATIONSHIPS] = relationship_instances
+        node_instance[RELATIONSHIPS] = [
+            relationship
+            for _, relationship in indexed_relationship_instances
+        ]
         node_instances.append(node_instance)
     return node_instances
 
@@ -345,18 +352,18 @@ def _graph_diff(
         subset_graph,
         node_instance_attributes):
     result = networkx.DiGraph()
-    for n1, data in graph.nodes_iter(data=True):
-        if n1 in subset_graph:
+    for node, data in graph.nodes_iter(data=True):
+        if node in subset_graph:
             continue
         result.add_node(
-            n1, data,
+            node, data,
             node_instance_attributes=node_instance_attributes)
-        for n2 in graph.neighbors_iter(n1):
-            result.add_node(n2, graph.node[n2])
-            result.add_edge(n1, n2, graph[n1][n2])
-        for n2 in graph.predecessors_iter(n1):
-            result.add_node(n2, graph.node[n2])
-            result.add_edge(n2, n1, graph[n2][n1])
+        for neighbors in graph.neighbors_iter(node):
+            result.add_node(neighbors, graph.node[neighbors])
+            result.add_edge(node, neighbors, graph[node][neighbors])
+        for predecessor in graph.predecessors_iter(node):
+            result.add_node(predecessor, graph.node[predecessor])
+            result.add_edge(predecessor, node, graph[predecessor][node])
     return result
 
 
@@ -372,7 +379,7 @@ def _graph_diff_relationships(
     :return:
     """
     result = networkx.DiGraph()
-    for source, dest, data in graph.edges_iter(data=True):
+    for source, dest, _ in graph.edges_iter(data=True):
         if source not in subset_graph or dest in subset_graph[source]:
             continue
         new_node = copy.deepcopy(graph.node[source])
@@ -406,10 +413,9 @@ def _build_multi_instance_node_tree_rec(
         parent_relationship_index=None,
         parent_node_instance_id=None,
         current_host_instance_id=None):
-    node = contained_tree.node[node_id]['node']
     containers = _build_and_update_node_instances(
         ctx=ctx,
-        node=node,
+        node=contained_tree.node[node_id]['node'],
         parent_node_instance_id=parent_node_instance_id,
         parent_relationship=parent_relationship,
         current_host_instance_id=current_host_instance_id)
@@ -442,7 +448,7 @@ def _build_multi_instance_node_tree_rec(
                 current_host_instance_id=new_current_host_instance_id)
 
 
-def _build_and_update_node_instances(
+def _build_and_update_node_instances(  # pylint: disable=too-many-locals
         ctx,
         node,
         parent_node_instance_id,
@@ -461,7 +467,8 @@ def _build_and_update_node_instances(
             if any((not parent_node_instance_id,
                     all((instance_id in ctx.previous_deployment_node_graph,
                          ctx.previous_deployment_node_graph[instance_id].get(
-                            parent_node_instance_id)))))]
+                             parent_node_instance_id)))))
+        ]
         previous_instances_num = len(previous_node_instance_ids)
         if node_id in ctx.modified_nodes:
             modified_node = ctx.modified_nodes[node_id]
@@ -544,7 +551,7 @@ def _handle_removed_instances(
 
 
 def _extract_contained(node, node_instance):
-    contained_in_type = relationship_types.contained_in_relationship_type
+    contained_in_type = _relationship_types.contained_in_relationship_type
     for node_relationship in node.get('relationships', []):
         if contained_in_type in node_relationship['type_hierarchy']:
             contained_node_relationship = node_relationship
@@ -596,10 +603,10 @@ def _handle_connected_to_and_depends_on(ctx):
 def _build_previous_target_ids_for_all_to_one(ctx):
     relationship_target_ids = {}
     if ctx.is_modification:
-        for s, t, e_data in ctx.previous_deployment_node_graph.edges_iter(data=True):
-            s_node = ctx.previous_deployment_node_graph.node[s]['node']
-            t_node = ctx.previous_deployment_node_graph.node[t]['node']
-            rel = e_data['relationship']
+        for node, neighbor, edge_data in ctx.previous_deployment_node_graph.edges_iter(data=True):
+            s_node = ctx.previous_deployment_node_graph.node[node]['node']
+            t_node = ctx.previous_deployment_node_graph.node[neighbor]['node']
+            rel = edge_data['relationship']
             key = (_node_id_from_node_instance(s_node),
                    _node_id_from_node_instance(t_node),
                    rel['type'])
@@ -627,7 +634,7 @@ def _get_all_to_one_relationship_target_id(
     return min(target_node_instance_ids)
 
 
-def _add_connected_to_and_depends_on_relationships(
+def _add_connected_to_and_depends_on_relationships(  # pylint: disable=invalid-name
         ctx,
         relationship,
         index,
@@ -770,24 +777,24 @@ def _verify_no_unsupported_relationships(graph):
     :param graph:
     :return:
     """
-    for s, t, edge in graph.edges_iter(data=True):
-        if not _relationship_type_hierarchy_includes_one_of(
+    for _, _, edge in graph.edges_iter(data=True):
+        if not _is_type_in_relationship_type_hierarchy(
                 edge['relationship'],
-                relationship_types.types.itervalues()):
+                _relationship_types.types.itervalues()):
             raise UnsupportedRelationship(edge['relationship']['type'])
 
 
 def _verify_and_get_connection_type(relationship):
     try:
         properties_relationship = relationship['properties'][
-            relationship_types.connection_type]
+            _relationship_types.connection_type]
         assert properties_relationship in [ALL_TO_ALL, ALL_TO_ONE]
     except (KeyError, AssertionError):
         raise IllegalConnectedToConnectionType()
     return properties_relationship
 
 
-def _relationship_type_hierarchy_includes_one_of(relationship, expected_types):
+def _is_type_in_relationship_type_hierarchy(relationship, expected_types):
     relationship_type_hierarchy = relationship['type_hierarchy']
     return any((
         relationship_type in expected_types
@@ -813,12 +820,12 @@ class Context(object):
         self.plan_node_graph = plan_node_graph
         self.deployment_node_graph = deployment_node_graph
         self.previous_deployment_node_graph = previous_deployment_node_graph
-        self.previous_deployment_contained_graph = previous_deployment_contained_graph
+        self.previous_deployment_contained_graph = previous_deployment_contained_graph  # pylint: disable=invalid-name
         self.modified_nodes = modified_nodes
 
-        self.plan_contained_graph = self._build_contained_in_graph(plan_node_graph)
-        self.plan_connected_graph = self._build_connected_to_and_depends_on_graph(
-            plan_node_graph)
+        self.plan_contained_graph = self._build_contained_in_graph(self.plan_node_graph)
+        self.plan_connected_graph = self._connected_to_and_depends_on_graph(
+            self.plan_node_graph)
 
         self.deployment_contained_graph = None
         self.node_ids_to_node_instance_ids = defaultdict(set)
@@ -901,31 +908,31 @@ class Context(object):
                 except KeyError:
                     pass
 
-    def _build_connected_to_and_depends_on_graph(self, graph):
-        return self._build_graph_by_relationship_types(
+    def _connected_to_and_depends_on_graph(self, graph):  # pylint: disable=invalid-name
+        return self._graph_by_relationship_types(
             graph,
             build_from_types=[
-                relationship_types.contained_to_relationship_type,
-                relationship_types.depens_on_relationship_type,
+                _relationship_types.contained_to_relationship_type,
+                _relationship_types.depens_on_relationship_type,
             ],
             exclude_types=[
-                relationship_types.contained_in_relationship_type,
+                _relationship_types.contained_in_relationship_type,
             ])
 
     def _build_contained_in_graph(self, graph):
-        result = self._build_graph_by_relationship_types(
+        result = self._graph_by_relationship_types(
             graph,
             exclude_types=[],
             build_from_types=[
-                relationship_types.contained_in_relationship_type,
-                relationship_types.group_contained_in_relationship_type,
+                _relationship_types.contained_in_relationship_type,
+                _relationship_types.group_contained_in_relationship_type,
             ])
         # don't forget to include nodes in this graph that no one is contained
         # in them (these will be considered 1 node trees)
         result.add_nodes_from(graph.nodes_iter(data=True))
         return result
 
-    def _build_graph_by_relationship_types(
+    def _graph_by_relationship_types(
             self,
             graph,
             build_from_types,
@@ -933,9 +940,9 @@ class Context(object):
         relationship_base_graph = networkx.DiGraph()
         for source, target, edge_data in graph.edges_iter(data=True):
             include_edge = all([
-                _relationship_type_hierarchy_includes_one_of(
+                _is_type_in_relationship_type_hierarchy(
                     edge_data['relationship'], build_from_types),
-                not _relationship_type_hierarchy_includes_one_of(
+                not _is_type_in_relationship_type_hierarchy(
                     edge_data['relationship'], exclude_types),
             ])
             if not include_edge:

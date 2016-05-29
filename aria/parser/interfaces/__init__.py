@@ -36,7 +36,7 @@ def merge_node_type_interfaces(
     ).merge()
 
 
-def merge_node_type_and_node_template_interfaces(
+def merge_node_type_and_node_template_interfaces(  # pylint: disable=invalid-name
         node_type_interfaces,
         node_template_interfaces):
     return InterfacesMerger(
@@ -46,7 +46,7 @@ def merge_node_type_and_node_template_interfaces(
     ).merge()
 
 
-def merge_relationship_type_interfaces(
+def merge_relationship_type_interfaces(  # pylint: disable=invalid-name
         overriding_interfaces,
         overridden_interfaces):
     return InterfacesMerger(
@@ -56,7 +56,7 @@ def merge_relationship_type_interfaces(
     ).merge()
 
 
-def merge_relationship_type_and_instance_interfaces(
+def merge_relationship_type_and_instance_interfaces(  # pylint: disable=invalid-name
         relationship_type_interfaces,
         relationship_instance_interfaces):
     return InterfacesMerger(

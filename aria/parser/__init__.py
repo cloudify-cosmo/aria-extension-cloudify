@@ -37,8 +37,8 @@ __all__ = [
     'extend',
 ]
 
-default_parser = Parser()
-default_expander = ParserExtender()
+default_parser = Parser()            # pylint: disable=C0103
+default_expander = ParserExtender()  # pylint: disable=C0103
 
-parse = default_parser.parse
-extend = default_expander.extend
+parse = default_parser.parse         # pylint: disable=C0103
+extend = default_expander.extend     # pylint: disable=C0103

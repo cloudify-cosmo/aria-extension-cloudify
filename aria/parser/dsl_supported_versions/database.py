@@ -17,7 +17,7 @@ from collections import defaultdict
 from .manager import BASE_VERSION_PROFILE, VersionNumber, VersionStructure
 
 
-database = defaultdict(
+database = defaultdict(  # pylint: disable=invalid-name
     set, **{
         BASE_VERSION_PROFILE: set([
             VersionStructure(profile=BASE_VERSION_PROFILE,

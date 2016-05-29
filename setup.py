@@ -15,7 +15,20 @@
 # limitations under the License.
 
 import os
+import sys
 from setuptools import setup, find_packages
+
+_PACKAGE_NAME = 'aria'
+_PYTHON_SUPPORTED_VERSIONS = [(2, 6), (2, 7)]
+
+if ((sys.version_info.major, sys.version_info.minor)
+        not in _PYTHON_SUPPORTED_VERSIONS):
+    raise NotImplementedError(
+        '{0} Package support Python version 2.6 & 2.7 Only'.format(
+            _PACKAGE_NAME))
+
+__version__ = '0.0.0.1'
+execfile(os.path.join('.', _PACKAGE_NAME, 'version.py'))
 
 
 try:
@@ -29,12 +42,8 @@ try:
 except ImportError:
     install_requires.append('importlib')
 
-package_name = 'aria'
-__version__ = '0.0.0.1'
-execfile(os.path.join('.', package_name, 'version.py'))
-
 setup(
-    name=package_name,
+    name=_PACKAGE_NAME,
     version=__version__,
     author='aria-core',
     author_email='cosmo-admin@gigaspaces.com',

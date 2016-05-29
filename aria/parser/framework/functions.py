@@ -28,19 +28,19 @@ def _get_relationships_type():
 
 
 SELF, SOURCE, TARGET = 'SELF', 'SOURCE', 'TARGET'
-template_functions = {}
+_template_functions = {}  #  pylint: disable=invalid-name
 
 
 def register(function_cls=None, name=None):
     if function_cls is None:
         return partial(register, name=name)
-    template_functions[name] = function_cls
+    _template_functions[name] = function_cls
     function_cls.name = name
     return function_cls
 
 
 def unregister(name):
-    template_functions.pop(name, None)
+    _template_functions.pop(name, None)
 
 
 class RuntimeEvaluationStorage(object):
@@ -295,11 +295,11 @@ class GetAttribute(Function):
                     self.node_name))
         if len(node_instances) == 1:
             return node_instances[0]
-        node_instance = self._try_resolve_node_instance_by_relationship(
+        node_instance = self._resolve_node_by_relationship(
             storage=storage, node_instances=node_instances)
         if node_instance:
             return node_instance
-        node_instance = self._try_resolve_node_instance_by_scaling_group(
+        node_instance = self._resolve_node_by_scaling_group(
             storage=storage, node_instances=node_instances)
         if node_instance:
             return node_instance
@@ -308,8 +308,7 @@ class GetAttribute(Function):
             'More than one node instance found for node "{0}". Cannot '
             'resolve a node instance unambiguously.'.format(self.node_name))
 
-    def _try_resolve_node_instance_by_relationship(
-            self, storage, node_instances):
+    def _resolve_node_by_relationship(self, storage, node_instances):
         self_instance_id = self.context.get('self')
         if not self_instance_id:
             return None
@@ -327,8 +326,7 @@ class GetAttribute(Function):
                 return node_instance
         raise RuntimeError('Illegal state')
 
-    def _try_resolve_node_instance_by_scaling_group(
-            self, storage, node_instances):
+    def _resolve_node_by_scaling_group(self, storage, node_instances):
 
         def _parent_instance(_instance):
             _node = storage.get_node(_instance.node_id)
@@ -362,7 +360,7 @@ class GetAttribute(Function):
             raise RuntimeError('Illegal state')
 
         def _group_instance(node_instance, group_name):
-            for scaling_group in (node_instance.scaling_groups or ()):
+            for scaling_group in node_instance.scaling_groups or ():
                 if scaling_group['name'] == group_name:
                     return scaling_group['id']
             parent_instance = _parent_instance(node_instance)
@@ -447,9 +445,9 @@ class Concat(Function):
 def parse(raw_function, scope=None, context=None, path=None):
     if isinstance(raw_function, dict) and len(raw_function) == 1:
         func_name = raw_function.keys()[0]
-        if func_name in template_functions:
+        if func_name in _template_functions:
             func_args = raw_function.values()[0]
-            return template_functions[func_name](
+            return _template_functions[func_name](
                 func_args,
                 scope=scope,
                 context=context,
@@ -521,49 +519,44 @@ def runtime_evaluation_handler(get_node_instances_method,
 def validate_functions(plan):
     get_property_functions = []
 
-    def handler(v, scope, context, path):
-        _func = parse(v, scope=scope, context=context, path=path)
-        if isinstance(_func, Function):
-            _func.validate(plan)
-        if isinstance(_func, GetProperty):
-            get_property_functions.append(_func)
-            return _func
-        return v
+    def handler(value, scope, context, path):
+        raw_func = parse(value, scope=scope, context=context, path=path)
+        if isinstance(raw_func, Function):
+            raw_func.validate(plan)
+        if isinstance(raw_func, GetProperty):
+            get_property_functions.append(raw_func)
+            return raw_func
+        return value
 
     # Replace all get_property functions with their instance representation
     scan.scan_service_template(plan, handler, replace=True)
 
-    if not get_property_functions:
-        return
+    def validate_no_circular_get_property(value, *_):
+        if not isinstance(value, GetProperty):
+            scan.scan_properties(value, validate_no_circular_get_property)
+            return
+        func_id = '{0}.{1}'.format(
+            value.get_node_template(plan)['name'],
+            FUNCTION_NAME_PATH_SEPARATOR.join(value.property_path))
+        if func_id in visited_functions:
+            visited_functions.append(func_id)
+            error_output = [
+                func_id.replace(FUNCTION_NAME_PATH_SEPARATOR, ',')
+                for func_id in visited_functions
+                ]
+            raise RuntimeError(
+                'Circular get_property function call detected: '
+                '{0}'.format(' -> '.join(error_output)))
+        visited_functions.append(func_id)
+        validate_no_circular_get_property(value.evaluate(plan))
 
     # Validate there are no circular get_property calls
     for func in get_property_functions:
         property_path = [str(prop) for prop in func.property_path]
-        visited_functions = ['{0}.{1}'.format(
-            func.get_node_template(plan)['name'],
-            FUNCTION_NAME_PATH_SEPARATOR.join(property_path))]
-
-        def validate_no_circular_get_property(*args):
-            r = args[0]
-            if isinstance(r, GetProperty):
-                func_id = '{0}.{1}'.format(
-                    r.get_node_template(plan)['name'],
-                    FUNCTION_NAME_PATH_SEPARATOR.join(
-                        r.property_path))
-                if func_id in visited_functions:
-                    visited_functions.append(func_id)
-                    error_output = [
-                        x.replace(FUNCTION_NAME_PATH_SEPARATOR, ',')
-                        for x in visited_functions
-                    ]
-                    raise RuntimeError(
-                        'Circular get_property function call detected: '
-                        '{0}'.format(' -> '.join(error_output)))
-                visited_functions.append(func_id)
-                r = r.evaluate(plan)
-                validate_no_circular_get_property(r)
-            else:
-                scan.scan_properties(r, validate_no_circular_get_property)
+        visited_functions = [
+            '{0}.{1}'.format(
+                func.get_node_template(plan)['name'],
+                FUNCTION_NAME_PATH_SEPARATOR.join(property_path))]
 
         result = func.evaluate(plan)
         validate_no_circular_get_property(result)
@@ -575,11 +568,12 @@ def validate_functions(plan):
     scan.scan_service_template(plan, replace_with_raw_function, replace=True)
 
 
-def _get_property_value(node_name,
-                        properties,
-                        property_path,
-                        context_path='',
-                        raise_if_not_found=True):
+def _get_property_value(
+        node_name,
+        properties,
+        property_path,
+        context_path='',
+        raise_if_not_found=True):
     """Extracts a property's value according to the provided property path
 
     :param node_name: Node name the property belongs to (for logging).
@@ -590,47 +584,52 @@ def _get_property_value(node_name,
     :return: Property value.
     """
 
-    def str_list(li):
-        return [str(item) for item in li]
+    def list_to_string(normal_list):
+        return '.'.join(str(item) for item in normal_list)
 
     value = properties
-    for p in property_path:
+    for path in property_path:
         if isinstance(value, dict):
-            if p not in value:
+            if path not in value:
                 if raise_if_not_found:
                     raise KeyError(
                         "Node template property '{0}.properties.{1}' "
                         "referenced from '{2}' doesn't exist.".format(
-                            node_name, '.'.join(str_list(property_path)),
+                            node_name,
+                            list_to_string(property_path),
                             context_path))
                 return None
-            value = value[p]
+            value = value[path]
         elif isinstance(value, list):
             try:
-                value = value[p]
+                value = value[path]
             except TypeError:
                 raise TypeError(
                     "Node template property '{0}.properties.{1}' "
                     "referenced from '{2}' is expected {3} to be an int "
                     "but it is a {4}.".format(
-                        node_name, '.'.join(str_list(property_path)),
+                        node_name, list_to_string(property_path),
                         context_path,
-                        p, type(p).__name__))
+                        path,
+                        type(path).__name__))
             except IndexError:
                 if raise_if_not_found:
                     raise IndexError(
                         "Node template property '{0}.properties.{1}' "
                         "referenced from '{2}' index is out of range. Got {3}"
                         " but list size is {4}.".format(
-                            node_name, '.'.join(str_list(property_path)),
-                            context_path, p, len(value)))
+                            node_name,
+                            list_to_string(property_path),
+                            context_path,
+                            path,
+                            len(value)))
                 return None
         else:
             if raise_if_not_found:
                 raise KeyError(
                     "Node template property '{0}.properties.{1}' "
                     "referenced from '{2}' doesn't exist.".format(
-                        node_name, '.'.join(str_list(property_path)),
+                        node_name, list_to_string(property_path),
                         context_path))
             return None
 
@@ -638,26 +637,27 @@ def _get_property_value(node_name,
 
 
 def _handler(evaluator, **evaluator_kwargs):
-    def handler(v, scope, context, path):
-        evaluated_value = v
+    def handler(evaluated_value, scope, context, path):
         scanned = False
         while True:
-            func = parse(evaluated_value,
-                         scope=scope,
-                         context=context,
-                         path=path)
+            func = parse(
+                evaluated_value,
+                scope=scope,
+                context=context,
+                path=path)
             if not isinstance(func, Function):
                 break
             previous_evaluated_value = evaluated_value
             evaluated_value = getattr(func, evaluator)(**evaluator_kwargs)
             if scanned and previous_evaluated_value == evaluated_value:
                 break
-            scan.scan_properties(evaluated_value,
-                                 handler,
-                                 scope=scope,
-                                 context=context,
-                                 path=path,
-                                 replace=True)
+            scan.scan_properties(
+                evaluated_value,
+                handler,
+                scope=scope,
+                context=context,
+                path=path,
+                replace=True)
             scanned = True
         return evaluated_value
     return handler

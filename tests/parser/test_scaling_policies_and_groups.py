@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from aria.parser.constants import SCALING_POLICY, UNBOUNDED, UNBOUNDED_LITERAL
+from aria.parser.constants import UNBOUNDED, UNBOUNDED_LITERAL
 from aria.parser.exceptions import (
     DSLParsingLogicException,
     ERROR_UNSUPPORTED_POLICY,
@@ -26,10 +26,12 @@ from aria.parser.exceptions import (
     ERROR_NON_CONTAINED_GROUP_MEMBERS,
     ERROR_INVALID_DICT_VALUE,
     ERROR_GROUP_AND_NODE_TEMPLATE_SAME_NAME,
-    ERROR_INSTANCES_DEPLOY_AND_CAPABILITIES,
 )
+from aria.parser.framework.elements.policies import PolicyInstanceType
 
 from ..suite import ParserTestCase
+
+SCALING_POLICY = PolicyInstanceType.SCALING_POLICY
 
 
 class TestScalingPoliciesAndGroups(ParserTestCase):

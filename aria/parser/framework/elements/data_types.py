@@ -13,9 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ...dsl_supported_versions import VersionNumber, VersionStructure
 from ...exceptions import (
-    DSLParsingLogicException, ERROR_UNKNOWN_TYPE, ERROR_INVALID_TYPE_NAME)
+    DSLParsingLogicException,
+    ERROR_UNKNOWN_TYPE,
+    ERROR_INVALID_TYPE_NAME,
+)
 from ... import constants, utils
 from .. import Value, Requirement, sibling_predicate
 from .version import ToscaDefinitionsVersion
@@ -24,11 +26,11 @@ from . import PRIMITIVE_TYPES, Element, Dict, DictElement, Leaf
 
 
 class SchemaPropertyDescription(Element):
-    schema = Leaf(type=str)
+    schema = Leaf(obj_type=str)
 
 
 class SchemaPropertyType(Element):
-    schema = Leaf(type=str)
+    schema = Leaf(obj_type=str)
     # requires will be modified later.
     requires = {}
     provides = ['component_types']
@@ -41,18 +43,18 @@ class SchemaPropertyType(Element):
                 ERROR_UNKNOWN_TYPE,
                 "Illegal type name '{0}'".format(self.initial_value))
 
-    def calculate_provided(self, component_types, **kwargs):
+    def calculate_provided(self, component_types, **_):
         return {'component_types': component_types}
 
 
 class SchemaPropertyDefault(Element):
-    schema = Leaf(type=PRIMITIVE_TYPES)
+    schema = Leaf(obj_type=PRIMITIVE_TYPES)
     requires = {
         SchemaPropertyType: [Requirement(
             'component_types', required=False, predicate=sibling_predicate)],
     }
 
-    def parse(self, component_types):
+    def parse(self, component_types, **_):
         type_name = self.sibling(SchemaPropertyType).value
         initial_value = self.initial_value
         if initial_value is None:
@@ -70,15 +72,15 @@ class SchemaPropertyDefault(Element):
             value=initial_value,
             type_name=type_name,
             data_types=component_types,
-            undefined_property_error_message=undefined_property_error,
-            missing_property_error_message='illegal state',
+            undefined_error_message=undefined_property_error,
+            missing_error_message='illegal state',
             node_name=current_type,
             path=[prop_name],
             raise_on_missing_property=False)
 
 
 class SchemaPropertyRequired(Element):
-    schema = Leaf(type=bool)
+    schema = Leaf(obj_type=bool)
     requires = {
         ToscaDefinitionsVersion: ['version'],
         'inputs': ['validate_version'],
@@ -104,7 +106,7 @@ class SchemaProperty(Element):
 
 
 class Schema(DictElement):
-    schema = Dict(type=SchemaProperty)
+    schema = Dict(obj_type=SchemaProperty)
 
 
 class SchemaWithInitialDefault(Schema):
@@ -112,11 +114,11 @@ class SchemaWithInitialDefault(Schema):
 
 
 class DataTypeDescription(Element):
-    schema = Leaf(type=str)
+    schema = Leaf(obj_type=str)
 
 
 class DataTypeVersion(Element):
-    schema = Leaf(type=str)
+    schema = Leaf(obj_type=str)
 
 
 class DataType(Type):
@@ -153,7 +155,7 @@ class DataType(Type):
                 ERROR_INVALID_TYPE_NAME,
                 "Can't redefine primitive type {0}".format(self.name))
 
-    def parse(self, super_type, component_types):
+    def parse(self, super_type, component_types, **_):
         merged_component_types = {}
         for component in component_types:
             merged_component_types.update(component)
@@ -170,7 +172,7 @@ class DataType(Type):
         self.component_types[self.name] = result
         return result
 
-    def calculate_provided(self, **kwargs):
+    def calculate_provided(self, **_):
         return {'component_types': self.component_types}
 
     @property
@@ -187,7 +189,7 @@ class DataType(Type):
 
 
 class DataTypes(Types):
-    schema = Dict(type=DataType)
+    schema = Dict(obj_type=DataType)
     requires = {
         ToscaDefinitionsVersion: ['version'],
         'inputs': ['validate_version'],

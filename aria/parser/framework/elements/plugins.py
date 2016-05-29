@@ -20,18 +20,18 @@ from . import Element, Leaf, Dict, DictElement
 
 
 class PluginSource(Element):
-    schema = Leaf(type=str)
+    schema = Leaf(obj_type=str)
 
 
 class PluginInstall(Element):
-    schema = Leaf(type=bool)
+    schema = Leaf(obj_type=bool)
 
     def parse(self):
         return self.initial_value if self.initial_value is not None else True
 
 
 class PluginVersionValidatedElement(Element):
-    schema = Leaf(type=str)
+    schema = Leaf(obj_type=str)
     requires = {
         ToscaDefinitionsVersion: ['version'],
         'inputs': ['validate_version'],
@@ -103,4 +103,4 @@ class Plugin(DictElement):
 
 
 class Plugins(DictElement):
-    schema = Dict(type=Plugin)
+    schema = Dict(obj_type=Plugin)

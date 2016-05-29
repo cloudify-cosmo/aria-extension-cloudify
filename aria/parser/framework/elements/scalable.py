@@ -25,7 +25,7 @@ from . import Element, DictElement, Leaf
 
 
 class Instances(Element):
-    schema = Leaf(type=(int, dict))
+    schema = Leaf(obj_type=(int, dict))
     default_value = None
 
     def validate(self):
@@ -65,7 +65,7 @@ class MinInstances(NonNegativeInstances):
 
 
 class MaxInstances(Instances):
-    schema = Leaf(type=(int, basestring, dict))
+    schema = Leaf(obj_type=(int, basestring, dict))
     default_value = UNBOUNDED
 
     def validate(self):
@@ -138,7 +138,7 @@ class Properties(DictElement):
                 'default_instances ({0}) cannot be greater than '
                 'max_instances ({1})'.format(default_instances, max_instances))
 
-    def parse(self, **kwargs):
+    def parse(self, **_):
         result = self.build_dict_result()
         result.setdefault('default_instances', self.DEFAULT['default_instances'])
         result.setdefault('min_instances', self.DEFAULT['min_instances'])

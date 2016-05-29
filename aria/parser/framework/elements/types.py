@@ -36,12 +36,12 @@ class Type(Element):
 
     @staticmethod
     def fix_properties(value):
-        for key, value in value['properties'].iteritems():
-            value.pop('initial_default', None)
+        for properties_value in value['properties'].itervalues():
+            properties_value.pop('initial_default', None)
 
 
 class DerivedFrom(Element):
-    schema = Leaf(type=str)
+    schema = Leaf(obj_type=str)
     descriptor = ''
 
     def validate(self, **kwargs):

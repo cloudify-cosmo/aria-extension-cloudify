@@ -53,8 +53,8 @@ def merge_schemas(overridden_schema, overriding_schema, data_types):
                 derived_value=overridden_default,
                 type_name=overridden_type,
                 data_types=data_types,
-                undefined_property_error_message='illegal state',
-                missing_property_error_message='illegal state',
+                undefined_error_message='illegal state',
+                missing_error_message='illegal state',
                 node_name='illegal state',
                 path=[],
                 raise_on_missing_property=False)
@@ -74,19 +74,19 @@ def merge_schema_and_instance_properties(
         instance_properties,
         schema_properties,
         data_types,
-        undefined_property_error_message,
-        missing_property_error_message,
+        undefined_error_message,
+        missing_error_message,
         node_name,
         path=None,
         raise_on_missing_property=True):
     flattened_schema_props = flatten_schema(schema_properties)
-    return _merge_flattened_schema_and_instance_properties(
+    return _merge_schema_and_instance_properties(
         instance_properties=instance_properties,
         schema_properties=schema_properties,
         flattened_schema_properties=flattened_schema_props,
         data_types=data_types,
-        undefined_property_error_message=undefined_property_error_message,
-        missing_property_error_message=missing_property_error_message,
+        undefined_error_message=undefined_error_message,
+        missing_error_message=missing_error_message,
         node_name=node_name,
         path=path,
         raise_on_missing_property=raise_on_missing_property)
@@ -96,8 +96,8 @@ def parse_value(
         value,
         type_name,
         data_types,
-        undefined_property_error_message,
-        missing_property_error_message,
+        undefined_error_message,
+        missing_error_message,
         node_name,
         path,
         derived_value=None,
@@ -125,14 +125,14 @@ def parse_value(
             flattened_data_schema = flatten_schema(data_schema)
             if isinstance(derived_value, dict):
                 flattened_data_schema.update(derived_value)
-            undef_msg = undefined_property_error_message
-            return _merge_flattened_schema_and_instance_properties(
+            undef_msg = undefined_error_message
+            return _merge_schema_and_instance_properties(
                 instance_properties=value,
                 schema_properties=data_schema,
                 flattened_schema_properties=flattened_data_schema,
                 data_types=data_types,
-                undefined_property_error_message=undef_msg,
-                missing_property_error_message=missing_property_error_message,
+                undefined_error_message=undef_msg,
+                missing_error_message=missing_error_message,
                 node_name=node_name,
                 path=path,
                 raise_on_missing_property=raise_on_missing_property)
@@ -185,11 +185,11 @@ def get_class_instance(class_path, properties):
     try:
         cls = get_class(class_path)
         return cls(**properties)
-    except Exception as e:
-        exc_type, exc, traceback = sys.exc_info()
+    except Exception as exc:
+        _, _, traceback = sys.exc_info()
         raise RuntimeError(
-            'Failed to instantiate {0}, error: {1}'.format(class_path, e)),\
-            None, traceback
+            'Failed to instantiate {0}, error: {1}'.format(class_path, exc)
+        ), None, traceback
 
 
 def get_class(class_path):
@@ -229,13 +229,13 @@ def _property_description(path, name=None):
     return '.'.join(path)
 
 
-def _merge_flattened_schema_and_instance_properties(
+def _merge_schema_and_instance_properties(
         instance_properties,
         schema_properties,
         flattened_schema_properties,
         data_types,
-        undefined_property_error_message,
-        missing_property_error_message,
+        undefined_error_message,
+        missing_error_message,
         node_name,
         path,
         raise_on_missing_property):
@@ -248,14 +248,14 @@ def _merge_flattened_schema_and_instance_properties(
         if key not in schema_properties:
             ex = DSLParsingLogicException(
                 106,
-                undefined_property_error_message.format(
+                undefined_error_message.format(
                     node_name,
                     _property_description(path, key)))
             ex.property = key
             raise ex
 
-    merged_properties = dict(flattened_schema_properties.items() +
-                             instance_properties.items())
+    merged_properties = dict(
+        flattened_schema_properties.items() + instance_properties.items())
     result = {}
     for key, property_schema in schema_properties.iteritems():
         if key not in merged_properties:
@@ -263,7 +263,7 @@ def _merge_flattened_schema_and_instance_properties(
             if required and raise_on_missing_property:
                 ex = DSLParsingLogicException(
                     107,
-                    missing_property_error_message.format(
+                    missing_error_message.format(
                         node_name,
                         _property_description(path, key)))
                 ex.property = key
@@ -277,8 +277,8 @@ def _merge_flattened_schema_and_instance_properties(
             derived_value=flattened_schema_properties.get(key),
             type_name=property_schema.get('type'),
             data_types=data_types,
-            undefined_property_error_message=undefined_property_error_message,
-            missing_property_error_message=missing_property_error_message,
+            undefined_error_message=undefined_error_message,
+            missing_error_message=missing_error_message,
             node_name=node_name,
             path=prop_path,
             raise_on_missing_property=raise_on_missing_property)

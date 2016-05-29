@@ -21,31 +21,29 @@ from ... import holder
 PRIMITIVE_TYPES = (list, bool, int, float, long, basestring, dict)
 
 
-class Unparsed(object):
-    pass
-UNPARSED = Unparsed()
+UNPARSED = type('Unparsed', (object,), {})()
 
 
-class ElementType(object):
-    def __init__(self, type):
-        if isinstance(type, list):
-            type = tuple(type)
-        self.type = type
+class ElementType(object):  # pylint: disable=too-few-public-methods
+    def __init__(self, obj_type):
+        if isinstance(obj_type, list):
+            obj_type = tuple(obj_type)
+        self.type = obj_type
 
 
-class Leaf(ElementType):
+class Leaf(ElementType):  # pylint: disable=too-few-public-methods
     pass
 
 
-class Dict(ElementType):
+class Dict(ElementType):  # pylint: disable=too-few-public-methods
     pass
 
 
-class List(ElementType):
+class List(ElementType):  # pylint: disable=too-few-public-methods
     pass
 
 
-class Element(object):
+class Element(object):  # pylint: disable=too-many-instance-attributes
     schema = None
     required = False
     requires = {}
@@ -54,14 +52,14 @@ class Element(object):
     supported_version = None
 
     def __new__(cls, *args, **kwargs):
-        if cls.extend:
+        if callable(cls.extend):
             cls.extend.extend = None
-            return cls.extend(*args, **kwargs)
+            return cls.extend(*args, **kwargs)  # pylint: disable=not-callable
         return super(Element, cls).__new__(cls, *args, **kwargs)
 
     def __init__(self, context, initial_value, name=None):
         self.context = context
-        initial_value = holder.Holder.of(initial_value)
+        initial_value = holder.Holder.from_object(initial_value)
         self.initial_value_holder = initial_value
         self._initial_value = initial_value.restore()
         self.start_line = initial_value.start_line
@@ -69,7 +67,7 @@ class Element(object):
         self.end_line = initial_value.end_line
         self.end_column = initial_value.end_column
         self.filename = initial_value.filename
-        name = holder.Holder.of(name)
+        name = holder.Holder.from_object(name)
         self.name = name.restore()
         self.name_start_line = name.start_line
         self.name_start_column = name.start_column
@@ -113,7 +111,7 @@ class Element(object):
                     version,
                     self.supported_version.name))
 
-    def parse(self, **kwargs):
+    def parse(self, **_):
         return self.initial_value
 
     @property
@@ -137,7 +135,7 @@ class Element(object):
     def value(self, val):
         self._parsed_value = val
 
-    def calculate_provided(self, **kwargs):
+    def calculate_provided(self, **_):
         return {}
 
     @property
@@ -202,11 +200,11 @@ class Element(object):
 
 
 class DictElement(Element):
-    def parse(self, **kwargs):
+    def parse(self, **_):
         return self.build_dict_result()
 
 
-class UnknownSchema(object):
+class UnknownSchema(object):  # pylint: disable=too-few-public-methods
     pass
 
 

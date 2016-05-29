@@ -29,8 +29,8 @@ from .holder import Holder
 
 def load(raw_yaml, error_message, filename=None):
     try:
-        result = yaml.load(raw_yaml, partial(MarkedLoader, filename=filename))
-        return result or Holder.of({}, filename=filename)
+        result = yaml.load(raw_yaml, partial(_MarkedLoader, filename=filename))
+        return result or Holder.from_object({}, filename=filename)
     except ParserError, ex:
         raise DSLParsingFormatException(
             -1, '{0}: Illegal yaml; {1}'.format(error_message, ex))
@@ -147,8 +147,13 @@ HolderConstructor.add_constructor(
     HolderConstructor.construct_yaml_map)
 
 
-class MarkedLoader(Reader, Scanner, Parser, Composer, HolderConstructor,
-                   Resolver):
+class _MarkedLoader(  # pylint: disable=too-many-ancestors
+        Reader,
+        Scanner,
+        Parser,
+        Composer,
+        HolderConstructor,
+        Resolver):
     def __init__(self, stream, filename=None):
         Reader.__init__(self, stream)
         Scanner.__init__(self)

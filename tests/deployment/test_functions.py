@@ -211,7 +211,7 @@ groups:
         members: [node]
 policies:
     policy:
-        type: cloudify.policies.scaling
+        type: tosca.policies.Scaling
         targets: [group]
         properties:
             default_instances: { get_property: [node, prop1] }

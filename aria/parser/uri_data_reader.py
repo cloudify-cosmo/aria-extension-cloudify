@@ -26,7 +26,7 @@ MAX_NUMBER_RETRIES = 5
 
 def read_data_from_uri(uri):
     try:
-        scheme, path = uri.split('://', 1)
+        scheme, _ = uri.split('://', 1)
         return _READ_HANDLERS_FROM_URI_SCHEMES[scheme](uri)
     except ValueError:
         return read_from_path(uri)
@@ -36,8 +36,8 @@ def read_data_from_uri(uri):
 
 def read_from_path(dsl_file_path):
     dsl_file_path = dsl_file_path.replace('file://', '', 1)
-    with open(dsl_file_path, 'r') as f:
-        return f.read()
+    with open(dsl_file_path, 'r') as file_obj:
+        return file_obj.read()
 
 
 @retry(stop_max_attempt_number=MAX_NUMBER_RETRIES + 1,

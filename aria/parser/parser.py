@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import os
 from functools import partial
 
@@ -27,14 +28,23 @@ from . import uri_data_reader
 
 
 class Parser(object):
-    def __init__(self, import_resolver=None, validate_version=True):
+    def __init__(
+            self,
+            import_resolver=None,
+            validate_version=True,
+            additional_resource_bases=None):
         """
 
         :param import_resolver:
+        :type import_resolver: aria.parser.import_resolver.AbstractImportResolver
         :param validate_version:
+        :type validate_version: bool
+        :param additional_resource_bases:
+        :type additional_resource_bases: list
         """
         self.import_resolver = import_resolver or DefaultImportResolver()
         self.validate_version = validate_version
+        self.additional_resource_bases = additional_resource_bases or []
 
     def __getattr__(self, item):
         if not item.startswith('parse_from'):
@@ -79,10 +89,11 @@ class Parser(object):
             version,
             self.import_resolver,
             self.validate_version)
+        self.additional_resource_bases.append(resource_base)
 
         plan = parse_blueprint(
             merged_blueprint_holder,
-            resource_base,
+            self.additional_resource_bases,
             self.validate_version)
 
         validate_functions(plan)

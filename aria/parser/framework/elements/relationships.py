@@ -32,7 +32,7 @@ class RelationshipMapping(Element):
         'connection_type': 'connection_type',
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):  # pylint: disable=super-init-not-called
         pass
 
     def __getattr__(self, item):
@@ -65,7 +65,7 @@ class Relationship(Type):
         DataTypes: [Value('data_types')],
     }
 
-    def parse(self, super_type, plugins, resource_base, data_types):
+    def parse(self, super_type, plugins, resource_base, data_types, **_):
         relationship_type = self.build_dict_result()
         if not relationship_type.get('derived_from'):
             relationship_type.pop('derived_from', None)
@@ -96,13 +96,13 @@ class Relationship(Type):
 
 
 class Relationships(Types):
-    schema = Dict(type=Relationship)
+    schema = Dict(obj_type=Relationship)
 
 
 def _validate_relationship_fields(rel_obj, plugins, rel_name, resource_base):
     for interfaces in [constants.SOURCE_INTERFACES,
                        constants.TARGET_INTERFACES]:
-        for interface_name, interface in rel_obj[interfaces].items():
+        for interface in rel_obj[interfaces].itervalues():
             process_interface_operations(
                 interface=interface,
                 plugins=plugins,

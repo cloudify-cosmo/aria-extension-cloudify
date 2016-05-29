@@ -18,12 +18,12 @@ from .parser import parse, validate_schema_api
 from .elements.blueprint import (
     BlueprintVersionExtractor, BlueprintImporter, Blueprint)
 from .elements import (
-    Unparsed, UNPARSED,
+    UNPARSED,
     Leaf, Dict, List,
     Element, ElementType, DictElement, UnknownElement,
     UnknownSchema,
 )
-from functions import validate_functions
+from .functions import validate_functions
 
 
 def validate_version_schema(

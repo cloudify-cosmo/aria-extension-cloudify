@@ -38,7 +38,7 @@ class BlueprintVersionExtractor(Element):
         ToscaDefinitionsVersion: ['version', Value('plan_version')],
     }
 
-    def parse(self, version, plan_version):
+    def parse(self, version, plan_version, **_):
         return {'version': version, 'plan_version': plan_version}
 
 
@@ -46,7 +46,7 @@ class BlueprintImporter(Element):
     schema = {'imports': ImportsLoader}
     requires = {ImportsLoader: ['resource_base']}
 
-    def parse(self, resource_base):
+    def parse(self, resource_base, **_):
         return {
             'merged_blueprint': self.child(ImportsLoader).value,
             'resource_base': resource_base,
@@ -79,7 +79,8 @@ class Blueprint(Element):
     def parse(self,
               workflow_plugins_to_install,
               deployment_plugins_to_install,
-              scaling_groups=None):
+              scaling_groups=None,
+              **_):
         return models.Plan({
             constants.DEPLOYMENT_PLUGINS_TO_INSTALL:
                 deployment_plugins_to_install,

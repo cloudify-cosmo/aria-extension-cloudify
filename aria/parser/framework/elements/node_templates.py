@@ -55,7 +55,7 @@ def _instances_predicate(source, target):
 
 class NodeTemplateInstancesDeploy(Element):
     required = True
-    schema = Leaf(type=int)
+    schema = Leaf(obj_type=int)
 
     def validate(self, **kwargs):
         if self.initial_value < 0:
@@ -74,7 +74,7 @@ class NodeTemplateCapabilities(DictElement):
                   predicate=_instances_predicate)],
     }
 
-    def validate(self, version, validate_version, instances_deploy):
+    def validate(self, instances_deploy, **_):
         if instances_deploy is not None and self.initial_value is not None:
             raise DSLParsingLogicException(
                 ERROR_INSTANCES_DEPLOY_AND_CAPABILITIES,
@@ -82,7 +82,7 @@ class NodeTemplateCapabilities(DictElement):
                 "capabilities.scalable (Note: instances.deploy is deprecated)"
                 .format(self.ancestor(NodeTemplate).name))
 
-    def parse(self, instances_deploy, **kwargs):
+    def parse(self, instances_deploy, **_):
         if self.initial_value is None:
             properties = Properties.DEFAULT.copy()
             if instances_deploy is not None:
@@ -95,7 +95,7 @@ class NodeTemplateCapabilities(DictElement):
         }
 
 
-def _node_template_relationship_type_predicate(source, target):
+def _relationship_type_predicate(source, target):
     try:
         return source.child(
             NodeTemplateRelationshipType).initial_value == target.name
@@ -197,10 +197,10 @@ def _process_node_relationships_operations(
 
 class NodeTemplateType(Element):
     required = True
-    schema = Leaf(type=str)
+    schema = Leaf(obj_type=str)
     requires = {NodeTypes: [Value('node_types')]}
 
-    def validate(self, node_types):
+    def validate(self, node_types, **kwargs):
         if self.initial_value not in node_types:
             raise DSLParsingLogicException(
                 7,
@@ -209,14 +209,14 @@ class NodeTemplateType(Element):
 
 
 class NodeTemplateProperties(Element):
-    schema = Leaf(type=dict)
+    schema = Leaf(obj_type=dict)
     requires = {
         NodeTemplateType: [],
         NodeTypes: [Value('node_types')],
         DataTypes: [Value('data_types')],
     }
 
-    def parse(self, node_types, data_types):
+    def parse(self, node_types, data_types, **_):
         properties = self.initial_value or {}
         node_type_name = self.sibling(NodeTemplateType).value
         node_type = node_types[node_type_name]
@@ -224,10 +224,10 @@ class NodeTemplateProperties(Element):
             instance_properties=properties,
             schema_properties=node_type['properties'],
             data_types=data_types,
-            undefined_property_error_message=(
+            undefined_error_message=(
                 "'{0}' node '{1}' property is not part of the derived"
                 " type properties schema"),
-            missing_property_error_message=(
+            missing_error_message=(
                 "'{0}' node does not provide a "
                 "value for mandatory "
                 "'{1}' property which is "
@@ -237,10 +237,10 @@ class NodeTemplateProperties(Element):
 
 class NodeTemplateRelationshipType(Element):
     required = True
-    schema = Leaf(type=str)
+    schema = Leaf(obj_type=str)
     requires = {Relationships: [Value('relationships')]}
 
-    def validate(self, relationships):
+    def validate(self, relationships, **kwargs):
         if self.initial_value not in relationships:
             raise DSLParsingLogicException(
                 26,
@@ -251,7 +251,7 @@ class NodeTemplateRelationshipType(Element):
 
 class NodeTemplateRelationshipTarget(Element):
     required = True
-    schema = Leaf(type=str)
+    schema = Leaf(obj_type=str)
 
     def validate(self, **kwargs):
         relationship_type = self.sibling(NodeTemplateRelationshipType).name
@@ -272,14 +272,14 @@ class NodeTemplateRelationshipTarget(Element):
 
 
 class NodeTemplateRelationshipProperties(Element):
-    schema = Leaf(type=dict)
+    schema = Leaf(obj_type=dict)
     requires = {
         NodeTemplateRelationshipType: [],
         Relationships: [Value('relationships')],
         DataTypes: [Value('data_types')],
     }
 
-    def parse(self, relationships, data_types):
+    def parse(self, relationships, data_types, **_):
         relationship_type_name = self.sibling(
             NodeTemplateRelationshipType).value
         properties = self.initial_value or {}
@@ -288,10 +288,10 @@ class NodeTemplateRelationshipProperties(Element):
             schema_properties=relationships[
                 relationship_type_name]['properties'],
             data_types=data_types,
-            undefined_property_error_message=(
+            undefined_error_message=(
                 "'{0}' node relationship '{1}' property is not part of "
                 "the derived relationship type properties schema"),
-            missing_property_error_message=(
+            missing_error_message=(
                 "'{0}' node relationship does not provide a "
                 "value for mandatory "
                 "'{1}' property which is "
@@ -320,10 +320,10 @@ class NodeTemplateRelationship(Element):
     requires = {
         Relationship: [
             Value('relationship_type',
-                  predicate=_node_template_relationship_type_predicate)],
+                  predicate=_relationship_type_predicate)],
     }
 
-    def parse(self, relationship_type):
+    def parse(self, relationship_type, **_):
         result = self.build_dict_result()
         for interfaces in [constants.SOURCE_INTERFACES,
                            constants.TARGET_INTERFACES]:
@@ -341,7 +341,7 @@ class NodeTemplateRelationship(Element):
 
 
 class NodeTemplateRelationships(Element):
-    schema = List(type=NodeTemplateRelationship)
+    schema = List(obj_type=NodeTemplateRelationship)
     provides = ['contained_in']
     _relationship_mapping = RelationshipMapping()
 
@@ -410,7 +410,8 @@ class NodeTemplate(Element):
               host_types,
               plugins,
               resource_base,
-              related_node_templates):
+              related_node_templates,
+              **_):
         node = self.build_dict_result()
         node.update({
             'name': self.name,
@@ -456,7 +457,7 @@ class NodeTemplate(Element):
 
 class NodeTemplates(Element):
     required = True
-    schema = Dict(type=NodeTemplate)
+    schema = Dict(obj_type=NodeTemplate)
     requires = {
         Plugins: [Value('plugins')],
         NodeTypes: ['host_types'],
@@ -466,7 +467,7 @@ class NodeTemplates(Element):
         'deployment_plugins_to_install',
     ]
 
-    def parse(self, host_types, plugins):
+    def parse(self, host_types, plugins, **_):
         processed_nodes = dict(
             (node.name, node.value) for node in self.children())
 
@@ -476,14 +477,13 @@ class NodeTemplates(Element):
             plugins=plugins)
         return processed_nodes.values()
 
-    def calculate_provided(self, **kwargs):
+    def calculate_provided(self, **_):
         return {
             'node_template_names': set(c.name for c in self.children()),
             'deployment_plugins_to_install': self._deployment_plugins(),
         }
 
-    @staticmethod
-    def should_install_plugin_on_compute_node(plugin):
+    def _should_install_plugin(self, plugin):
         return plugin[constants.PLUGIN_EXECUTOR_KEY] == constants.LOCAL_AGENT
 
     def _deployment_plugins(self):
@@ -524,7 +524,7 @@ class NodeTemplates(Element):
             node[constants.DEPLOYMENT_PLUGINS_TO_INSTALL] = \
                 deployment_plugins_to_install.values()
 
-        self._validate_agent_plugins_on_host_nodes(processed_nodes)
+        self._validate_agent_plugins(processed_nodes)
 
     def _set_plugin_to_install(self, node, host_types, processed_nodes):
         if node['type'] in host_types:
@@ -536,12 +536,12 @@ class NodeTemplates(Element):
                     # ok to override here since we assume it is
                     # the same plugin
                     for plugin in another_node[constants.PLUGINS]:
-                        if self.should_install_plugin_on_compute_node(plugin):
+                        if self._should_install_plugin(plugin):
                             plugins_to_install[plugin['name']] = plugin
             node[constants.PLUGINS_TO_INSTALL] = (
                 plugins_to_install.values())
 
-    def _validate_agent_plugins_on_host_nodes(self, processed_nodes):
+    def _validate_agent_plugins(self, processed_nodes):
         for node in processed_nodes.itervalues():
             if 'host_id' in node:
                 continue

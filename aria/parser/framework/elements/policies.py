@@ -27,7 +27,7 @@ from ...exceptions import (
     ERROR_MULTIPLE_GROUPS,
     ERROR_NON_CONTAINED_GROUP_MEMBERS,
 )
-from ...constants import SCALING_POLICY, RELATIONSHIPS
+from ...constants import RELATIONSHIPS
 from ..requirements import Value
 from .node_templates import NodeTemplates
 from .relationships import RelationshipMapping
@@ -37,10 +37,10 @@ from . import DictElement, Element, Leaf, List, Dict
 
 
 class GroupMember(Element):
-    schema = Leaf(type=basestring)
+    schema = Leaf(obj_type=basestring)
     requires = {NodeTemplates: ['node_template_names']}
 
-    def validate(self, node_template_names):
+    def validate(self, node_template_names, **kwargs):
         value = self.initial_value
         groups = self.ancestor(Groups).initial_value
         if all([value not in node_template_names,
@@ -54,7 +54,7 @@ class GroupMember(Element):
 
 class GroupMembers(Element):
     required = True
-    schema = List(type=GroupMember)
+    schema = List(obj_type=GroupMember)
 
     def validate(self, **kwargs):
         if len(self.children()) < 1:
@@ -72,7 +72,7 @@ class Group(DictElement):
     }
     requires = {NodeTemplates: ['node_template_names']}
 
-    def validate(self, node_template_names):
+    def validate(self, node_template_names, **kwargs):
         if self.name in node_template_names:
             raise DSLParsingLogicException(
                 ERROR_GROUP_AND_NODE_TEMPLATE_SAME_NAME,
@@ -81,27 +81,29 @@ class Group(DictElement):
 
 
 class Groups(DictElement):
-    schema = Dict(type=Group)
+    schema = Dict(obj_type=Group)
 
 
 class PolicyInstanceType(Element):
+    SCALING_POLICY = 'tosca.policies.Scaling'
     required = True
-    schema = Leaf(type=basestring)
+    schema = Leaf(obj_type=basestring)
 
-    def validate(self):
-        if self.initial_value != SCALING_POLICY:
-            raise DSLParsingLogicException(
-                ERROR_UNSUPPORTED_POLICY,
-                "'{0}' policy type is not implemented. "
-                "Only '{1}' policy type is supported."
-                .format(self.initial_value, SCALING_POLICY))
+    def validate(self, **kwargs):
+        if self.initial_value == self.SCALING_POLICY:
+            return
+        raise DSLParsingLogicException(
+            ERROR_UNSUPPORTED_POLICY,
+            "'{0}' policy type is not implemented. "
+            "Only '{1}' policy type is supported.".format(
+                self.initial_value, self.SCALING_POLICY))
 
 
 class PolicyInstanceTarget(Element):
-    schema = Leaf(type=basestring)
+    schema = Leaf(obj_type=basestring)
     requires = {Groups: [Value('groups')]}
 
-    def validate(self, groups):
+    def validate(self, groups, **kwargs):
         if self.initial_value not in groups:
             raise DSLParsingLogicException(
                 ERROR_NON_GROUP_TARGET,
@@ -112,9 +114,9 @@ class PolicyInstanceTarget(Element):
 
 class PolicyInstanceTargets(Element):
     required = True
-    schema = List(type=PolicyInstanceTarget)
+    schema = List(obj_type=PolicyInstanceTarget)
 
-    def validate(self):
+    def validate(self, **kwargs):
         if len(self.children()) < 1:
             raise DSLParsingLogicException(
                 ERROR_NO_TARGETS,
@@ -123,16 +125,15 @@ class PolicyInstanceTargets(Element):
                 .format(self.ancestor(Policy).name))
 
 
+# TODO: policies should be implemented according to TOSCA as generic types
 class Policy(DictElement):
     schema = {
         'type': PolicyInstanceType,
-        # TODO: policies should be implemented according to TOSCA
-        # as generic types
         'properties': Properties,
         'targets': PolicyInstanceTargets
     }
 
-    def parse(self, **kwargs):
+    def parse(self, **_):
         result = self.build_dict_result()
         if 'properties' not in result:
             result['properties'] = Properties.DEFAULT.copy()
@@ -140,7 +141,7 @@ class Policy(DictElement):
 
 
 class Policies(DictElement):
-    schema = Dict(type=Policy)
+    schema = Dict(obj_type=Policy)
     requires = {
         Groups: [Value('groups')],
         NodeTemplates: [Value('node_templates')],
@@ -149,7 +150,7 @@ class Policies(DictElement):
     }
     provides = ['scaling_groups']
 
-    def calculate_provided(self, groups, node_templates, **kwargs):
+    def calculate_provided(self, groups, node_templates, **_):
         scaling_groups = self._create_scaling_groups(groups)
         # we can't perform the validation in "validate" because we need
         # the parsed value of "policies" which is only calculated in "parse"
@@ -158,8 +159,8 @@ class Policies(DictElement):
 
     def _create_scaling_groups(self, groups):
         scaling_policies = [
-            policy for policy in self.value.itervalues()
-            if policy['type'] == SCALING_POLICY]
+            policy for policy in self.value.itervalues()  # pylint: disable=no-member
+            if policy['type'] == PolicyInstanceType.SCALING_POLICY]
         scaling_groups = {}
         for policy in scaling_policies:
             properties = policy['properties']
@@ -187,11 +188,9 @@ class Policies(DictElement):
                     node_graph.add_edge(node['id'], rel['target_id'])
 
         self._validate_no_group_cycles(member_graph)
-        self._validate_members_in_one_group_only(member_graph)
-        self._validate_no_contained_in_shares_group_with_non_contained_in(
-            member_graph, node_graph)
-        self._remove_contained_nodes_from_scaling_groups(
-            scaling_groups, member_graph, node_graph)
+        self._validate_in_one_group_only(member_graph)
+        self._validate_nodes_contained_in(member_graph, node_graph)
+        self._remove_contained_nodes(scaling_groups, member_graph, node_graph)
 
     def _validate_no_group_cycles(self, member_graph):
         # verify no group cycles (i.e. group A in group B and vice versa)
@@ -201,7 +200,7 @@ class Policies(DictElement):
                 ERROR_GROUP_CYCLE,
                 'Illegal group cycles found: {0}'.format(group_cycles))
 
-    def _validate_members_in_one_group_only(self, member_graph):
+    def _validate_in_one_group_only(self, member_graph):
         # verify all group members are part of exactly one group
         for member in member_graph:
             successors = member_graph.successors(member)
@@ -212,21 +211,19 @@ class Policies(DictElement):
                     "but member '{0}' belongs to the following multiple "
                     "groups: {1}".format(member, successors))
 
-    def _validate_no_contained_in_shares_group_with_non_contained_in(
-            self, member_graph, node_graph):
+    def _validate_nodes_contained_in(self, member_graph, node_graph):
         # for each node a, if node a is (recursively) contained in node b
         # verify that it is not contained in (recursively) a group that has
         # nodes that are not (recursively) contained in node b too unless
         # node b is in that group as well
 
         # first extract all group members (recursively)
-        group_members = {}
-        for member in member_graph:
-            if member in node_graph:
-                continue
-            group_members[member] = networkx.ancestors(member_graph, member)
+        group_members = dict(
+            (member, networkx.ancestors(member_graph, member))
+            for member in member_graph
+            if member not in node_graph
+        )
 
-        # next, remove members that are groups themselves
         group_names = set(group_members.keys())
         group_node_members = dict(
             (group_name, members - group_names)
@@ -297,8 +294,7 @@ class Policies(DictElement):
                     "they are not contained in any shared node, nor is any "
                     "ancestor node of theirs.")
 
-    def _remove_contained_nodes_from_scaling_groups(
-            self, scaling_groups, member_graph, node_graph):
+    def _remove_contained_nodes(self, scaling_groups, member_graph, node_graph):
         # for each node, if a node is (recursively) with
         # a node that contains it (recursively), remove the offending
         # member from the relevant group.

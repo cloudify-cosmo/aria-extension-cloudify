@@ -24,8 +24,7 @@ def operation_mapping(
         inputs=None,
         executor=None,
         max_retries=None,
-        retry_interval=None,
-        **kwargs):
+        retry_interval=None):
     return {
         'implementation': implementation,
         'inputs': inputs or {},
@@ -49,7 +48,7 @@ def no_op_operation(operation_name):
     return operation(
         name=operation_name,
         plugin_name='',
-        operation_mapping='',
+        mapping='',
         operation_inputs={},
         executor=LOCAL_AGENT,
         max_retries=None,
@@ -60,7 +59,7 @@ def no_op_operation(operation_name):
 def operation(
         name,
         plugin_name,
-        operation_mapping,
+        mapping,
         operation_inputs,
         executor,
         max_retries,
@@ -68,7 +67,7 @@ def operation(
     return {
         'name': name,
         'plugin': plugin_name,
-        'operation': operation_mapping,
+        'operation': mapping,
         'executor': executor,
         'inputs': operation_inputs,
         'has_intrinsic_functions': False,
@@ -116,12 +115,10 @@ def _validate_inputs_types(inputs, schema_inputs):
             continue
 
         if input_type == 'integer':
-            if isinstance(input_val, (int, long)) and not \
-                    isinstance(input_val, bool):
+            if isinstance(input_val, (int, long)) and not isinstance(input_val, bool):
                 continue
         elif input_type == 'float':
-            if isinstance(input_val, (int, float, long)) and not \
-                    isinstance(input_val, bool):
+            if isinstance(input_val, (int, float, long)) and not isinstance(input_val, bool):
                 continue
         elif input_type == 'boolean':
             if isinstance(input_val, bool):
@@ -131,10 +128,10 @@ def _validate_inputs_types(inputs, schema_inputs):
         else:
             raise DSLParsingLogicException(
                 80, "Unexpected type defined in inputs schema "
-                    "for input '{0}' - unknown type is {1}"
-                    .format(input_key, input_type))
+                    "for input '{0}' - unknown type is {1}".format(
+                        input_key, input_type))
 
         raise DSLParsingLogicException(
             50, "Input type validation failed: Input '{0}' type "
-                "is '{1}', yet it was assigned with the value '{2}'"
-                .format(input_key, input_type, input_val))
+                "is '{1}', yet it was assigned with the value '{2}'".format(
+                    input_key, input_type, input_val))

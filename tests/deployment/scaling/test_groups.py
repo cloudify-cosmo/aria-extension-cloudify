@@ -18,13 +18,15 @@ import copy
 
 import networkx
 
-from aria.parser.constants import SCALING_POLICY
+from aria.parser.framework.elements.policies import PolicyInstanceType
 from aria.deployment.relationships_graph import (
     build_node_graph,
     build_previous_deployment_node_graph,
 )
 
-from . import BaseTestMultiInstance
+from ...suite import BaseTestMultiInstance
+
+SCALING_POLICY = PolicyInstanceType.SCALING_POLICY
 
 
 class TestMultiInstanceGroups(BaseTestMultiInstance):
