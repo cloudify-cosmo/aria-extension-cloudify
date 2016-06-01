@@ -93,8 +93,9 @@ class TestEvaluateFunctions(TestCase):
                 'node_id': 'node2',
                 'runtime_properties': {'key': 'value1'},
             },
-            'node2_2': {'node_id': 'node2',
-                        'runtime_properties': {'key': 'value2'},
+            'node2_2': {
+                'node_id': 'node2',
+                'runtime_properties': {'key': 'value2'},
             },
         }
         node_instances = dict(
@@ -133,19 +134,19 @@ class TestEvaluateFunctions(TestCase):
         node_instances['node1_1']['relationships'] = []
         self.assertRaises(FunctionEvaluationError, evaluate)
 
-    def test_process_attribute_scaling_group_ambiguity_resolution_node_operation(self):  # noqa
+    def test_process_attribute_scaling_group_ambiguity_resolution_node_operation(self):
         for index in [1, 2]:
             context = {'self': 'node3_{0}'.format(index)}
             self._test_process_attribute_scaling_group_ambiguity_resolution(
                 context, index)
 
-    def test_process_attribute_scaling_group_ambiguity_resolution_relationship_operation_source(self):  # noqa
+    def test_process_attribute_scaling_group_ambiguity_resolution_relationship_operation_source(self):
         for index in [1, 2]:
             context = {'source': 'node3_{0}'.format(index), 'target': 'stub'}
             self._test_process_attribute_scaling_group_ambiguity_resolution(
                 context, index)
 
-    def test_process_attribute_scaling_group_ambiguity_resolution_relationship_operation_target(self):  # noqa
+    def test_process_attribute_scaling_group_ambiguity_resolution_relationship_operation_target(self):
         for index in [1, 2]:
             context = {'target': 'node3_{0}'.format(index), 'source': 'stub'}
             self._test_process_attribute_scaling_group_ambiguity_resolution(
@@ -162,7 +163,7 @@ class TestEvaluateFunctions(TestCase):
                 'node_id': 'node2',
                 'scaling_groups': [{'name': 'g2', 'id': 'g2_1'}],
                 'relationships': [
-                    {'target_name': 'node1','target_id': 'node1_1'}],
+                    {'target_name': 'node1', 'target_id': 'node1_1'}],
             },
             'node3_1': {
                 'node_id': 'node3',
@@ -178,7 +179,7 @@ class TestEvaluateFunctions(TestCase):
                 'node_id': 'node5',
                 'scaling_groups': [{'name': 'g5', 'id': 'g5_1'}],
                 'relationships': [
-                     {'target_name': 'node4', 'target_id': 'node4_1'}]
+                    {'target_name': 'node4', 'target_id': 'node4_1'}]
             },
             'node6_1': {
                 'node_id': 'node6',
@@ -211,7 +212,7 @@ class TestEvaluateFunctions(TestCase):
                 'node_id': 'node5',
                 'scaling_groups': [{'name': 'g5', 'id': 'g5_2'}],
                 'relationships': [
-                     {'target_name': 'node4', 'target_id': 'node4_2'}]
+                    {'target_name': 'node4', 'target_id': 'node4_2'}]
             },
             'node6_2': {
                 'node_id': 'node6',

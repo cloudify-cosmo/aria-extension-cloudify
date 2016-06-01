@@ -570,9 +570,9 @@ class TestMultiInstanceModify(BaseTestMultiInstance):
         db_nodes = self.nodes_by_name(node_instances, 'db')
         host2_nodes = self.nodes_by_name(node_instances, 'host2')
         initial_target_id = self.assert_all_to_one(
-                self.nodes_relationships(db_nodes, 'host2'),
-                self.node_ids(host2_nodes),
-                'host2')
+            self.nodes_relationships(db_nodes, 'host2'),
+            self.node_ids(host2_nodes),
+            'host2')
         modification = self.modify_multi(
             plan,
             {'host2': {'instances': 10}, 'db': {'instances': 10}})
@@ -649,7 +649,7 @@ class TestMultiInstanceModify(BaseTestMultiInstance):
                 })
             self.assert_modification(modification, 0, 3, 0, 3)
             removed_host_ids = self.node_ids(self.nodes_by_name(
-                    modification['removed_and_related'], 'host'))
+                modification['removed_and_related'], 'host'))
             self.assertEqual(removed_host_ids, [host_id])
 
         for host_id in host_ids:
@@ -703,7 +703,8 @@ class TestMultiInstanceModify(BaseTestMultiInstance):
         self.assert_modification(modification, 0, 6, 0, 3)
         # give all nodes as exclude hint to see we still take what is needed
         modification = self.modify_multi(
-            plan, {'db': {
+            plan, {
+                'db': {
                     'instances': 1,
                     'removed_ids_exclude_hint': db_ids,
                 },

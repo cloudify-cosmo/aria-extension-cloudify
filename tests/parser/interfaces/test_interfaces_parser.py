@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import testtools
 from functools import partial
+import testtools
 
 from aria.parser.framework.elements.operation import NodeTemplateInterfaces, NodeTypeInterfaces
 from aria.parser.interfaces.operation_merger import NO_OP
@@ -153,8 +153,8 @@ class InterfacesParserTest(testtools.TestCase):
         _validate_type_interfaces(node_type_interfaces)
         _validate_instance_interfaces(node_template_interfaces)
         actual_merged_interfaces = merge_node_type_and_node_template_interfaces(
-                node_type_interfaces=node_type_interfaces,
-                node_template_interfaces=node_template_interfaces)
+            node_type_interfaces=node_type_interfaces,
+            node_template_interfaces=node_template_interfaces)
         self.assertEqual(expected_merged_interfaces, actual_merged_interfaces)
 
     def test_merge_node_type_no_interfaces_and_node_template_interfaces(self):
@@ -174,8 +174,8 @@ class InterfacesParserTest(testtools.TestCase):
         _validate_type_interfaces(node_type_interfaces)
         _validate_instance_interfaces(node_template_interfaces)
         actual_merged_interfaces = merge_node_type_and_node_template_interfaces(
-                node_type_interfaces=node_type_interfaces,
-                node_template_interfaces=node_template_interfaces)
+            node_type_interfaces=node_type_interfaces,
+            node_template_interfaces=node_template_interfaces)
         self.assertEqual(actual_merged_interfaces, expected_merged_interfaces)
 
     def test_merge_node_type_interfaces_and_node_template_no_interfaces(self):
@@ -350,8 +350,8 @@ class InterfacesParserTest(testtools.TestCase):
         _validate_type_interfaces(relationship_type_interfaces)
         _validate_instance_interfaces(relationship_instance_interfaces)
         actual_merged_interfaces = merge_relationship_type_and_instance_interfaces(
-                relationship_type_interfaces=relationship_type_interfaces,
-                relationship_instance_interfaces=relationship_instance_interfaces)
+            relationship_type_interfaces=relationship_type_interfaces,
+            relationship_instance_interfaces=relationship_instance_interfaces)
         self.assertEqual(actual_merged_interfaces, expected_merged_interfaces)
 
     def test_merge_relationship_type_and_instance_no_interfaces(self):
@@ -388,6 +388,6 @@ class InterfacesParserTest(testtools.TestCase):
         _validate_type_interfaces(relationship_type_interfaces)
         _validate_instance_interfaces(relationship_instance_interfaces)
         actual_merged_interfaces = merge_relationship_type_and_instance_interfaces(
-                relationship_type_interfaces=relationship_type_interfaces,
-                relationship_instance_interfaces=relationship_instance_interfaces)
+            relationship_type_interfaces=relationship_type_interfaces,
+            relationship_instance_interfaces=relationship_instance_interfaces)
         self.assertEqual(actual_merged_interfaces, expected_merged_interfaces)

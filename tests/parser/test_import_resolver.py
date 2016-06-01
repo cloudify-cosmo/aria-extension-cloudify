@@ -37,8 +37,8 @@ class MockCustomImportResolverException(Exception):
 
 
 class CustomImportResolver(AbstractImportResolver):
-    def __init__(self, custom_reolver_parameters):
-        self.custom_resolver_parameters = custom_reolver_parameters
+    def __init__(self, custom_resolver_parameters):
+        self.custom_resolver_parameters = custom_resolver_parameters
 
     def resolve(self, import_url):
         pass
@@ -127,7 +127,7 @@ class CreateImportResolverTests(TestCase):
             expected_params_name=DEFAULT_RESLOVER_RULES_KEY)
 
     def test_create_custom_resolver(self):
-        parameters = {'custom_reolver_parameters': {}}
+        parameters = {'custom_resolver_parameters': {}}
         resolver_configuration = {
             RESOLVER_IMPLEMENTATION_KEY: custom_resolver_class_path,
             RESLOVER_PARAMETERS_KEY: parameters,
@@ -135,7 +135,7 @@ class CreateImportResolverTests(TestCase):
         self._test_create_import_resolver(
             resolver_configuration=resolver_configuration,
             expected_resolver=CustomImportResolver(
-                custom_reolver_parameters={}),
+                custom_resolver_parameters={}),
             expected_params_name='custom_resolver_parameters')
 
     def test_create_custom_resolver_without_init(self):
@@ -158,7 +158,7 @@ class CreateImportResolverTests(TestCase):
             self._test_create_import_resolver(
                 resolver_configuration=resolver_configuration,
                 err_msg_regex=(
-                    'Failed to instantiate resolver \({0}\)\. mock exception'
+                    r'Failed to instantiate resolver \({0}\)\. mock exception'
                     .format(DefaultImportResolver.__name__)))
         finally:
             DefaultImportResolver.__init__ = original_init
@@ -169,9 +169,9 @@ class CreateImportResolverTests(TestCase):
         }
         self._test_create_import_resolver(
             resolver_configuration=resolver_configuration,
-            err_msg_regex='Failed to instantiate resolver '
-                          '\({0}\).*mock exception'
-            .format(failed_custom_resolver_class_path))
+            err_msg_regex=(
+                r'Failed to instantiate resolver '
+                r'\({0}\).*mock exception'.format(failed_custom_resolver_class_path)))
 
     def test_create_resolver_illegal_params_type(self):
         resolver_configuration = {
@@ -180,10 +180,10 @@ class CreateImportResolverTests(TestCase):
         }
         self._test_create_import_resolver(
             resolver_configuration=resolver_configuration,
-            err_msg_regex='Invalid parameters supplied for the '
-                          'resolver \({0}\): parameters must be '
-                          'a dictionary and not str'
-            .format(default_resolver_class_path))
+            err_msg_regex=(
+                r'Invalid parameters supplied for the '
+                r'resolver \({0}\): parameters must be '
+                r'a dictionary and not str'.format(default_resolver_class_path)))
 
     def test_create_default_resolver_illegal_params(self):
         resolver_configuration = {
@@ -192,10 +192,10 @@ class CreateImportResolverTests(TestCase):
         }
         self._test_create_import_resolver(
             resolver_configuration=resolver_configuration,
-            err_msg_regex='Failed to instantiate resolver \({0}\).*'
-                          '__init__\(\) got an unexpected keyword argument '
-                          '\'wrong parameter name\''
-            .format(default_resolver_class_path))
+            err_msg_regex=(
+                r'Failed to instantiate resolver \({0}\).*'
+                r'__init__\(\) got an unexpected keyword argument '
+                r'\'wrong parameter name\''.format(default_resolver_class_path)))
 
     def test_create_resolver_illegal_class_path(self):
         resolver_configuration = {
@@ -203,5 +203,5 @@ class CreateImportResolverTests(TestCase):
         }
         self._test_create_import_resolver(
             resolver_configuration=resolver_configuration,
-            err_msg_regex='Failed to instantiate resolver '
-                          '\(wrong class path\).*Invalid class path')
+            err_msg_regex=r'Failed to instantiate resolver '
+                          r'\(wrong class path\).*Invalid class path')

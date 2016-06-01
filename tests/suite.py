@@ -16,9 +16,9 @@
 import os
 from uuid import uuid4
 from shutil import rmtree
-from yaml import safe_dump
 from tempfile import mkdtemp
 from itertools import imap, groupby
+from yaml import safe_dump
 
 from testtools import TestCase
 
@@ -279,7 +279,7 @@ node_templates:
             plan_node_graph=plan_node_graph,
             previous_node_instances=removed_and_related)
 
-        for instance_id, data in removed_nodes_graph.nodes_iter(data=True):
+        for instance_id, _ in removed_nodes_graph.nodes_iter(data=True):
             self.assertIn(instance_id, previous_graph)
         for source, target, in removed_nodes_graph.edges_iter():
             self.assertTrue(previous_graph.has_edge(source, target))

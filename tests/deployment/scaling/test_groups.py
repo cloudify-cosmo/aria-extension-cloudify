@@ -1397,7 +1397,7 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
             }
         )
 
-    def test_group_with_host_db_contained_in_it_ip_and_volume2_scale_out1(self):  # noqa
+    def test_group_with_host_db_contained_in_it_ip_and_volume2_scale_out1(self):
         self._test_modify(
             base=self.test_group_with_host_db_contained_in_it_ip_and_volume2,
             modified_nodes={
@@ -1519,7 +1519,7 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
             }
         )
 
-    def test_group_with_host_db_contained_in_it_ip_and_volume2_scale_out2(self):  # noqa
+    def test_group_with_host_db_contained_in_it_ip_and_volume2_scale_out2(self):
         self._test_modify(
             base=self.test_group_with_host_db_contained_in_it_ip_and_volume2,
             modified_nodes={
@@ -1621,7 +1621,7 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
             }
         )
 
-    def test_group_with_host_db_contained_in_it_ip_and_volume2_scale_out3(self):  # noqa
+    def test_group_with_host_db_contained_in_it_ip_and_volume2_scale_out3(self):
         self._test_modify(
             base=self.test_group_with_host_db_contained_in_it_ip_and_volume2,
             modified_nodes={
@@ -1777,9 +1777,9 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
             }
         )
 
-    def test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container_scale_in1(self):  # noqa
+    def test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container_scale_in1(self):
         self._test_modify(
-            base=self.test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container,  # noqa
+            base=self.test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container,
             modified_nodes={
                 'vm_with_resources': {
                     'instances': 1
@@ -1861,9 +1861,9 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
             }
         )
 
-    def test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container_scale_out2(self):  # noqa
+    def test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container_scale_out2(self):
         self._test_modify(
-            base=self.test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container,  # noqa
+            base=self.test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container,
             modified_nodes={
                 'volume_scale_group': {
                     'instances': 6
@@ -1932,9 +1932,9 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
             }
         )
 
-    def test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container_scale_in2(self):  # noqa
+    def test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container_scale_in2(self):
         self._test_modify(
-            base=self.test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container,  # noqa
+            base=self.test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container,
             modified_nodes={
                 'volume_scale_group': {
                     'instances': 4
@@ -2003,9 +2003,9 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
             }
         )
 
-    def test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container_scale_out3(self):  # noqa
+    def test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container_scale_out3(self):
         self._test_modify(
-            base=self.test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container,  # noqa
+            base=self.test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container,
             modified_nodes={
                 'db': {
                     'instances': 4
@@ -2047,9 +2047,9 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
             }
         )
 
-    def test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container_scale_in3(self):  # noqa
+    def test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container_scale_in3(self):
         self._test_modify(
-            base=self.test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container,  # noqa
+            base=self.test_group_with_host_db_contained_in_it_ip_volume_volume_c_and_container,
             modified_nodes={
                 'db': {
                     'instances': 2
@@ -2475,9 +2475,7 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
         result = base()
         plan = result['plan']
         initial_group_components = result['initial_group_components']
-
         modification = self.modify_multi(plan=plan, modified_nodes=modified_nodes)
-
         added_and_related_node_instances = modification['added_and_related']
         removed_and_related_node_instances = modification['removed_and_related']
 
@@ -2492,14 +2490,14 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
 
         (added_group_components,
          removed_group_components) = self._assert_modification_groups(
-            plan=plan,
-            initial_group_components=initial_group_components,
-            added_and_related_node_instances=added_and_related_node_instances,
-            removed_and_related_node_instances=removed_and_related_node_instances,
-            expected_added_groups=expected_added_groups,
-            expected_added_and_related_group_members=expected_added_and_related_group_members,
-            expected_removed_groups=expected_removed_groups,
-            expected_removed_and_related_group_members=expected_removed_and_related_group_members)
+             plan=plan,
+             initial_group_components=initial_group_components,
+             added_and_related_node_instances=added_and_related_node_instances,
+             removed_and_related_node_instances=removed_and_related_node_instances,
+             expected_added_groups=expected_added_groups,
+             expected_added_and_related_group_members=expected_added_and_related_group_members,
+             expected_removed_groups=expected_removed_groups,
+             expected_removed_and_related_group_members=expected_removed_and_related_group_members)
 
         self._assert_modification_relationships(
             added_and_related_node_instances=added_and_related_node_instances,
@@ -2651,7 +2649,7 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
             group_instances = set(
                 n for n in contained_graph
                 if not contained_graph.node[n].get('stub')
-                    and contained_graph.node[n]['node']['name'] == group_name)
+                and contained_graph.node[n]['node']['name'] == group_name)
 
             # now, for each group instance include all its ancestors including
             # itself
@@ -2701,7 +2699,7 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
                     component_members = [
                         n for n in component
                         if not component.node[n].get('stub')
-                            and component.node[n]['node']['name'] == member]
+                        and component.node[n]['node']['name'] == member]
                     # verify expected node instances member count
                     # component members is a list of all node instances
                     # of a single node contained within the current group
@@ -2710,7 +2708,7 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
                 component_node_members = [
                     n for n in component
                     if not component.node[n].get('stub')
-                        and not component.node[n]['node'].get('group')]
+                    and not component.node[n]['node'].get('group')]
                 # verify group member instances count adds up
                 self.assertEqual(expected_total_count, len(component_node_members))
                 # used by scale in modification tests to verify that a certain

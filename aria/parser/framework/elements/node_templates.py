@@ -483,7 +483,7 @@ class NodeTemplates(Element):
             'deployment_plugins_to_install': self._deployment_plugins(),
         }
 
-    def _should_install_plugin(self, plugin):
+    def should_install_plugin(self, plugin):
         return plugin[constants.PLUGIN_EXECUTOR_KEY] == constants.LOCAL_AGENT
 
     def _deployment_plugins(self):
@@ -536,10 +536,9 @@ class NodeTemplates(Element):
                     # ok to override here since we assume it is
                     # the same plugin
                     for plugin in another_node[constants.PLUGINS]:
-                        if self._should_install_plugin(plugin):
+                        if self.should_install_plugin(plugin):
                             plugins_to_install[plugin['name']] = plugin
-            node[constants.PLUGINS_TO_INSTALL] = (
-                plugins_to_install.values())
+            node[constants.PLUGINS_TO_INSTALL] = plugins_to_install.values()
 
     def _validate_agent_plugins(self, processed_nodes):
         for node in processed_nodes.itervalues():

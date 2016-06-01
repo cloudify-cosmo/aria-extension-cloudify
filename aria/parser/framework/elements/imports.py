@@ -117,19 +117,23 @@ class ImportsLoader(Element):
             import_url = imported['import']
             parsed_imported_dsl_holder = imported['parsed']
             if validate_version:
-                self._validate_version(
-                    version.raw, import_url, parsed_imported_dsl_holder)
-            self._merge_parsed_into_combined(
+                self.validate_imports_versions(
+                    version.raw,
+                    import_url,
+                    parsed_imported_dsl_holder)
+            self.merge_parsed_into_combined(
+                version=version,
                 combined_parsed_dsl_holder=holder_result,
                 parsed_imported_dsl_holder=parsed_imported_dsl_holder)
         holder_result.value[version_key_holder] = version_value_holder
         return holder_result
 
-    def _merge_parsed_into_combined(
+    def merge_parsed_into_combined(
             self,
             combined_parsed_dsl_holder,
             parsed_imported_dsl_holder,
-            merge_no_override=None):
+            merge_no_override=None,
+            **_):
         merge_no_override = merge_no_override or self.MERGE_NO_OVERRIDE.copy()
         for key_holder, value_holder in parsed_imported_dsl_holder.value.iteritems():
             if key_holder.value in self.IGNORE:
@@ -236,7 +240,7 @@ class ImportsLoader(Element):
 
         return None
 
-    def _validate_version(
+    def validate_imports_versions(
             self,
             dsl_version,
             import_url,

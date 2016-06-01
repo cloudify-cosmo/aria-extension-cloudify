@@ -979,12 +979,12 @@ imports:
         self.template += top_level_yaml
         result = self.parse()
         self._assert_blueprint(result)
-        self.assertEqual({
-            'name': 'empty_rel',
-            'properties': {},
-            'source_interfaces': {},
-            'target_interfaces': {},
-            'type_hierarchy': ['empty_rel']},
+        self.assertEqual(
+            {'name': 'empty_rel',
+             'properties': {},
+             'source_interfaces': {},
+             'target_interfaces': {},
+             'type_hierarchy': ['empty_rel']},
             result['relationships']['empty_rel'])
         test_relationship = result['relationships']['test_relationship']
         self.assertEquals('test_relationship', test_relationship['name'])
@@ -1804,7 +1804,7 @@ relationships:
         self.assertEqual('rel2', type_hierarchy[1])
         self.assertEqual('rel3', type_hierarchy[2])
 
-    def test_agent_plugin_in_node_contained_in_host_contained_in_container(self):  # noqa
+    def test_agent_plugin_in_node_contained_in_host_contained_in_container(self):
         self.template.version_section('1.0')
         self.template += """
 plugins:
@@ -2025,8 +2025,8 @@ imports:
 imports:
     -   {0}
             """.format(
-            os.path.join(self.temp_directory, "top_level.yaml")) + \
-            self.template.BASIC_TYPE
+                os.path.join(self.temp_directory, "top_level.yaml")) + \
+                self.template.BASIC_TYPE
         bottom_file_name = self.make_yaml_file(bottom_level_yaml)
 
         mid_level_yaml = self.template.BASIC_PLUGIN + """

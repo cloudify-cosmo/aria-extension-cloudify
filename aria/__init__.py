@@ -25,9 +25,8 @@ Methods:
                    from parser to a deployment plan.
 """
 
-from . import parser
-from . import deployment
-from .version import __version__
+from .VERSION import version as __version__
+from . import parser, deployment
 
 __all__ = [
     '__version__',

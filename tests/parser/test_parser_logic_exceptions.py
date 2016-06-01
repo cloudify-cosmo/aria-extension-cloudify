@@ -514,8 +514,8 @@ node_templates:
                                parse_dsl_version, None)
 
     def test_parse_not_string_dsl_version(self):
-        expected_err_msg = 'Invalid tosca_definitions_version: \[1\] is not' \
-                           ' a string'
+        expected_err_msg = (
+            r'Invalid tosca_definitions_version: \[1\] is not a string')
         self.assertRaisesRegex(DSLParsingLogicException,
                                expected_err_msg,
                                parse_dsl_version, [1])

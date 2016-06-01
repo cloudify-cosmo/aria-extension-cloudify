@@ -27,8 +27,8 @@ if ((sys.version_info.major, sys.version_info.minor)
         '{0} Package support Python version 2.6 & 2.7 Only'.format(
             _PACKAGE_NAME))
 
-__version__ = '0.0.0.1'
-execfile(os.path.join('.', _PACKAGE_NAME, 'version.py'))
+version = '0.0.1'
+execfile(os.path.join('.', _PACKAGE_NAME, 'VERSION.py'))
 
 
 try:
@@ -38,13 +38,13 @@ except IOError:
     install_requires = []
 
 try:
-    import importlib  # NOQA
+    import importlib
 except ImportError:
     install_requires.append('importlib')
 
 setup(
     name=_PACKAGE_NAME,
-    version=__version__,
+    version=version,
     author='aria-core',
     author_email='cosmo-admin@gigaspaces.com',
     packages=find_packages(),

@@ -15,7 +15,7 @@
 
 """
 Aria Version module:
-    * __version__: Aria Package version
+    * version: Aria Package version
 """
 
-__version__ = '0.1.0'
+version = '0.1.0'  # pylint: disable=C0103

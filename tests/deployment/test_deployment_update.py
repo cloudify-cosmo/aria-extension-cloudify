@@ -31,11 +31,11 @@ class TestDeploymentUpdate(BaseTestMultiInstance):
     @staticmethod
     def modify_multi(plan, modified_nodes):
         return modify_deployment_plan(
-                nodes=modified_nodes,
-                previous_nodes=plan['nodes'],
-                previous_node_instances=plan['node_instances'],
-                modified_nodes=(),
-                scaling_groups={})
+            nodes=modified_nodes,
+            previous_nodes=plan['nodes'],
+            previous_node_instances=plan['node_instances'],
+            modified_nodes=(),
+            scaling_groups={})
 
     def test_add_node(self):
         self.template.version_section('1.0')
@@ -51,15 +51,12 @@ class TestDeploymentUpdate(BaseTestMultiInstance):
             'deploy_number_of_instances': 1,
             'min_number_of_instances': 1,
             'max_number_of_instances': 1,
-            'relationships': [
-                {'type': 'tosca.relationships.ConnectsTo',
-                 'target_id': 'without_rel',
-                 'type_hierarchy': ['tosca.relationships.ConnectsTo'],
-                 'properties': {
-                     'connection_type': 'all_to_all'
-                 },
-                 }
-            ]
+            'relationships': [{
+                'type': 'tosca.relationships.ConnectsTo',
+                'target_id': 'without_rel',
+                'type_hierarchy': ['tosca.relationships.ConnectsTo'],
+                'properties': {'connection_type': 'all_to_all'},
+            }],
         })
 
         modified_nodes = plan['nodes']
