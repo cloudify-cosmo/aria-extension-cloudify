@@ -21,8 +21,7 @@ from setuptools import setup, find_packages
 _PACKAGE_NAME = 'aria'
 _PYTHON_SUPPORTED_VERSIONS = [(2, 6), (2, 7)]
 
-if ((sys.version_info.major, sys.version_info.minor)
-        not in _PYTHON_SUPPORTED_VERSIONS):
+if (sys.version_info[0], sys.version_info[1]) not in _PYTHON_SUPPORTED_VERSIONS:
     raise NotImplementedError(
         '{0} Package support Python version 2.6 & 2.7 Only'.format(
             _PACKAGE_NAME))
@@ -33,7 +32,7 @@ execfile(os.path.join('.', _PACKAGE_NAME, 'VERSION.py'))
 
 try:
     with open('requirements.txt') as requirements:
-        install_requires = requirements.readlines()
+        install_requires = [requirement.strip() for requirement in requirements.readlines()]
 except IOError:
     install_requires = []
 
@@ -47,9 +46,9 @@ setup(
     version=version,
     author='aria-core',
     author_email='cosmo-admin@gigaspaces.com',
-    packages=find_packages(),
+    packages=find_packages(exclude=('*tests*',)),
     license='LICENSE',
     description='Aria Project',
     zip_safe=False,
-    install_requires=install_requires
+    install_requires=install_requires,
 )
