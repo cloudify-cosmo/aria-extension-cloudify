@@ -1,13 +1,11 @@
-Cloudify DSL Parser
-===================
-
-* Master Branch [![Build Status](https://travis-ci.org/cloudify-cosmo/cloudify-dsl-parser.svg?branch=master)](https://travis-ci.org/cloudify-cosmo/cloudify-dsl-parser) [![Circle CI](https://circleci.com/gh/cloudify-cosmo/cloudify-system-tests/tree/master.svg?&style=shield)](https://circleci.com/gh/cloudify-cosmo/cloudify-dsl-parser/tree/master)
-
-* PyPI [![PyPI](http://img.shields.io/pypi/dm/cloudify-dsl-parser.svg)](http://img.shields.io/pypi/dm/cloudify-dsl-parser.svg)
-* Version [![PypI](http://img.shields.io/pypi/v/cloudify-dsl-parser.svg)](http://img.shields.io/pypi/v/cloudify-dsl-parser.svg)
+Aria
+====
 
 
-Cloudify DSL parsing package
+[![Build Status](https://travis-ci.org/cloudify-cosmo/aria.svg?branch=master)](https://travis-ci.org/cloudify-cosmo/aria) [![Circle CI](https://circleci.com/gh/cloudify-cosmo/aria/tree/master.svg?&style=shield)](https://circleci.com/gh/cloudify-cosmo/aria/tree/master)
 
-## Reference
-For details on the DSL specification see [DSL Specification](http://getcloudify.org/guide/dsl-spec-general.html).
+[![PyPI](http://img.shields.io/pypi/dm/aria.svg)](http://img.shields.io/pypi/dm/aria.svg)
+[![PypI](http://img.shields.io/pypi/v/aria.svg)](http://img.shields.io/pypi/v/aria.svg)
+
+
+See http://ariatosca.org/
