@@ -31,7 +31,7 @@ execfile(os.path.join('.', _PACKAGE_NAME, 'VERSION.py'))
 
 
 try:
-    with open('requirements.txt') as requirements:
+    with open('./requirements.txt') as requirements:
         install_requires = [requirement.strip() for requirement in requirements.readlines()]
 except IOError:
     install_requires = []
