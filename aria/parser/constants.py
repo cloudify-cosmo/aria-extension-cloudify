@@ -63,7 +63,6 @@ SCRIPT_PATH_PROPERTY = 'script_path'
 FUNCTION_NAME_PATH_SEPARATOR = '__sep__'
 
 NODES = 'nodes'
-NODE_INSTANCES = 'node_instances'
 
 IMPORT_RESOLVER_KEY = 'import_resolver'
 VALIDATE_DEFINITIONS_VERSION = 'validate_definitions_version'

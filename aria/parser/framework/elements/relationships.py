@@ -43,10 +43,9 @@ class RelationshipMapping(Element):
         except KeyError:
             return super(RelationshipMapping, self).__getattribute__(item)
 
-    def __getitem__(self, item):
-        if self.extend:
-            return self.extend.types[item]
-        return self.types[item]
+    def type_values(self):
+        for relationship_type in self.types:
+            yield getattr(self, relationship_type)
 
 
 class Relationship(Type):

@@ -2894,7 +2894,7 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
                     'default_instances': group_instances,
                 }
 
-        self.template.from_blouprint_dict({
+        self.template.from_blueprint_dict({
             'tosca_definitions_version': 'tosca_aria_yaml_1_0',
             'node_types': {
                 'tosca.nodes.Compute': {},

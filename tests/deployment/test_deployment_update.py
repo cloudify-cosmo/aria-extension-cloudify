@@ -15,7 +15,7 @@
 
 import copy
 
-from aria.deployment import modify_deployment_plan
+from aria.deployment import modify_deployment
 
 from ..suite import BaseTestMultiInstance
 
@@ -30,7 +30,7 @@ class TestDeploymentUpdate(BaseTestMultiInstance):
 
     @staticmethod
     def modify_multi(plan, modified_nodes):
-        return modify_deployment_plan(
+        return modify_deployment(
             nodes=modified_nodes,
             previous_nodes=plan['nodes'],
             previous_node_instances=plan['node_instances'],

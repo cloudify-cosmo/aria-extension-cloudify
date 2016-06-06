@@ -186,8 +186,7 @@ def build_previous_deployment_node_graph(plan_node_graph, previous_node_instance
                 'id': node_instance_id,
                 'name': node_id})
 
-        (scaling_groups_first_iter,
-         scaling_groups_second_iter) = tee(iter(scaling_groups))
+        scaling_groups_first_iter, scaling_groups_second_iter = tee(iter(scaling_groups))
         next(scaling_groups_second_iter)
 
         for scaling_group, next_scaling_group in izip(
@@ -198,7 +197,7 @@ def build_previous_deployment_node_graph(plan_node_graph, previous_node_instance
                 relationship={
                     'type': _relationship_types.group_contained_in_relationship_type,
                     'target_id': next_scaling_group['id'],
-                    'target_name': next_scaling_group['name']
+                    'target_name': next_scaling_group['name'],
                 },
                 index=-1)
             contained_graph.add_edge(
@@ -623,8 +622,8 @@ def _get_all_to_one_relationship_target_id(
         relationship,
         target_node_instance_ids):
     key = (source_node_id, target_node_id, relationship['type'])
-    target_ids = relationship_target_ids.get(key, ())
     if ctx.is_modification and key in relationship_target_ids:
+        target_ids = relationship_target_ids.get(key, ())
         if len(target_ids) != 1:
             raise IllegalAllToOneState(
                 "Expected exactly one target id for relationship "
@@ -780,7 +779,7 @@ def _verify_no_unsupported_relationships(graph):
     for _, _, edge in graph.edges_iter(data=True):
         if not _is_type_in_relationship_type_hierarchy(
                 edge['relationship'],
-                _relationship_types.types.itervalues()):
+                _relationship_types.type_values()):
             raise UnsupportedRelationship(edge['relationship']['type'])
 
 

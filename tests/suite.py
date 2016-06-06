@@ -33,22 +33,20 @@ from aria.deployment.relationships_graph import (
     build_previous_deployment_node_graph,
 )
 from aria.exceptions import DSLParsingException
-from aria.deployment import prepare_deployment_plan, modify_deployment_plan
+from aria.deployment import prepare_deployment_plan, modify_deployment
 
 
 class TempDirectoryTestCase(TestCase):
-    def __init__(self, *args, **kwargs):
-        super(TempDirectoryTestCase, self).__init__(*args, **kwargs)
-        self.temp_directory = None
-        self._path_to_uri = 'file://{0}'.format
+    temp_directory = None
+    _path_to_uri = 'file://{0}'.format
 
     def setUp(self):
         self.temp_directory = mkdtemp(prefix=self.__class__.__name__)
+        self.addCleanup(self.cleanup)
         super(TempDirectoryTestCase, self).setUp()
 
-    def tearDown(self):
+    def cleanup(self):
         rmtree(self.temp_directory, ignore_errors=True)
-        super(TempDirectoryTestCase, self).tearDown()
 
     def write_to_file(self, content, filename, directory=None):
         directory = os.path.join(self.temp_directory, directory or '')
@@ -80,17 +78,11 @@ class TempDirectoryTestCase(TestCase):
 
 
 class ParserTestCase(TestCase):
-    def __init__(self, *args, **kwargs):
-        super(ParserTestCase, self).__init__(*args, **kwargs)
-        self.template = None
+    template = None
 
     def setUp(self):
         self.template = Template()
         super(ParserTestCase, self).setUp()
-
-    def tearDown(self):
-        self.template = None
-        super(ParserTestCase, self).tearDown()
 
     def parse(
             self,
@@ -197,7 +189,7 @@ node_templates:
 
     @staticmethod
     def modify_multi(plan, modified_nodes):
-        return modify_deployment_plan(
+        return modify_deployment(
             nodes=plan['nodes'],
             previous_nodes=plan['nodes'],
             previous_node_instances=plan['node_instances'],
@@ -393,7 +385,7 @@ class Template(object):
         self.clear()
         self.template += safe_dump(blueprint)
 
-    def from_blouprint_dict(self, blueprint):
+    def from_blueprint_dict(self, blueprint):
         self.clear()
         self.template += safe_dump(blueprint)
 
