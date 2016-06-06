@@ -4,6 +4,7 @@ all:
 	@echo "make release - prepares a release and publishes it"
 	@echo "make dev - prepares a development environment"
 	@echo "make install - install on local system"
+	@echo "make files - update changelog and todo files"
 	@echo "make test - run tox"
 	@echo "make docs - build docs"
 	@echo "prepare - prepare module for release"
@@ -18,12 +19,17 @@ dev:
 install:
 	python setup.py install
 
+files:
+	grep '# TODO' -rn * --exclude-dir=docs --exclude-dir=build --exclude=TODO.md | sed 's/: \+#/:    # /g;s/:#/:    # /g' | sed -e 's/^/- /' | grep -v Makefile > TODO.md
+	git log --oneline --decorate --color > CHANGELOG
+
 test:
-	pip install -r tests/requirements.txt
 	tox
 
 docs:
-	cd docs && make html
+	pip install -r docs/requirements.txt
+	cd docs
+	make html
 	pandoc README.md -f markdown -t rst -s -o README.rst
 
 prepare:
@@ -33,5 +39,5 @@ publish: prepare
 	python setup.py upload
 
 cleanup:
-	rm -fr dist/ aria.egg-info/ .tox/ .coverage
+	rm -fr dist/ *.egg-info/ .tox/ .coverage
 	find . -name "*.pyc" -exec rm -rf {} \;
