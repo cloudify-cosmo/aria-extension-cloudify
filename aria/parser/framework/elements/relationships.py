@@ -26,7 +26,8 @@ from . import Dict, Element
 class RelationshipMapping(Element):
     types = {
         'depens_on_relationship_type': 'tosca.relationships.DependsOn',
-        'contained_in_relationship_type': 'tosca.relationships.HostedOn',
+        # 'contained_in_relationship_type': 'tosca.relationships.HostedOn',
+        'contained_in_relationship_type': 'cloudify.relationships.contained_in',
         'contained_to_relationship_type': 'tosca.relationships.ConnectsTo',
         'group_contained_in_relationship_type': '__group_contained_in__',
         'connection_type': 'connection_type',
@@ -43,7 +44,7 @@ class RelationshipMapping(Element):
         except KeyError:
             return super(RelationshipMapping, self).__getattribute__(item)
 
-    def type_values(self):
+    def __iter__(self):
         for relationship_type in self.types:
             yield getattr(self, relationship_type)
 

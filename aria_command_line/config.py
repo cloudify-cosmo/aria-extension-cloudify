@@ -13,23 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import aria
-from .suite import TestCase
+import os
+from getpass import getuser
+from tempfile import gettempdir
+from yaml import safe_load
+import logging
+
+from .storage import config_file_path
+
+# path to a file where cli logs will be saved.
+logging_filename = os.path.join(gettempdir(), 'aria_cli_{0}.log'.format(getuser()))
+# loggers log level to show
+logger_level = logging.INFO
+# loggers log level to show
+colors = True
+
+import_resolver = None
 
 
-class TestAriaPackageApi(TestCase):
-    def test_aria_base_package_api(self):
-        self.assertEqual(
-            expected=(
-                '__version__',
-                'parser',
-                'validate_template',
-                'workflow',
-                'operation',
-            ),
-            observed=aria.__all__)
-
-    def test_validate_template_func(self):
-        self.assertIs(
-            expected=aria.validate_template,
-            observed=aria.parser.parse)
+def load_configurations():
+    config_path = config_file_path()
+    with open(config_path) as config_file:
+        globals().update(safe_load(config_file) or {})
+# load_configurations()

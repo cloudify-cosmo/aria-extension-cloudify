@@ -12,24 +12,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import aria
-from .suite import TestCase
-
-
-class TestAriaPackageApi(TestCase):
-    def test_aria_base_package_api(self):
-        self.assertEqual(
-            expected=(
-                '__version__',
-                'parser',
-                'validate_template',
-                'workflow',
-                'operation',
-            ),
-            observed=aria.__all__)
-
-    def test_validate_template_func(self):
-        self.assertIs(
-            expected=aria.validate_template,
-            observed=aria.parser.parse)

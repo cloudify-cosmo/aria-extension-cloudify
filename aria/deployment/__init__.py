@@ -27,6 +27,7 @@ from ..exceptions import UnknownInputError
 from ..parser.models import Plan
 from ..parser.scan import scan_service_template
 from ..parser.framework.functions import plan_evaluation_handler
+from ..parser.framework.elements.node_types import NodeTypes
 from .exceptions import MissingRequiredInputError
 
 
@@ -63,7 +64,10 @@ def prepare_deployment_plan(plan, inputs=None):
         plan = Plan(plan)
     _set_plan_inputs(plan, inputs)
     _process_functions(plan)
-    return _create_deployment(plan)
+    _create_deployment(plan)
+    _prepare_nodes(plan)
+    _prepare_node_instances(plan)
+    return plan
 
 
 def modify_deployment(
@@ -77,14 +81,15 @@ def modify_deployment(
     based on previous_node_instances
     Prepare a modify plan for deployment
     :param nodes: the entire set of expected nodes.
-    :param previous_nodes:
-    :param previous_node_instances:
+    :param previous_nodes: the set of previous nodes.
+    :param previous_node_instances: the set of previous node instances.
     :param modified_nodes: existing nodes whose instance number has changed
         Add a line note
     :param scaling_groups:
     :return: a dict of add,extended,reduced and removed instances
         Add a line note
     """
+
     plan_node_graph = build_node_graph(
         nodes=nodes,
         scaling_groups=scaling_groups)
@@ -193,10 +198,39 @@ def _process_functions(plan):
 
 def _filter_out_node_instances(node_instances_to_filter_out, base_node_instances):
     instance_ids_to_remove = set(
-        node['id']
+        node.id
         for node in node_instances_to_filter_out
-        if 'modification' in node)
+        if hasattr(node, 'modification'))
     return [
-        node
-        for node in base_node_instances
-        if node['id'] not in instance_ids_to_remove]
+        node_instance
+        for node_instance in base_node_instances
+        if node_instance.id not in instance_ids_to_remove]
+
+
+def _prepare_node_instances(plan):
+    for node_instance in plan['node_instances']:
+        node_instance['version'] = 0
+        node_instance['runtime_properties'] = {}
+        node_instance['node_id'] = node_instance['name']
+        if 'relationships' not in node_instance:
+            node_instance['relationships'] = []
+
+
+def _prepare_nodes(plan):
+    for node in plan['nodes']:
+        scalable = node['capabilities']['scalable']['properties']
+        node.update(
+            number_of_instances=scalable['current_instances'],
+            deploy_number_of_instances=scalable['default_instances'],
+            min_number_of_instances=scalable['min_instances'],
+            max_number_of_instances=scalable['max_instances'],
+        )
+        node.setdefault('relationships', [])
+
+        if all((NodeTypes.HOST_TYPE in node['type_hierarchy'],
+                node.properties.get('install_agent'))):
+            raise ValueError(
+                "'install_agent': true is not supported (it is True by default) "
+                "when executing local workflows. The 'install_agent' property "
+                "must be set to false for each node of type {0}.".format(
+                    NodeTypes.HOST_TYPE))

@@ -13,23 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import aria
-from .suite import TestCase
+from .install import install
+from .uninstall import uninstall
+from .execute_operation import execute_operation
+from .heal import heal
+from .scale import scale_entity, scale
+from .update import update
 
 
-class TestAriaPackageApi(TestCase):
-    def test_aria_base_package_api(self):
-        self.assertEqual(
-            expected=(
-                '__version__',
-                'parser',
-                'validate_template',
-                'workflow',
-                'operation',
-            ),
-            observed=aria.__all__)
-
-    def test_validate_template_func(self):
-        self.assertIs(
-            expected=aria.validate_template,
-            observed=aria.parser.parse)
+__all__ = [
+    'install',
+    'uninstall'
+    'execute_operation',
+    'heal',
+    'scale'
+    'scale_entity',
+    'update'
+]
