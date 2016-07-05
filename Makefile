@@ -13,7 +13,6 @@ all:
 release: test todo docs publish
 
 dev:
-	pip install -r dev-requirements.txt
 	pip install -e $(shell pwd)
 
 install:
