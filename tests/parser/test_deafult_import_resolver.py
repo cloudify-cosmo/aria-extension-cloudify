@@ -278,12 +278,3 @@ class TestDefaultResolverValidations(TestCase):
                 'Each rule must be a dictionary with one (key,value) '
                 'pair but the rule {0} has 2 keys'
                 .format(rules), str(ex))
-
-    def test_illegal_default_resolver_parameters(self):
-        # illegal initialization of the default resolver
-        try:
-            DefaultImportResolver(wrong_param_name='')
-        except TypeError, ex:
-            self.assertIn(
-                'got an unexpected keyword argument \'wrong_param_name\'',
-                str(ex))
