@@ -1,9 +1,4 @@
-cosmo-plugin-dsl-parser
-=======================
+Aria
+====
 
-This package contains a plugin that manipulates the recipe dsl
-
--  Build Status (master) |Build Status|
-
-.. |Build Status| image:: https://secure.travis-ci.org/CloudifySource/cosmo-plugin-dsl-parser.png?branch=master
-   :target: http://travis-ci.org/CloudifySource/cosmo-plugin-dsl-parser
+See `Official Github Repo <https://github.com/cloudify-cosmo/aria>`_.
