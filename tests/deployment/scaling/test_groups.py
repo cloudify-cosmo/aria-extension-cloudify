@@ -787,6 +787,77 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
             },
         )
 
+    def test_group_of_node_contained_in1(self):
+        return self._test(
+            groups={
+                'group': {
+                    'members': ['node2']
+                },
+            },
+            nodes={
+                'node1': {'type': 'Root'},
+                'node2': {'type': 'Root',
+                          'HostedOn': 'node1'}
+            },
+            expected_instances={
+                'node1': 1,
+                'node2': 1
+            },
+            expected_groups={
+                'group': {
+                    'instances': 1,
+                    'members': {
+                        'node2': 1
+                    }
+                }
+            },
+            expected_relationships={
+                'node2': {
+                    'target': 'node1',
+                    'count': 1,
+                    'source_count': 1,
+                    'target_count': 1,
+                    'groups': []
+                },
+            },
+        )
+
+    def test_group_of_node_contained_in2(self):
+        return self._test(
+            groups={
+                'group': {
+                    'members': ['node2']
+                },
+            },
+            nodes={
+                'node1': {'type': 'Root'},
+                'node2': {'type': 'Root',
+                          'HostedOn': 'node1',
+                          'instances': 3}
+            },
+            expected_instances={
+                'node1': 1,
+                'node2': 3
+            },
+            expected_groups={
+                'group': {
+                    'instances': 1,
+                    'members': {
+                        'node2': 3
+                    }
+                }
+            },
+            expected_relationships={
+                'node2': {
+                    'target': 'node1',
+                    'count': 1,
+                    'source_count': 3,
+                    'target_count': 1,
+                    'groups': []
+                },
+            },
+        )
+
     def test_group_with_single_node_scale_out(self):
         self._test_modify(
             base=self.test_group_with_single_node,
@@ -2238,6 +2309,134 @@ class TestMultiInstanceGroups(BaseTestMultiInstance):
                 }
             }
         )
+
+    def test_group_of_node_contained_in1_scale_out1(self):
+        self._test_modify(
+            base=self.test_group_of_node_contained_in1,
+            modified_nodes={
+                'node2': {
+                    'instances': 2
+                }
+            },
+            expected_added_instances={
+                'node2': 1,
+            },
+            expected_related_to_added_instances={
+                'node1': 1
+            },
+            expected_added_and_related_group_members={
+                'group': {
+                    'instances': 1,
+                    'members': {
+                        'node2': 1
+                    }
+                }
+            },
+            expected_added_relationships={
+                'node2': {
+                    'target': 'node1',
+                    'count': 1,
+                    'source_count': 1,
+                    'target_count': 1,
+                    'groups': []
+                }
+            })
+
+    def test_group_of_node_contained_in1_scale_out2(self):
+        self._test_modify(
+            base=self.test_group_of_node_contained_in1,
+            modified_nodes={
+                'node2': {
+                    'instances': 3
+                }
+            },
+            expected_added_instances={
+                'node2': 2,
+            },
+            expected_related_to_added_instances={
+                'node1': 1
+            },
+            expected_added_and_related_group_members={
+                'group': {
+                    'instances': 1,
+                    'members': {
+                        'node2': 2
+                    }
+                }
+            },
+            expected_added_relationships={
+                'node2': {
+                    'target': 'node1',
+                    'count': 1,
+                    'source_count': 2,
+                    'target_count': 1,
+                    'groups': []
+                }
+            })
+
+    def test_group_of_node_contained_in2_scale_in1(self):
+        self._test_modify(
+            base=self.test_group_of_node_contained_in2,
+            modified_nodes={
+                'node2': {
+                    'instances': 2
+                }
+            },
+            expected_removed_instances={
+                'node2': 1,
+            },
+            expected_related_to_removed_instances={
+                'node1': 1
+            },
+            expected_removed_and_related_group_members={
+                'group': {
+                    'instances': 1,
+                    'members': {
+                        'node2': 1
+                    }
+                }
+            },
+            expected_removed_relationships={
+                'node2': {
+                    'target': 'node1',
+                    'count': 1,
+                    'source_count': 1,
+                    'target_count': 1,
+                    'groups': []
+                }
+            })
+
+    def test_group_of_node_contained_in2_scale_in2(self):
+        self._test_modify(
+            base=self.test_group_of_node_contained_in2,
+            modified_nodes={
+                'node2': {
+                    'instances': 1
+                }
+            },
+            expected_removed_instances={
+                'node2': 2,
+            },
+            expected_related_to_removed_instances={
+                'node1': 1
+            },
+            expected_removed_and_related_group_members={
+                'group': {
+                    'instances': 1,
+                    'members': {
+                        'node2': 2
+                    }
+                }
+            },
+            expected_removed_relationships={
+                'node2': {
+                    'target': 'node1',
+                    'count': 1,
+                    'source_count': 2,
+                    'target_count': 1,
+                    'groups': []
+                }
+            })
 
     def _test(
             self,
