@@ -14,7 +14,8 @@
 # limitations under the License.
 
 import copy
-from random import randrange
+from random import choice
+from string import ascii_lowercase, digits
 from itertools import product, izip, tee
 from collections import namedtuple, deque, defaultdict
 
@@ -234,11 +235,12 @@ def build_deployment_node_graph(  # pylint: disable=invalid-name
     return deployment_node_graph, ctx
 
 
-def extract_node_instances(  # pylint: disable=too-many-locals
+def extract_node_instances(  # pylint: disable=too-many-locals,too-many-nested-blocks
         node_instances_graph,
         ctx,
         copy_instances=False,
         contained_graph=None):
+    # todo: need to split this function to smaller func's, see pylint disable features...
     contained_graph = contained_graph or ctx.deployment_contained_graph
     node_instances = []
     added_missing_node_instance_ids = set()
@@ -752,8 +754,8 @@ def _node_instance_id(node_id, ctx):
     return new_node_instance_id
 
 
-def _generate_id():
-    return '{0:x}'.format(randrange(16 ** 5))
+def _generate_id(id_len=6):
+    return ''.join(choice(digits + ascii_lowercase) for _ in xrange(id_len))
 
 
 def _node_instance_copy(node, node_instance_id):
