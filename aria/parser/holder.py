@@ -38,6 +38,14 @@ class Holder(object):
             self.end_column,
             self.filename)
 
+    def __hash__(self):
+        return hash(self.value)
+
+    def __eq__(self, other):
+        if isinstance(other, Holder):
+            return self.value == other.value
+        return self.value == other
+
     def __repr__(self):
         return (
             '{name}(start_line={self.start_line}, '
