@@ -533,7 +533,8 @@ def validate_functions(plan):
 
     def validate_no_circular_get_property(value, *_):
         if not isinstance(value, GetProperty):
-            scan.scan_properties(value, validate_no_circular_get_property)
+            scan.scan_properties(
+                value, validate_no_circular_get_property, recursive=False)
             return
         func_id = '{0}.{1}'.format(
             value.get_node_template(plan)['name'],

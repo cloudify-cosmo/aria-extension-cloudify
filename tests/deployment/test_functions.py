@@ -436,6 +436,30 @@ node_templates:
             ]
         )
 
+    def test_not_circular_nested_property_path(self):
+        self.template.version_section('1.0')
+        self.template += """
+node_types:
+    vm_type:
+        properties:
+            a: { type: string }
+            b: { type: string }
+node_templates:
+    vm1:
+        type: vm_type
+        properties:
+            a: { get_property: [ vm2, a ] }
+            b: bla1
+    vm2:
+        type: vm_type
+        properties:
+            a:
+                b3:
+                    b4: { get_property: [ vm1, b ] }
+            b: bla2
+"""
+        self.prepare_deployment_plan()
+
     def test_recursive_get_property_in_outputs(self):
         self.template.version_section('1.0')
         self.template += """

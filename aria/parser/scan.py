@@ -28,7 +28,8 @@ def scan_properties(
         scope=None,
         context=None,
         path='',
-        replace=False):
+        replace=False,
+        recursive=True):
     """
     Scans properties dict recursively and applies the provided handler
     method for each property.
@@ -48,10 +49,18 @@ def scan_properties(
     :param context:
     :param path: The properties base path (for debugging purposes).
     :param replace:
+    :param recursive: Run recursively on the sub-properties.
     """
     scan_property_handler = _SCAN_PROPERTIES_HANDLERS.get(type(value))
     if scan_property_handler:
-        scan_property_handler(value, handler, scope, context, path, replace)
+        scan_property_handler(
+            value,
+            handler,
+            scope,
+            context,
+            path,
+            replace,
+            recursive)
 
 
 def scan_dict_properties(
@@ -60,18 +69,20 @@ def scan_dict_properties(
         scope=None,
         context=None,
         path='',
-        replace=False):
+        replace=False,
+        recursive=True):
     for key, value in value_dict.iteritems():
         current_path = '{0}.{1}'.format(path, key)
         result = handler(value, scope, context, current_path)
         if replace and result != value:
             value_dict[key] = result
-        scan_properties(
-            value, handler,
-            scope=scope,
-            context=context,
-            path=current_path,
-            replace=replace)
+        if recursive:
+            scan_properties(
+                value, handler,
+                scope=scope,
+                context=context,
+                path=current_path,
+                replace=replace)
 
 
 def scan_list_properties(
@@ -80,18 +91,21 @@ def scan_list_properties(
         scope=None,
         context=None,
         path='',
-        replace=False):
+        replace=False,
+        recursive=True):
     for index, item in enumerate(value):
         current_path = '{0}[{1}]'.format(path, index)
         result = handler(item, scope, context, current_path)
         if replace and result != item:
             value[index] = result
-        scan_properties(item,
-                        handler,
-                        scope=scope,
-                        context=context,
-                        path=path,
-                        replace=replace)
+        if recursive:
+            scan_properties(
+                item,
+                handler,
+                scope=scope,
+                context=context,
+                path=path,
+                replace=replace)
 
 
 def scan_node_operation_properties(node_template, handler, replace=False):
