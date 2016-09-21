@@ -21,3 +21,12 @@ Aria exceptions module.
 
 from .parser.exceptions import *        # pylint: disable=W0401, W0614
 from .deployment.exceptions import *    # pylint: disable=W0401, W0614
+from .workflow_engine.exceptions import *    # pylint: disable=W0401, W0614
+
+
+class AriaError(Exception):
+    pass
+
+
+class StorageError(AriaError):
+    pass

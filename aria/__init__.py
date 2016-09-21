@@ -26,13 +26,56 @@ Methods:
 """
 
 from .VERSION import version as __version__
-from . import parser, deployment
+from .storage.drivers import ResourceDriver, ModelDriver, FileSystemModelDriver, FileSystemResourceDriver
+from .storage import ModelStorage, ResourceStorage, models
+from . import parser
 
-__all__ = [
+__all__ = (
     '__version__',
     'parser',
-    'deployment',
     'validate_template',
-]
+    'workflow',
+    'operation',
+)
 
 validate_template = parser.parse  # pylint: disable=C0103
+
+
+_model_storages = {}
+_resource_storages = {}
+
+
+def application_model_storage(driver):
+    assert isinstance(driver, ModelDriver)
+    global _model_storages
+    if driver not in _model_storages:
+        _model_storages[driver] = ModelStorage(
+            driver, models=[
+                models.Node,
+                models.NodeInstance,
+                models.Plugin,
+                models.Blueprint,
+                models.Snapshot,
+                models.Deployment,
+                models.DeploymentUpdate,
+                models.DeploymentModification,
+                models.Execution,
+                models.ProviderContext,
+                models.Operation,
+            ])
+    return _model_storages[driver]
+
+
+def application_resource_storage(driver):
+    assert isinstance(driver, ResourceDriver)
+    global _resource_storages
+    if driver not in _resource_storages:
+        _resource_storages[driver] = ResourceStorage(
+            driver,
+            resources=[
+                'blueprint',
+                'deployment',
+                'plugin',
+                'snapshot',
+            ])
+    return _resource_storages[driver]

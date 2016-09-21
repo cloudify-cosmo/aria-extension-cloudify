@@ -17,8 +17,8 @@ import sys
 from types import NoneType
 from collections import namedtuple, Iterable
 
-from .dsl_supported_versions import (
-    VersionNumber, VersionStructure, add_version_to_database)
+from ..utils import ValidatorMixin
+from .dsl_supported_versions import VersionNumber, VersionStructure, add_version_to_database
 from .framework.functions import register, unregister, Function
 from .framework import Element
 
@@ -39,30 +39,7 @@ _BaseElementExtension = namedtuple(
     'ElementExtension', 'action, target_element, new_element, schema_key')
 
 
-class _ValidatorMixin(object):
-    _ARGUMENT_TYPE_MESSAGE = '{name} argument must be {type} based, got {arg!r}'
-    _ACTION_MESSAGE = 'action arg options: {actions}, got {action}'
-
-    @classmethod
-    def validate_actions(cls, action):
-        if action not in cls.ACTIONS:
-            raise TypeError(cls._ACTION_MESSAGE.format(
-                actions=cls.ACTIONS, action=action))
-
-    @classmethod
-    def validate_type(cls, argument_name, argument, expected_type):
-        if not issubclass(argument, expected_type):
-            raise TypeError(cls._ARGUMENT_TYPE_MESSAGE.format(
-                name=argument_name, type=expected_type, arg=argument))
-
-    @classmethod
-    def validate_instance(cls, argument_name, argument, expected_type):
-        if not isinstance(argument, expected_type):
-            raise TypeError(cls._ARGUMENT_TYPE_MESSAGE.format(
-                name=argument_name, type=expected_type, arg=argument))
-
-
-class IntrinsicFunctionExtension(_BaseFunctionExtension, _ValidatorMixin):
+class IntrinsicFunctionExtension(_BaseFunctionExtension, ValidatorMixin):
     # todo: maybe add replace action and check in add that we don't replace...
     ADD_FUNCTION_ACTION = 'add'
     REMOVE_FUNCTION_ACTION = 'remove'
@@ -76,7 +53,7 @@ class IntrinsicFunctionExtension(_BaseFunctionExtension, _ValidatorMixin):
             cls, action, name, function)
 
 
-class ElementExtension(_BaseElementExtension, _ValidatorMixin):
+class ElementExtension(_BaseElementExtension, ValidatorMixin):
     REPLACE_ELEMENT_ACTION = 'replace'
     ADD_ELEMENT_TO_SCHEMA_ACTION = 'schema'
     CHANGE_ELEMENT_VERSION = 'supported_version'
@@ -110,7 +87,7 @@ class ElementExtension(_BaseElementExtension, _ValidatorMixin):
             cls, action, target_element, new_element, schema_key)
 
 
-class ParserExtender(_ValidatorMixin):
+class ParserExtender(ValidatorMixin):
     def __init__(self):
         self._intrinsic_function_handlers = {
             IntrinsicFunctionExtension.ADD_FUNCTION_ACTION:
