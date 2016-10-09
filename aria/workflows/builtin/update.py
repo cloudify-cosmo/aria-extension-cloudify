@@ -13,18 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Aria exceptions module.
- Every sub-package in Aria have a module with his Exceptions.
- aria.exceptions module is a center for all exceptions.
-"""
-
-from .workflows.exceptions import *     # pylint: disable=W0401, W0614
+from aria import workflow
 
 
-class AriaError(Exception):
-    pass
-
-
-class StorageError(AriaError):
+@workflow
+def update(context, graph):
     pass

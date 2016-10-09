@@ -17,7 +17,7 @@ import os
 
 from blinker import signal
 
-from ..utils import plugin_installer
+from ..tools.plugin import plugin_installer
 
 
 # workflow engine default signals:
@@ -29,6 +29,8 @@ on_failure_task_signal = signal('failure_task_signal')
 # workflow engine workflow signals:
 start_workflow_signal = signal('start_workflow_signal')
 end_workflow_signal = signal('end_workflow_signal')
+on_success_workflow_signal = signal('on_success_workflow_signal')
+on_failure_workflow_signal = signal('on_failure_workflow_signal')
 start_sub_workflow_signal = signal('start_sub_workflow_signal')
 end_sub_workflow_signal = signal('end_sub_workflow_signal')
 

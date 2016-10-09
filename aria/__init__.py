@@ -28,28 +28,23 @@ Methods:
 from .VERSION import version as __version__
 from .storage.drivers import ResourceDriver, ModelDriver, FileSystemModelDriver, FileSystemResourceDriver
 from .storage import ModelStorage, ResourceStorage, models
-from . import parser
+from .decorators import workflow, operation
 
 __all__ = (
     '__version__',
-    'parser',
-    'validate_template',
     'workflow',
     'operation',
 )
 
-validate_template = parser.parse  # pylint: disable=C0103
-
-
-_model_storages = {}
-_resource_storages = {}
+_model_storage = {}
+_resource_storage = {}
 
 
 def application_model_storage(driver):
     assert isinstance(driver, ModelDriver)
-    global _model_storages
-    if driver not in _model_storages:
-        _model_storages[driver] = ModelStorage(
+    global _model_storage
+    if driver not in _model_storage:
+        _model_storage[driver] = ModelStorage(
             driver, models=[
                 models.Node,
                 models.NodeInstance,
@@ -63,14 +58,14 @@ def application_model_storage(driver):
                 models.ProviderContext,
                 models.Operation,
             ])
-    return _model_storages[driver]
+    return _model_storage[driver]
 
 
 def application_resource_storage(driver):
     assert isinstance(driver, ResourceDriver)
-    global _resource_storages
-    if driver not in _resource_storages:
-        _resource_storages[driver] = ResourceStorage(
+    global _resource_storage
+    if driver not in _resource_storage:
+        _resource_storage[driver] = ResourceStorage(
             driver,
             resources=[
                 'blueprint',
@@ -78,4 +73,4 @@ def application_resource_storage(driver):
                 'plugin',
                 'snapshot',
             ])
-    return _resource_storages[driver]
+    return _resource_storage[driver]

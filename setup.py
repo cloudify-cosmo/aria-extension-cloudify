@@ -53,7 +53,7 @@ setup(
     install_requires=install_requires,
     entry_points={
         'console_scripts': [
-            'aria = aria_command_line.cli:main'
+            'aria = aria.cli.cli:main'
         ]
     }
 )

@@ -37,10 +37,11 @@ classes:
     * Plugin - plugin implementation model.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from types import NoneType
 
 from .structures import Field, IterPointerField, Model, uuid_generator, PointerField
+
 __all__ = (
     'Model',
     'Blueprint',
@@ -57,6 +58,7 @@ __all__ = (
     'ProviderContext',
     'Plugin',
 )
+
 # todo: sort this, maybe move from mgr or move from aria???
 ACTION_TYPES = ()
 ENTITY_TYPES = ()
@@ -196,41 +198,26 @@ class Execution(Model):
 
 
 class Operation(Model):
+    PENDING = 'pending'
     STARTED = 'started'
     SUCCESS = 'success'
     FAILED = 'failed'
-    WAITING_TO_RETRY = 'waiting_to_retry'
     STATES = (
+        PENDING,
         STARTED,
         SUCCESS,
         FAILED,
-        WAITING_TO_RETRY,
     )
     END_STATES = [SUCCESS, FAILED]
 
     id = Field(type=basestring, default=uuid_generator)
     status = Field(type=basestring, choices=STATES, default=STARTED)
     execution_id = Field(type=basestring)
-    started_at = Field(type=datetime)
+    eta = Field(type=datetime, default=0)
+    started_at = Field(type=datetime, default=None)
     ended_at = Field(type=datetime, default=None)
     max_retries = Field(type=int, default=0)
     retry_count = Field(type=int, default=0)
-    countdown = Field(type=int, default=0)
-
-    @property
-    def need_to_retry(self):
-
-        if self.status not in self.END_STATES:
-            return False
-        return all([
-            self.status == self.WAITING_TO_RETRY,
-            self.retry_count < self.max_retries,
-            # self.ended_at + timedelta(self.countdown) >= datetime.utcnow(),
-        ])
-
-    @property
-    def finished(self):
-        return self.status in Operation.END_STATES
 
 
 class Relationship(Model):

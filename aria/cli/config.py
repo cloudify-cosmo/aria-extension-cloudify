@@ -13,18 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Aria exceptions module.
- Every sub-package in Aria have a module with his Exceptions.
- aria.exceptions module is a center for all exceptions.
-"""
+import os
+from getpass import getuser
+from tempfile import gettempdir
+from yaml import safe_load
+import logging
 
-from .workflows.exceptions import *     # pylint: disable=W0401, W0614
+from .storage import config_file_path
+
+# path to a file where cli logs will be saved.
+logging_filename = os.path.join(gettempdir(), 'aria_cli_{0}.log'.format(getuser()))
+# loggers log level to show
+logger_level = logging.INFO
+# loggers log level to show
+colors = True
+
+import_resolver = None
 
 
-class AriaError(Exception):
-    pass
-
-
-class StorageError(AriaError):
-    pass
+def load_configurations():
+    config_path = config_file_path()
+    with open(config_path) as config_file:
+        globals().update(safe_load(config_file) or {})

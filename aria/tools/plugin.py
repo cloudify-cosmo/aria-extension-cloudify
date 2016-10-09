@@ -13,18 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Aria exceptions module.
- Every sub-package in Aria have a module with his Exceptions.
- aria.exceptions module is a center for all exceptions.
-"""
-
-from .workflows.exceptions import *     # pylint: disable=W0401, W0614
+import os
+from importlib import import_module
 
 
-class AriaError(Exception):
-    pass
+def plugin_installer(path, plugin_suffix, package=None, callback=None):
+    """
 
+    :param path:
+    :param plugin_suffix:
+    :param package:
+    :param callback:
+    :return:
+    """
+    assert callback is None or callable(callback)
+    plugin_suffix = '{0}.py'.format(plugin_suffix)
 
-class StorageError(AriaError):
-    pass
+    for file_name in os.listdir(path):
+        if not file_name.endswith(plugin_suffix):
+            continue
+        module_name = '{0}.{1}'.format(package, file_name[:-3]) if package else file_name[:-3]
+        module = import_module(module_name)
+        if callback:
+            callback(module)

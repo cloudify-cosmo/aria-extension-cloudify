@@ -16,8 +16,8 @@
 from uuid import uuid4
 
 from aria.logger import LoggerMixin
-from aria.lru_cache import lru_cache
-from aria.tasks_graph import TaskGraph
+from aria.tools.lru_cache import lru_cache
+from aria.workflows.api.tasks_graph import TaskGraph
 
 
 class WorkflowContext(LoggerMixin):
@@ -26,7 +26,6 @@ class WorkflowContext(LoggerMixin):
     def __init__(
             self,
             name,
-            concurrency_count,
             model_storage,
             resource_storage,
             deployment_id,
@@ -36,15 +35,12 @@ class WorkflowContext(LoggerMixin):
         super(WorkflowContext, self).__init__(**kwargs)
         self.name = name
         self.id = str(uuid4())
-        self.concurrency_count = concurrency_count
-        self.storage = model_storage
+        self.model = model_storage
         self.resource = resource_storage
         self.deployment_id = deployment_id
         self.workflow_id = workflow_id
         self.execution_id = str(uuid4())
         self.parameters = parameters or {}
-        self.execution_env = {}
-        self.description = None
 
     def __repr__(self):
         return (
@@ -58,15 +54,13 @@ class WorkflowContext(LoggerMixin):
             name,
             operation_details,
             node_instance,
-            parameters=None,
-            **engine_options):
+            inputs=None):
         return OperationContext(
             name=name,
             operation_details=operation_details,
             workflow_context=self,
             node_instance=node_instance,
-            parameters=parameters or {},
-            **engine_options)
+            inputs=inputs or {})
 
     @property
     def task_graph(self):
@@ -79,35 +73,29 @@ class WorkflowContext(LoggerMixin):
     @property
     @lru_cache()
     def blueprint(self):
-        return self.storage.blueprint.get(self.blueprint_id)
+        return self.model.blueprint.get(self.blueprint_id)
 
     @property
     @lru_cache()
     def deployment(self):
-        return self.storage.deployment.get(self.deployment_id)
+        return self.model.deployment.get(self.deployment_id)
 
     @property
     def nodes(self):
-        return self.storage.node.iter(
+        return self.model.node.iter(
             filters={'blueprint_id': self.blueprint_id})
 
     @property
-    @lru_cache()
-    def plugin(self):
-        # return self.storage.plugin.get()
-        return None
-
-    @property
     def node_instances(self):
-        return self.storage.node_instance.iter(filters={'deployment_id': self.deployment_id})
+        return self.model.node_instance.iter(filters={'deployment_id': self.deployment_id})
 
     @property
     def execution(self):
-        return self.storage.execution.get(self.execution_id)
+        return self.model.execution.get(self.execution_id)
 
     @execution.setter
     def execution(self, value):
-        self.storage.execution.store(value)
+        self.model.execution.store(value)
 
     def download_blueprint_resource(self, destination, path=None):
         return self.resource.blueprint.download(
@@ -137,18 +125,14 @@ class OperationContext(LoggerMixin):
             operation_details,
             workflow_context,
             node_instance,
-            parameters=None,
-            **engine_options):
+            inputs=None):
         super(OperationContext, self).__init__()
         self.name = name
+        self.id = str(uuid4())
         self.operation_details = operation_details
         self.workflow_context = workflow_context
         self.node_instance = node_instance
-        self.engine_options = engine_options
-        self.parameters = parameters or {}
-        self.parameters.update(self.workflow_context.parameters)
-        self.id = str(uuid4())
-        self.description = None
+        self.inputs = inputs or {}
 
     def __repr__(self):
         details = ', '.join(

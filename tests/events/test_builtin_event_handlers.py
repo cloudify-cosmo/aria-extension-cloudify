@@ -15,11 +15,6 @@
 
 import mock
 import pytest
-import logging
-
-from aria.storage.models import NodeInstance
-
-x = 'aria.events.builtin_event_handlers.start_operation_signal'
 
 from aria.events.builtin_event_handlers import (_OperationToNodeInstanceState,
                                                 _update_node_instance_state,

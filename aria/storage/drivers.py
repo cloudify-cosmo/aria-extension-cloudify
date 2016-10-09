@@ -28,7 +28,6 @@ classes:
 """
 
 import os
-import json
 import shutil
 import distutils.dir_util
 from functools import partial
