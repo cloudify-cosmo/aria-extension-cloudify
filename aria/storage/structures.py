@@ -32,8 +32,8 @@ from uuid import uuid4
 from itertools import count
 
 from ..logger import LoggerMixin
-from ..utils import ValidatorMixin
 from ..exceptions import StorageError
+from ..tools.validation import ValidatorMixin
 
 
 __all__ = (

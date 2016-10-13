@@ -13,18 +13,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Aria exceptions module.
- Every sub-package in Aria have a module with his Exceptions.
- aria.exceptions module is a center for all exceptions.
-"""
-
-from .workflows.exceptions import *     # pylint: disable=W0401, W0614
+from aria.events import (
+    start_task_signal,
+    on_success_task_signal,
+    on_failure_task_signal,
+)
 
 
-class AriaError(Exception):
-    pass
+class Executor(object):
+
+    def execute(self, task):
+        raise NotImplementedError
+
+    def task_started(self, task_id):
+        start_task_signal.send(self, task_id=task_id)
+
+    def task_failed(self, task_id, exception):
+        on_failure_task_signal.send(self, task_id=task_id, exception=exception)
+
+    def task_succeeded(self, task_id):
+        on_success_task_signal.send(self, task_id=task_id)
 
 
-class StorageError(AriaError):
-    pass
+class LocalExecutor(Executor):
+
+    def execute(self, task):
+        pass

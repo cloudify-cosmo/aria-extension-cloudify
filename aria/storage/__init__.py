@@ -40,7 +40,6 @@ API:
 # todo: rewrite the above package documentation
 # (something like explaning the two types of storage - models and resources)
 
-import types
 from collections import namedtuple
 
 from .structures import Storage, Field, Model, IterField, PointerField

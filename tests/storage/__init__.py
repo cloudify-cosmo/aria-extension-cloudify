@@ -16,7 +16,7 @@
 from tempfile import mkdtemp
 from shutil import rmtree
 
-from aria.storage import ModelDriver, Field, Model
+from aria.storage import ModelDriver
 
 
 class InMemoryModelDriver(ModelDriver):
