@@ -13,8 +13,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 #
+from aria.parser.modeling import Parameter, Function
 
-from aria.modeling import Parameter, Function
 
 def has_intrinsic_functions(context, value):
     """

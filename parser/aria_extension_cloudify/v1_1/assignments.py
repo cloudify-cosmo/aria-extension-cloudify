@@ -15,8 +15,8 @@
 #
 
 from ..v1_0 import OperationAssignment as OperationAssignment1_0, InterfaceAssignment as InterfaceAssignment1_0
-from aria import dsl_specification
-from aria.presentation import has_fields, allow_unknown_fields, short_form_field, primitive_field, object_dict_unknown_fields
+from aria.parser import dsl_specification
+from aria.parser.presentation import has_fields, allow_unknown_fields, short_form_field, primitive_field, object_dict_unknown_fields
 
 @short_form_field('implementation')
 @has_fields

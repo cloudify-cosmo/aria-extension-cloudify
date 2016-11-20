@@ -14,9 +14,9 @@
 # under the License.
 #
 
-from dsl_parser.tasks import prepare_deployment_plan
-from framework.abstract_test_parser import AbstractTestParser
-from framework.abstract_test_parser import timeout
+from old_parser_components.tasks import prepare_deployment_plan
+from .framework.abstract_test_parser import AbstractTestParser
+from .framework.abstract_test_parser import timeout
 
 
 class TestGetProperty(AbstractTestParser):

@@ -14,7 +14,7 @@
 # under the License.
 #
 
-from dsl_parser.exceptions import DSLParsingLogicException
+from old_parser_components.exceptions import DSLParsingLogicException
 
 from .abstract_import_resolver import AbstractImportResolver, read_import
 

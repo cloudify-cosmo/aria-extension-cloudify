@@ -21,7 +21,7 @@ import urllib2
 import requests
 from retrying import retry
 
-from dsl_parser import exceptions
+from old_parser_components import exceptions
 
 DEFAULT_RETRY_DELAY = 1
 MAX_NUMBER_RETRIES = 5

@@ -18,7 +18,7 @@ from .assignments import InterfaceAssignment
 from .templates import ServiceTemplate
 from .functions import Concat
 from ..v1_0 import CloudifyPresenter1_0
-from aria.utils import cachedmethod
+from aria.utils.caching import cachedmethod
 
 class CloudifyPresenter1_1(CloudifyPresenter1_0):
     """

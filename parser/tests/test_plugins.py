@@ -14,7 +14,7 @@
 # under the License.
 #
 
-from aria.utils import yaml_dumps, yaml_loads
+from aria.utils.formatting import yaml_dumps, yaml_loads
 
 from .suite import ParserTestCase, CloudifyParserError
 

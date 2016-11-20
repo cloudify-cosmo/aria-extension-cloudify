@@ -15,8 +15,8 @@
 #
 
 from ..v1_0 import Plugin as Plugin1_0
-from aria import dsl_specification
-from aria.presentation import has_fields, primitive_field 
+from aria.parser import dsl_specification
+from aria.parser.presentation import has_fields, primitive_field
 
 @has_fields
 @dsl_specification('plugins', 'cloudify-1.1')

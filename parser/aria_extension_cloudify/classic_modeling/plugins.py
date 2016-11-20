@@ -14,13 +14,14 @@
 # under the License.
 #
 
+import os
+
 from .elements import find_by_name
 from .nodes import find_hosted_node_templates
-from aria import InvalidValueError
-from aria.validation import Issue
-from aria.utils import safe_repr
+from aria.parser.exceptions import InvalidValueError
+from aria.parser.validation import Issue
+from aria.utils.formatting import safe_repr
 from collections import OrderedDict
-import os
 
 CENTRAL_DEPLOYMENT_AGENT = 'central_deployment_agent'
 HOST_AGENT = 'host_agent'

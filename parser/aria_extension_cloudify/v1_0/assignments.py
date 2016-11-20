@@ -15,9 +15,10 @@
 #
 
 from .modeling.properties import get_assigned_and_defined_property_values
-from aria.presentation import Presentation, AsIsPresentation, has_fields, allow_unknown_fields, short_form_field, primitive_field, object_dict_field, object_dict_unknown_fields, field_validator, type_validator
-from aria.utils import FrozenDict, cachedmethod
-from aria import dsl_specification
+from aria.parser.presentation import Presentation, AsIsPresentation, has_fields, allow_unknown_fields, short_form_field, primitive_field, object_dict_field, object_dict_unknown_fields, field_validator, type_validator
+from aria.utils.collections import FrozenDict
+from aria.utils.caching import cachedmethod
+from aria.parser import dsl_specification
 
 class PropertyAssignment(AsIsPresentation):
     pass

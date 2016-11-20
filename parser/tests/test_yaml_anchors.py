@@ -14,7 +14,7 @@
 # under the License.
 #
 
-from framework.abstract_test_parser import AbstractTestParser
+from .framework.abstract_test_parser import AbstractTestParser
 
 
 class TestAnchors(AbstractTestParser):

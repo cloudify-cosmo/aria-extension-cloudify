@@ -14,7 +14,7 @@
 # under the License.
 #
 
-from dsl_parser.constants import UNBOUNDED, UNBOUNDED_LITERAL, SCALING_POLICY
+from old_parser_components.constants import UNBOUNDED, UNBOUNDED_LITERAL, SCALING_POLICY
 
 from ..suite import ParserTestCase
 

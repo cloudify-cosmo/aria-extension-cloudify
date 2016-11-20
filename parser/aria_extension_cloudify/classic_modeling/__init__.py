@@ -21,10 +21,11 @@ from .groups import find_groups, iter_scaling_groups, prune_redundant_members
 from .relationships import is_contained_in
 from .plugins import CENTRAL_DEPLOYMENT_AGENT, SCRIPT_PLUGIN_NAME, plugins_to_install_for_operations, add_plugins_to_install_for_node_template, parse_implementation, is_file
 from .policies import SCALING_POLICY_NAME
-from aria import InvalidValueError
-from aria.consumption import Consumer
-from aria.validation import Issue
-from aria.utils import as_raw, as_agnostic, merge, prune, json_dumps, string_list_as_string, safe_repr
+from aria.parser.exceptions import InvalidValueError
+from aria.parser.consumption import Consumer
+from aria.parser.validation import Issue
+from aria.utils.formatting import as_raw, json_dumps, string_list_as_string, safe_repr
+from aria.utils.collections import merge, prune
 from collections import OrderedDict
 
 class ClassicDeploymentPlan(Consumer):

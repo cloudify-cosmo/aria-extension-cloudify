@@ -14,7 +14,7 @@
 # under the License.
 #
 
-from cloudify import scaling
+from .. import scaling
 
 
 class TestMultiInstanceModify(scaling.BaseTestMultiInstance):

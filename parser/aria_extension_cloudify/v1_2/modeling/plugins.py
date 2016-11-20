@@ -14,7 +14,7 @@
 # under the License.
 #
 
-from aria.validation import Issue
+from aria.parser.validation import Issue
 
 def validate_plugin(context, presentation):
     """

@@ -17,8 +17,8 @@
 from .assignments import InterfaceAssignment
 from .misc import Plugin
 from ..v1_0 import ServiceTemplate as ServiceTemplate1_0, RelationshipTemplate as RelationshipTemplate1_0, NodeTemplate as NodeTemplate1_0
-from aria import dsl_specification
-from aria.presentation import has_fields, object_dict_field, object_list_field
+from aria.parser import dsl_specification
+from aria.parser.presentation import has_fields, object_dict_field, object_list_field
 
 @has_fields
 @dsl_specification('relationships-1', 'cloudify-1.1')

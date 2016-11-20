@@ -15,8 +15,8 @@
 #
 
 from ...v1_0.modeling.node_templates import Scalable, get_node_template_scalable as _get_node_template_scalable
-from aria.validation import Issue
-from aria.utils import safe_repr
+from aria.parser.validation import Issue
+from aria.utils.formatting import safe_repr
 
 def get_node_template_scalable(context, presentation):
     scalable = Scalable()

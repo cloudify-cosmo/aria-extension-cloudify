@@ -16,7 +16,7 @@
 
 import copy
 
-from dsl_parser import constants
+from old_parser_components import constants
 from . import models, rel_graph
 
 

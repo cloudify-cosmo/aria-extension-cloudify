@@ -14,7 +14,7 @@
 # under the License.
 #
 
-from dsl_parser.constants import DEPLOYMENT_PLUGINS_TO_INSTALL
+from old_parser_components.constants import DEPLOYMENT_PLUGINS_TO_INSTALL
 
 from .suite import (ParserTestCase,
                     op_struct,

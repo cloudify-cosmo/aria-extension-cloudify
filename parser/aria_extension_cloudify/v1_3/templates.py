@@ -20,10 +20,11 @@ from .modeling.node_templates import get_node_template_scalable
 from ..v1_0 import GroupTemplate as GroupTemplate1_0, PropertyAssignment
 from ..v1_1 import NodeTemplate as NodeTemplate1_1
 from ..v1_2 import ServiceTemplate as ServiceTemplate1_2
-from aria import dsl_specification
-from aria.presentation import Presentation, has_fields, primitive_field, primitive_list_field, object_dict_field, field_validator, list_type_validator
-from aria.validation import Issue
-from aria.utils import FrozenList, cachedmethod
+from aria.parser import dsl_specification
+from aria.parser.presentation import Presentation, has_fields, primitive_field, primitive_list_field, object_dict_field, field_validator, list_type_validator
+from aria.parser.validation import Issue
+from aria.utils.collections import FrozenList
+from aria.utils.caching import cachedmethod
 
 @has_fields
 @dsl_specification('node-templates-1', 'cloudify-1.3')

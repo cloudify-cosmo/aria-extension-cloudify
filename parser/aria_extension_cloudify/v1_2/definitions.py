@@ -16,8 +16,8 @@
 
 from ..v1_0 import PropertyDefinition as PropertyDefinition1_0, WorkflowDefinition as WorkflowDefinition1_0
 from ..v1_1 import OperationDefinition as OperationDefinition1_1, InterfaceDefinition as InterfaceDefinition1_1
-from aria import dsl_specification
-from aria.presentation import has_fields, allow_unknown_fields, short_form_field, primitive_field, object_dict_field, object_dict_unknown_fields
+from aria.parser import dsl_specification
+from aria.parser.presentation import has_fields, allow_unknown_fields, short_form_field, primitive_field, object_dict_field, object_dict_unknown_fields
 
 @has_fields
 class PropertyDefinition(PropertyDefinition1_0):

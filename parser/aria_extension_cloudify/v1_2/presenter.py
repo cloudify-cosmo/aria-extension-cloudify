@@ -16,7 +16,7 @@
 
 from .templates import ServiceTemplate
 from ..v1_1 import CloudifyPresenter1_1
-from aria.utils import cachedmethod
+from aria.utils.caching import cachedmethod
 
 class CloudifyPresenter1_2(CloudifyPresenter1_1):
     """

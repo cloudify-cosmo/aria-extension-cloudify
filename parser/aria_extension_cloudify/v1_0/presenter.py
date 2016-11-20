@@ -18,9 +18,10 @@ from .templates import ServiceTemplate
 from .assignments import InterfaceAssignment
 from .functions import GetInput, GetProperty, GetAttribute
 from .modeling import create_service_model
-from aria.validation import Issue
-from aria.presentation import Presenter
-from aria.utils import EMPTY_READ_ONLY_LIST, cachedmethod
+from aria.parser.validation import Issue
+from aria.parser.presentation import Presenter
+from aria.utils.collections import EMPTY_READ_ONLY_LIST
+from aria.utils.caching import cachedmethod
 
 class CloudifyPresenter1_0(Presenter):
     """

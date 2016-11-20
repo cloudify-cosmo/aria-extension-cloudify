@@ -19,8 +19,8 @@ from .v1_1 import CloudifyPresenter1_1
 from .v1_2 import CloudifyPresenter1_2
 from .v1_3 import CloudifyPresenter1_3
 from .classic_modeling import ClassicDeploymentPlan
-from aria import DSL_SPECIFICATION_PACKAGES
-from aria.presentation import PRESENTER_CLASSES
+from aria.parser.presentation import PRESENTER_CLASSES
+from aria.parser import DSL_SPECIFICATION_PACKAGES
 
 def install_aria_extension():
     global PRESENTER_CLASSES

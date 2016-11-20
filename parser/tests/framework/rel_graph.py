@@ -21,8 +21,7 @@ from string import ascii_lowercase, digits
 
 import networkx as nx
 
-from dsl_parser import constants
-from dsl_parser import exceptions
+from old_parser_components import constants, exceptions
 
 NODES = 'nodes'
 RELATIONSHIPS = 'relationships'

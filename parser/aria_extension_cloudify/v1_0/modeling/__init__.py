@@ -14,8 +14,8 @@
 # under the License.
 #
 
-from aria.modeling import Type, RelationshipType, PolicyType, PolicyTriggerType, ServiceModel, NodeTemplate, RequirementTemplate, RelationshipTemplate, GroupTemplate, PolicyTemplate, GroupPolicyTemplate, GroupPolicyTriggerTemplate, InterfaceTemplate, OperationTemplate, Parameter
-from aria.validation import Issue
+from aria.parser.modeling import Type, RelationshipType, PolicyType, PolicyTriggerType, ServiceModel, NodeTemplate, RequirementTemplate, RelationshipTemplate, GroupTemplate, PolicyTemplate, GroupPolicyTemplate, GroupPolicyTriggerTemplate, InterfaceTemplate, OperationTemplate, Parameter
+from aria.parser.validation import Issue
 
 POLICY_SCALING = 'cloudify.policies.scaling'
 

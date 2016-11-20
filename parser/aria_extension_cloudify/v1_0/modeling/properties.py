@@ -15,9 +15,9 @@
 #
 
 from .data_types import coerce_value
-from aria.validation import Issue
-from aria.presentation import Value
-from aria.utils import merge, deepcopy_with_locators
+from aria.parser.validation import Issue
+from aria.parser.presentation import Value
+from aria.utils.collections import merge, deepcopy_with_locators
 from collections import OrderedDict
 
 #

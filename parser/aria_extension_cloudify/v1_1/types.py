@@ -16,8 +16,8 @@
 
 from ..v1_0 import NodeType as NodeType1_0, RelationshipType as RelationshipType1_0
 from .definitions import InterfaceDefinition
-from aria import dsl_specification
-from aria.presentation import has_fields, object_dict_field
+from aria.parser import dsl_specification
+from aria.parser.presentation import has_fields, object_dict_field
 
 @has_fields
 @dsl_specification('node-types', 'cloudify-1.1')

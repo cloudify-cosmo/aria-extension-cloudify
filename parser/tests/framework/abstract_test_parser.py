@@ -23,9 +23,9 @@ from multiprocessing import Process
 
 import testtools
 
-from dsl_parser.exceptions import DSLParsingException
-from dsl_parser.parser import parse
-from dsl_parser.parser import parse_from_path as dsl_parse_from_path
+from old_parser_components.exceptions import DSLParsingException
+from old_parser_components.parser import parse
+from old_parser_components.parser import parse_from_path as dsl_parse_from_path
 from .version import DSL_VERSION_PREFIX
 from .multi_instance import create_deployment_plan, modify_deployment
 
