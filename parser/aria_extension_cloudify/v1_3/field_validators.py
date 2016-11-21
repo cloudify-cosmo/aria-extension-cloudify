@@ -14,7 +14,7 @@
 # under the License.
 #
 
-from aria.presentation import type_validator, report_issue_for_unknown_type
+from aria.parser.presentation import type_validator, report_issue_for_unknown_type
 
 #
 # GroupTemplate

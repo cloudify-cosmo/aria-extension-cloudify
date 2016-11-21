@@ -19,9 +19,9 @@ import copy
 import networkx as nx
 import yaml
 
-from dsl_parser import constants
-from cloudify.framework import rel_graph
-from cloudify import scaling
+from old_parser_components import constants
+from ..framework import rel_graph
+from .. import scaling
 
 
 class TestMultiInstanceGroups(scaling.BaseTestMultiInstance):

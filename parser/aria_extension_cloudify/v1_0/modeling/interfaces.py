@@ -15,9 +15,9 @@
 #
 
 from .properties import coerce_property_value, convert_property_definitions_to_values
-from aria.validation import Issue
-from aria.presentation import get_locator
-from aria.utils import merge, deepcopy_with_locators
+from aria.parser.validation import Issue
+from aria.parser.presentation import get_locator
+from aria.utils.collections import merge, deepcopy_with_locators
 from collections import OrderedDict
 
 #

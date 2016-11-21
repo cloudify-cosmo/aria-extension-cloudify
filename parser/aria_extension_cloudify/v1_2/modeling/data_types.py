@@ -15,9 +15,9 @@
 #
 
 from ...v1_0.modeling.data_types import coerce_value, get_primitive_data_type
-from aria.validation import Issue
-from aria.presentation import get_locator
-from aria.utils import safe_repr
+from aria.parser.validation import Issue
+from aria.parser.presentation import get_locator
+from aria.utils.formatting import safe_repr
 from collections import OrderedDict
 
 #

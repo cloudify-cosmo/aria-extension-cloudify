@@ -13,7 +13,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 #
-
 from aria_extension_cloudify.classic_modeling.post_processing import PostProcessingContext
 
 def evaluate_outputs(outputs_def, get_node_instances_method, get_node_instance_method, get_node_method):

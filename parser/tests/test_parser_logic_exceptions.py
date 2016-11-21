@@ -14,10 +14,10 @@
 # under the License.
 #
 
-from dsl_parser import constants
-from dsl_parser.exceptions import DSLParsingLogicException
-from framework import version
-from framework.abstract_test_parser import AbstractTestParser
+from old_parser_components import constants
+from old_parser_components.exceptions import DSLParsingLogicException
+from .framework import version
+from .framework.abstract_test_parser import AbstractTestParser
 
 
 class TestParserLogicExceptions(AbstractTestParser):

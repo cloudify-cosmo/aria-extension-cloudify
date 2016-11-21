@@ -14,8 +14,9 @@
 # under the License.
 #
 
-from aria import InvalidValueError
-from aria.utils import deepcopy_with_locators, safe_repr
+from aria.parser.exceptions import InvalidValueError
+from aria.utils.formatting import safe_repr
+from aria.utils.collections import deepcopy_with_locators
 
 class PostProcessingContext(object):
     """

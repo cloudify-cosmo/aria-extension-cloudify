@@ -16,9 +16,9 @@
 
 from ..modeling.data_types import get_primitive_data_type, get_container_data_type
 from ..modeling.properties import coerce_value
-from aria.presentation import report_issue_for_unknown_type
-from aria.validation import Issue
-from aria.utils import safe_repr
+from aria.parser.presentation import report_issue_for_unknown_type
+from aria.parser.validation import Issue
+from aria.utils.formatting import safe_repr
 
 #
 # PropertyDefinition

@@ -15,9 +15,10 @@
 #
 
 from .presentation.plugins import validate_plugin
-from aria import dsl_specification
-from aria.presentation import Presentation, AsIsPresentation, has_fields, primitive_field, object_field
-from aria.utils import puts, as_raw
+from aria.parser import dsl_specification
+from aria.parser.presentation import Presentation, AsIsPresentation, has_fields, primitive_field, object_field
+from aria.utils.formatting import as_raw
+from aria.utils.console import puts
 
 class Description(AsIsPresentation):
     def __init__(self, name=None, raw=None, container=None, cls=None):

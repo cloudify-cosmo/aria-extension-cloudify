@@ -15,8 +15,8 @@
 #
 
 from aria import install_aria_extensions
-from aria.consumption import ConsumptionContext, ConsumerChain, Read, Validate, Model, Instance
-from aria.loading import UriLocation, LiteralLocation
+from aria.parser.consumption import ConsumptionContext, ConsumerChain, Read, Validate, Model, Instance
+from aria.parser.loading import UriLocation, LiteralLocation
 from aria_extension_cloudify import ClassicDeploymentPlan
 from aria_extension_cloudify.v1_3 import CloudifyPresenter1_3
 import os

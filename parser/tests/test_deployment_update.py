@@ -16,8 +16,8 @@
 
 import copy
 
-from framework.multi_instance import modify_deployment
-from framework.abstract_test_parser import AbstractTestParser
+from .framework.multi_instance import modify_deployment
+from .framework.abstract_test_parser import AbstractTestParser
 
 
 class TestDeploymentUpdate(AbstractTestParser):

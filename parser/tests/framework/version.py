@@ -16,7 +16,7 @@
 
 import collections
 
-from dsl_parser.exceptions import DSLParsingLogicException
+from old_parser_components.exceptions import DSLParsingLogicException
 
 VERSION = 'tosca_definitions_version'
 DSL_VERSION_PREFIX = 'cloudify_dsl_'

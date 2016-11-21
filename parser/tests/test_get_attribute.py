@@ -18,11 +18,9 @@ import collections
 
 import testtools.testcase
 
-from dsl_parser import constants
-from dsl_parser import exceptions
-from dsl_parser import functions
-from dsl_parser.tasks import prepare_deployment_plan
-from framework.abstract_test_parser import AbstractTestParser
+from old_parser_components import constants, exceptions, functions
+from old_parser_components.tasks import prepare_deployment_plan
+from .framework.abstract_test_parser import AbstractTestParser
 
 
 class TestGetAttribute(AbstractTestParser):

@@ -19,8 +19,8 @@ from .types import NodeType, RelationshipType, PolicyType, GroupPolicyTriggerTyp
 from .misc import Plugin, UploadResources
 from ..v1_0 import Description
 from ..v1_1 import ServiceTemplate as ServiceTemplate1_1
-from aria import dsl_specification
-from aria.presentation import has_fields, primitive_field, object_field, object_dict_field
+from aria.parser import dsl_specification
+from aria.parser.presentation import has_fields, primitive_field, object_field, object_dict_field
 
 @has_fields
 class ServiceTemplate(ServiceTemplate1_1):

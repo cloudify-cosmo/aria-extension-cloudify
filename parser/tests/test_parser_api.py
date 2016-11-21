@@ -16,8 +16,8 @@
 
 import os
 from urllib import pathname2url
-from aria.utils import yaml_dumps, yaml_loads
-from aria.reading.exceptions import ReaderNotFoundError
+from aria.utils.formatting import yaml_dumps, yaml_loads
+from aria.parser.reading.exceptions import ReaderNotFoundError
 
 from .suite import (
     ParserTestCase,

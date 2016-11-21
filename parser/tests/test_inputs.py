@@ -14,11 +14,10 @@
 # under the License.
 #
 
-from dsl_parser.tasks import prepare_deployment_plan
-from dsl_parser.exceptions import (MissingRequiredInputError,
-                                  UnknownInputError,
-                                  DSLParsingLogicException)
-from framework.abstract_test_parser import AbstractTestParser
+from old_parser_components.tasks import prepare_deployment_plan
+from old_parser_components.exceptions import (MissingRequiredInputError,
+                                              UnknownInputError)
+from .framework.abstract_test_parser import AbstractTestParser
 
 
 class TestInputs(AbstractTestParser):

@@ -15,9 +15,11 @@
 #
 
 from ..functions import get_function
-from aria.presentation import validate_primitive
-from aria.validation import Issue
-from aria.utils import import_fullname, deepcopy_with_locators, full_type_name, safe_repr
+from aria.parser.presentation import validate_primitive
+from aria.parser.validation import Issue
+from aria.utils.formatting import full_type_name, safe_repr
+from aria.utils.imports import import_fullname
+from aria.utils.collections import deepcopy_with_locators
 
 #
 # PropertyDefinition

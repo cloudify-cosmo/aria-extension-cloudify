@@ -15,9 +15,11 @@
 #
 
 from ..v1_0.functions import parse_string_expression
-from aria import InvalidValueError, dsl_specification
-from aria.modeling import Function, CannotEvaluateFunctionException
-from aria.utils import FrozenList, as_raw, safe_repr
+from aria.parser import dsl_specification
+from aria.parser.exceptions import InvalidValueError
+from aria.parser.modeling import Function, CannotEvaluateFunctionException
+from aria.utils.collections import FrozenList
+from aria.utils.formatting import as_raw, safe_repr
 
 @dsl_specification('intrinsic-functions-1', 'cloudify-1.1')
 @dsl_specification('intrinsic-functions-1', 'cloudify-1.2')

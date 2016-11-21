@@ -14,8 +14,8 @@
 # under the License.
 #
 
-from cloudify.framework.abstract_test_parser import AbstractTestParser
-from cloudify.suite import TempDirectoryTestCase
+from ..framework.abstract_test_parser import AbstractTestParser
+from ..suite import TempDirectoryTestCase
 
 
 class InterfaceMergerTest(AbstractTestParser, TempDirectoryTestCase):

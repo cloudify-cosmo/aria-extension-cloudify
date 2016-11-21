@@ -14,10 +14,10 @@
 # under the License.
 #
 
-from dsl_parser import exceptions
-from dsl_parser.tasks import prepare_deployment_plan
-from framework.abstract_test_parser import AbstractTestParser
-from framework import functions
+from old_parser_components import exceptions
+from old_parser_components.tasks import prepare_deployment_plan
+from .framework.abstract_test_parser import AbstractTestParser
+from .framework import functions
 
 
 class TestOutputs(AbstractTestParser):

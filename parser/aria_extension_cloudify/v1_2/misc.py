@@ -16,8 +16,8 @@
 
 from .modeling.plugins import validate_plugin
 from ..v1_1 import Plugin as Plugin1_1
-from aria import dsl_specification
-from aria.presentation import Presentation, has_fields, primitive_field, object_list_field
+from aria.parser import dsl_specification
+from aria.parser.presentation import Presentation, has_fields, primitive_field, object_list_field
 
 @has_fields
 @dsl_specification('plugins', 'cloudify-1.2')

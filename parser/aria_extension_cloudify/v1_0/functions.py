@@ -14,10 +14,11 @@
 # under the License.
 #
 
-from aria import InvalidValueError, dsl_specification
-from aria.validation import Issue
-from aria.modeling import Function, CannotEvaluateFunctionException
-from aria.utils import as_raw, safe_repr
+from aria.parser import dsl_specification
+from aria.parser.exceptions import InvalidValueError
+from aria.parser.validation import Issue
+from aria.parser.modeling import Function, CannotEvaluateFunctionException
+from aria.utils.formatting import as_raw, safe_repr
 
 @dsl_specification('intrinsic-functions-2', 'cloudify-1.0')
 @dsl_specification('intrinsic-functions-2', 'cloudify-1.1')

@@ -17,13 +17,13 @@
 import os
 from uuid import uuid4
 from shutil import rmtree
-from aria.utils import yaml_dumps
+from aria.utils.formatting import yaml_dumps
 from itertools import imap
 from tempfile import mkdtemp
 
 from testtools import TestCase
 
-from dsl_parser.parser import parse, parse_from_path
+from old_parser_components.parser import parse, parse_from_path
 
 
 PARSING_ISSUES_TITLE = 'parse failed with issues: \n\t'

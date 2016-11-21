@@ -19,8 +19,8 @@ import random
 
 from mock import patch
 
-from dsl_parser import exceptions
-from cloudify import scaling
+from old_parser_components import exceptions
+from .. import scaling
 
 
 class TestMultiInstance(scaling.BaseTestMultiInstance):

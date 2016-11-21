@@ -18,12 +18,14 @@ from .relationships import is_contained_in
 
 COMPUTE_NODE_NAME = 'cloudify.nodes.Compute'
 
+
 def is_host(context, node_or_node_template):
     """
     Whether we are a compute node or node template.
     """
     
     return context.modeling.node_types.is_descendant(COMPUTE_NODE_NAME, node_or_node_template.type_name)
+
 
 def find_host_node_template(context, node_template):
     """
@@ -40,6 +42,7 @@ def find_host_node_template(context, node_template):
 
     return None
 
+
 def find_host_node(context, node):
     """
     The node that hosts us. Works by following the path of contained-in relationships until we hit
@@ -55,6 +58,7 @@ def find_host_node(context, node):
             return find_host_node(context, context.modeling.instance.nodes.get(relationship.target_node_id))
 
     return None
+
 
 def find_hosted_node_templates(context, node_template):
     """

@@ -16,8 +16,8 @@
 
 import testtools
 
-from cloudify.framework.abstract_test_parser import AbstractTestParser
-from aria.presentation.null import NULL, null_to_none
+from ..framework.abstract_test_parser import AbstractTestParser
+from aria.parser.presentation.null import NULL, null_to_none
 
 # from . import validate
 

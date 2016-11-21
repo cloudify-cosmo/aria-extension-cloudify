@@ -20,15 +20,6 @@ from .suite import (get_node_by_name,
                     CloudifyParserError
                     )
 
-from dsl_parser.exceptions import (
-    DSLParsingLogicException,
-    DSLParsingException,
-    ERROR_UNKNOWN_TYPE,
-    ERROR_CODE_CYCLE,
-    ERROR_VALUE_DOES_NOT_MATCH_TYPE,
-    ERROR_INVALID_TYPE_NAME,
-)
-
 
 class TestDataTypes(ParserTestCase, TempDirectoryTestCase):
     def test_unknown_type(self):

@@ -18,9 +18,10 @@ from .definitions import InterfaceDefinition, PropertyDefinition
 from .modeling.properties import get_inherited_property_definitions
 from .modeling.interfaces import get_inherited_interface_definitions
 from .modeling.relationships import get_relationship_inherited_property_definitions
-from aria import dsl_specification
-from aria.presentation import Presentation, has_fields, primitive_field, object_dict_field, field_validator, derived_from_validator, get_parent_presentation
-from aria.utils import FrozenDict, cachedmethod
+from aria.parser import dsl_specification
+from aria.parser.presentation import Presentation, has_fields, primitive_field, object_dict_field, field_validator, derived_from_validator, get_parent_presentation
+from aria.utils.collections import FrozenDict
+from aria.utils.caching import cachedmethod
 
 @has_fields
 @dsl_specification('node-types', 'cloudify-1.0')

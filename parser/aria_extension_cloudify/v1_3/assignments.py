@@ -15,8 +15,8 @@
 #
 
 from ..v1_0 import PropertyAssignment
-from aria import dsl_specification
-from aria.presentation import Presentation, has_fields, object_dict_field
+from aria.parser import dsl_specification
+from aria.parser.presentation import Presentation, has_fields, object_dict_field
 
 @has_fields
 @dsl_specification('node-templates-2', 'cloudify-1.3')

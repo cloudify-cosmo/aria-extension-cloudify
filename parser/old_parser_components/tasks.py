@@ -17,7 +17,8 @@
 from .exceptions import UnknownInputError, MissingRequiredInputError
 from aria_extension_cloudify.classic_modeling import add_deployment_plan_attributes
 from aria_extension_cloudify.classic_modeling.post_processing import PostProcessingContext
-from aria.utils import deepcopy_with_locators, string_list_as_string
+from aria.utils.collections import deepcopy_with_locators
+from aria.utils.formatting import string_list_as_string
 
 def prepare_deployment_plan(plan, inputs=None, **kwargs):
     """

@@ -16,8 +16,8 @@
 
 import pkg_resources
 import abc
-
-from . import constants, exceptions, scan
+from old_parser_components import constants, exceptions
+from ..framework import scan
 
 
 SELF = 'SELF'

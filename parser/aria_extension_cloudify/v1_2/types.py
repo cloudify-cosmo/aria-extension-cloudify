@@ -19,9 +19,10 @@ from .modeling.data_types import coerce_data_type_value, validate_data_type_name
 from ..v1_0 import PolicyType as PolicyType1_1, GroupPolicyTriggerType as GroupPolicyTriggerType1_1
 from ..v1_0.modeling.properties import get_inherited_property_definitions
 from ..v1_1 import NodeType as NodeType1_1, RelationshipType as RelationshipType1_1
-from aria import dsl_specification
-from aria.presentation import Presentation, has_fields, primitive_field, object_dict_field, field_validator, derived_from_validator, get_parent_presentation
-from aria.utils import FrozenDict, cachedmethod
+from aria.parser import dsl_specification
+from aria.parser.presentation import Presentation, has_fields, primitive_field, object_dict_field, field_validator, derived_from_validator, get_parent_presentation
+from aria.utils.collections import FrozenDict
+from aria.utils.caching import cachedmethod
 
 @has_fields
 @dsl_specification('node-types', 'cloudify-1.2')

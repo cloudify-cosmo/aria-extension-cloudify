@@ -15,8 +15,8 @@
 #
 
 from .properties import get_inherited_property_definitions, get_assigned_and_defined_property_values
-from aria.validation import Issue
-from aria.utils import safe_repr
+from aria.parser.validation import Issue
+from aria.utils.formatting import safe_repr
 
 #
 # RelationshipType

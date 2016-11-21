@@ -22,9 +22,10 @@ from .modeling.properties import get_assigned_and_defined_property_values, get_p
 from .modeling.interfaces import get_template_interfaces
 from .modeling.relationships import get_relationship_assigned_and_defined_property_values
 from .modeling.node_templates import get_node_template_scalable
-from aria import dsl_specification
-from aria.presentation import Presentation, has_fields, primitive_field, primitive_list_field, object_field, object_list_field, object_dict_field, field_validator, type_validator, list_type_validator
-from aria.utils import FrozenDict, cachedmethod
+from aria.parser import dsl_specification
+from aria.parser.presentation import Presentation, has_fields, primitive_field, primitive_list_field, object_field, object_list_field, object_dict_field, field_validator, type_validator, list_type_validator
+from aria.utils.collections import FrozenDict
+from aria.utils.caching import cachedmethod
 
 @has_fields
 @dsl_specification('relationships-1', 'cloudify-1.0')
