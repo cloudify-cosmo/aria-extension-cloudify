@@ -13,19 +13,22 @@
 # under the License.
 
 sudo: false
+
 language: python
+
 python:
-  - "2.7"
+  - '2.7'
+
+# TODO add python 2.6?
 env:
 - TOX_ENV=flake8
-# - TOX_ENV=py27
-# TODO add python 2.6?
+- TOX_ENV=py27
+
 install:
-  - pip install --upgrade pip
-  - pip install --upgrade setuptools
-  - pip install tox
+- pip install --upgrade pip
+- pip install tox
+
 script:
-  # TODO add flake?
-  - pip --version
-  - tox --version
-  - tox -v -e $TOX_ENV
+- pip --version
+- tox --version
+- tox -v -e $TOX_ENV
