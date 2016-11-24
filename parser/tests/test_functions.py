@@ -16,7 +16,6 @@
 
 from old_parser_components.tasks import prepare_deployment_plan
 from .framework.abstract_test_parser import AbstractTestParser
-from .framework.abstract_test_parser import timeout
 
 
 class TestGetProperty(AbstractTestParser):
@@ -438,7 +437,6 @@ node_templates:
         self.assertEqual(1, vm['properties']['c'][0])
         self.assertEqual(2, vm['properties']['c'][1])
 
-    @timeout(seconds=10)
     def test_circular_get_property(self):
         yaml = """
 node_types:
@@ -460,7 +458,6 @@ node_templates:
             issue_messages=["f"]
         )
 
-    @timeout(seconds=10)
     def test_circular_get_property_with_nesting(self):
         yaml = """
 node_types:
@@ -509,7 +506,6 @@ outputs:
         self.assertEqual(1, outputs['o']['value']['b'][1][0])
         self.assertEqual(2, outputs['o']['value']['b'][1][1])
 
-    @timeout(seconds=10)
     def test_circular_get_property_from_outputs(self):
         yaml = """
 node_types:
@@ -534,7 +530,6 @@ outputs:
             issue_messages=["f"]
         )
 
-    @timeout(seconds=10)
     def test_circular_self_get_property(self):
         yaml = """
 node_types:
@@ -665,7 +660,6 @@ node_templates:
             issue_messages=["f"]
         )
 
-    @timeout(seconds=10)
     def test_circular_nested_property_path(self):
         yaml = """
 node_types:
@@ -687,7 +681,6 @@ node_templates:
             issue_messages=["f"]
         )
 
-    @timeout(seconds=10)
     def test_not_circular_nested_property_path(self):
         yaml = """
 node_types:
