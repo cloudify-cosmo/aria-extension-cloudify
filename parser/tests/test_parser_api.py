@@ -120,6 +120,17 @@ class TestParserApi(ParserTestCase, _AssertionsMixin):
             issue.message,
             'location: http://www.google.com/bad-dsl')
 
+    def test_multiple_instances_without_deploy_property(self):
+        self.template.version_section('cloudify_dsl', '1.0')
+        self.template.node_type_section()
+        self.template.node_template_section()
+        self.template += """
+    instances: {}
+    """
+
+        result = self.parse()
+        self.assertEqual(1, len(result['node_instances']))
+
     # todo: move this tests to plugin tests?
     def test_type_with_single_explicit_interface_and_plugin(self):
         self.template.version_section('cloudify_dsl', '1.0')
