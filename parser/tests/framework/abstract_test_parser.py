@@ -18,8 +18,6 @@ import tempfile
 import shutil
 import os
 import uuid
-from functools import wraps
-from multiprocessing import Process
 
 import testtools
 
@@ -30,21 +28,6 @@ from .version import DSL_VERSION_PREFIX
 from .multi_instance import create_deployment_plan, modify_deployment
 
 PARSING_ISSUES_TITLE = 'parse failed with issues: \n\t'
-
-def timeout(seconds=10):
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            process = Process(None, func, None, args, kwargs)
-            process.start()
-            process.join(seconds)
-            if process.is_alive():
-                process.terminate()
-                raise RuntimeError(
-                    'test timeout exceeded [timeout={0}]'.format(seconds))
-            if process.exitcode != 0:
-                raise RuntimeError()
-        return wraps(func)(wrapper)
-    return decorator
 
 
 class CloudifyParserError(Exception):
