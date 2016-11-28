@@ -25,7 +25,8 @@ class TestParserLogicExceptions(AbstractTestParser):
     def test_parse_dsl_from_file_bad_path(self):
         self.assert_parser_issue_messages(dsl_string='fake-file.yaml',
                                           parse_from_path=True,
-                                          issue_messages=["file not found: \"fake-file.yaml\""])
+                                          issue_messages=["document not found at "
+                                                          "URI: \"fake-file.yaml\""])
 
     def test_no_type_definition(self):
         self.assert_parser_issue_messages(
@@ -53,7 +54,7 @@ node_types:
 """
         self.assert_parser_issue_messages(
             dsl_string=yaml,
-            issue_messages=["unknown plugin: missing_plugin"])
+            issue_messages=["unknown plugin for implementation: 'missing_plugin.terminate'"])
 
     def test_type_derive_non_from_none_existing(self):
         yaml = self.BASIC_NODE_TEMPLATES_SECTION + """
@@ -63,8 +64,8 @@ node_types:
         """
         self.assert_parser_issue_messages(
             dsl_string=yaml,
-            issue_messages=["unknown parent type "
-                            "\"non_existing_type_parent\" in \"test_type\""])
+            issue_messages=["assignment to undefined property \"key\" in \"test_node\"",
+                            "unknown parent type \"non_existing_type_parent\" in \"test_type\""])
 
     def test_import_bad_path(self):
         yaml = """
@@ -73,7 +74,7 @@ imports:
         """
         self.assert_parser_issue_messages(
             dsl_string=yaml,
-            issue_messages=["file not found: \"fake-file.yaml\""])
+            issue_messages=["document not found at URI: \"fake-file.yaml\""])
 
     def test_cyclic_dependency(self):
         yaml = self.BASIC_NODE_TEMPLATES_SECTION + """
@@ -156,7 +157,7 @@ relationships:
                         """
         self.assert_parser_issue_messages(
             dsl_string=yaml,
-            issue_messages=["unknown plugin: no_plugin"])
+            issue_messages=["unknown plugin for implementation: 'no_plugin.op'"])
 
     def test_workflow_mapping_no_plugin(self):
         yaml = self.BLUEPRINT_WITH_INTERFACES_AND_PLUGINS + """
@@ -165,7 +166,7 @@ workflows:
 """
         self.assert_parser_issue_messages(
             dsl_string=yaml,
-            issue_messages=["unknown plugin: test_plugin2"])
+            issue_messages=["unknown plugin for implementation: 'test_plugin2.workflow1'"])
 
     def test_top_level_relationships_import_same_name_relationship(self):
         imported_yaml = self.MINIMAL_BLUEPRINT + """
@@ -192,9 +193,12 @@ relationships:
         """
         self.assert_parser_issue_messages(
             dsl_string=yaml,
-            issue_messages=["maximum recursion depth exceeded in cmp",
-                            "\"test_relationship2\" of \"test_relationship1\""
-                            " creates a circular type hierarchy"])
+            issue_messages=["\"test_relationship2\" of \"test_relationship1\" "
+                            "creates a circular type hierarchy",
+                            "\"test_relationship3\" of \"test_relationship2\" "
+                            "creates a circular type hierarchy",
+                            "\"test_relationship1\" of \"test_relationship3\" "
+                            "creates a circular type hierarchy"])
 
     def test_instance_relationships_bad_target_value(self):
         # target value is a non-existent node
@@ -210,7 +214,7 @@ relationships:
         self.assert_parser_issue_messages(
             dsl_string=yaml,
             issue_messages=["\"target\" refers to an unknown node "
-                            "template in \"test_node2\": u'fake_node'"])
+                            "template in \"relationships\": 'fake_node'"])
 
     def test_instance_relationships_bad_type_value(self):
         # type value is a non-existent relationship
@@ -226,7 +230,7 @@ relationships:
         self.assert_parser_issue_messages(
             dsl_string=yaml,
             issue_messages=["\"type\" refers to an unknown "
-                            "relationship in \"test_node2\": u'fake_relationship'"])
+                            "relationship in \"relationships\": 'fake_relationship'"])
 
     def test_instance_relationships_same_source_and_target(self):
         # A relationship from a node to itself is not valid
@@ -258,7 +262,7 @@ relationships:
                         """
         self.assert_parser_issue_messages(
             dsl_string=yaml,
-            issue_messages=["unknown plugin: no_plugin"])
+            issue_messages=["unknown plugin for implementation: 'no_plugin.op'"])
 
     def test_validate_agent_plugin_on_non_host_node(self):
         yaml = """
@@ -308,10 +312,9 @@ plugins:
 node_types:
     test_type: {}
 """
-        ex = self.assert_parser_issue_messages(
+        self.assert_parser_issue_messages(
             dsl_string=yaml,
             issue_messages=["assignment to undefined property \"key\" in \"test_node\""])
-        self.assertEquals('key', ex.property)
 
     def test_node_doesnt_implement_schema_mandatory_property(self):
         yaml = self.BASIC_NODE_TEMPLATES_SECTION + self.BASIC_PLUGIN + """
@@ -343,7 +346,7 @@ relationships:
         self.assert_parser_issue_messages(
             dsl_string=yaml,
             issue_messages=["assignment to undefined property \"do_not_exist\" in "
-                            "\"test_node2\""])
+                            "\"relationships\""])
 
     def test_relationship_instance_doesnt_implement_schema_mandatory_property(self):  # NOQA
         yaml = self.MINIMAL_BLUEPRINT + """
@@ -362,7 +365,7 @@ relationships:
         self.assert_parser_issue_messages(
             dsl_string=yaml,
             issue_messages=["required property \"should_implement\" "
-                            "is not assigned a value in \"test_node2\""])
+                            "is not assigned a value in \"relationships\""])
 
     def test_instance_relationship_more_than_one_contained_in(self):
         yaml = self.MINIMAL_BLUEPRINT + """
@@ -378,12 +381,9 @@ relationships:
     derived_from_contained_in:
         derived_from: cloudify.relationships.contained_in
 """
-        ex = self.assert_parser_issue_messages(
+        self.assert_parser_issue_messages(
             dsl_string=yaml,
             issue_messages=["node template \"test_node2\" has more than one contained-in relationship"])
-        self.assertEqual(set(['cloudify.relationships.contained_in',
-                              'derived_from_contained_in']),
-                         set(ex.relationship_types))
 
     def test_group_missing_member(self):
         yaml = self.MINIMAL_BLUEPRINT + """
@@ -404,7 +404,7 @@ groups:
         self.assert_parser_issue_messages(
             dsl_string=yaml,
             issue_messages=["\"members\" refers to an unknown node template "
-                            "in \"group\": [u'vm']"])
+                            "in \"group\": ['vm']"])
 
     def test_group_missing_policy_type(self):
         yaml = self.MINIMAL_BLUEPRINT + """
@@ -425,7 +425,7 @@ groups:
         self.assert_parser_issue_messages(
             dsl_string=yaml,
             issue_messages=["\"type\" refers to an unknown policy type in "
-                            "\"policy\": u'non_existent_policy_type'"])
+                            "\"policy\": 'non_existent_policy_type'"])
 
     def test_group_missing_trigger_type(self):
         yaml = self.MINIMAL_BLUEPRINT + """
@@ -445,7 +445,7 @@ groups:
         self.assert_parser_issue_messages(
             dsl_string=yaml,
             issue_messages=["\"type\" refers to an unknown group policy "
-                            "trigger type in \"trigger1\": u'non_existent_trigger'"])
+                            "trigger type in \"trigger1\": 'non_existent_trigger'"])
 
     def test_group_policy_type_undefined_property(self):
         yaml = self.MINIMAL_BLUEPRINT + """

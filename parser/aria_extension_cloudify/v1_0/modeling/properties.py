@@ -131,7 +131,9 @@ def validate_required_values(context, presentation, values, definitions):
     if not definitions:
         return
     for name, definition in definitions.iteritems():
-        if getattr(definition, 'required', False) and ((values is None) or (values.get(name) is None)):
+        # If 'required' doesn't exist, we're in version 1_0 or 1_1,
+        # where all properties are 'required'.
+        if getattr(definition, 'required', True) and ((values is None) or (values.get(name) is None)):
             context.validation.report('required property "%s" is not assigned a value in "%s"' % (name, presentation._fullname), locator=presentation._get_child_locator('properties'), level=Issue.BETWEEN_TYPES)
 
 def merge_property_definition_default(context, definition):
