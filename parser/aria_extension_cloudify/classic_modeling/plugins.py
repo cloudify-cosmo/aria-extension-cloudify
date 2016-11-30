@@ -141,9 +141,6 @@ def _parse_implementation(context, implementation):
         if not operation:
             raise InvalidValueError('no operation name in implementation: %s' % safe_repr(implementation), level=Issue.BETWEEN_TYPES)
         return plugin, operation
-    elif context.modeling.plugins:
-        plugin = context.modeling.plugins[0]
-        return plugin, implementation
     raise InvalidValueError('unknown plugin for implementation: %s' % safe_repr(implementation), level=Issue.BETWEEN_TYPES)
 
 def _add_plugins_to_install_for_interface(context, plugins_to_install, interfaces, agent):
