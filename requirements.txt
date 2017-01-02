@@ -1,1 +1,1 @@
-https://github.com/apache/incubator-ariatosca/archive/master.zip
+https://github.com/apache/incubator-ariatosca/archive/0.1.0.zip
