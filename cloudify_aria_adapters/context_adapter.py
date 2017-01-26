@@ -233,12 +233,10 @@ class _NodeInstance(object):
         self._node_instance.runtime_properties = value
 
     def update(self, on_conflict=None):
-        # TODO
-        pass
+        self._ctx.model.node_instance.update(self._node_instance)
 
     def refresh(self, force=False):
-        # TODO
-        pass
+        self._ctx.model.node_instance.refresh(self._node_instance)
 
     @property
     def host_ip(self):
@@ -343,8 +341,7 @@ class _Plugin(object):
 
     @property
     def workdir(self):
-        # TODO
-        return self._plugin_attr('workdir')
+        return self._ctx.plugin_workdir
 
     def _plugin_attr(self, attr):
         if not self._plugin:

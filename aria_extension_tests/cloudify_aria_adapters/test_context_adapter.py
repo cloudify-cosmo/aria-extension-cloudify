@@ -174,7 +174,7 @@ class TestCloudifyContextAdapter(object):
         self._run(executor, workflow_context, _test_logger_and_send_event,
                   inputs={'message': message, 'event': event})
 
-    def test_plugin(self, executor, workflow_context):
+    def test_plugin(self, executor, workflow_context, tmpdir):
         name = 'PLUGIN'
         package_name = 'PACKAGE'
         package_version = '0.1.1'
@@ -194,9 +194,12 @@ class TestCloudifyContextAdapter(object):
 
         out = self._run(executor, workflow_context, _test_plugin, plugin=name)
 
+        expected_workdir = tmpdir.join('workdir', 'plugins', str(workflow_context.deployment.id),
+                                       name)
         assert out['plugin']['name'] == name
         assert out['plugin']['package_name'] == package_name
         assert out['plugin']['package_version'] == package_version
+        assert out['plugin']['workdir'] == str(expected_workdir)
 
     def test_importable_ctx_and_inputs(self, executor, workflow_context):
         test_inputs = {'input1': 1, 'input2': 2}
@@ -225,12 +228,26 @@ class TestCloudifyContextAdapter(object):
         assert message in exception.message
         assert exception.retry_interval == retry_interval
 
-    @pytest.mark.skip('Pending ARIA feature implementation')
-    def test_plugin_workdir_and_prefix(self, executor, workflow_context):
-        assert False
+    def test_node_instance_update_and_refresh(self, executor, workflow_context):
+        expected_initial = self._get_node_instance(workflow_context).runtime_properties
+        updated = {'new': 'runtime', 'property': 'value'}
+        uncommitted_change = {'newer': 'runtime', 'properties': 'and values'}
+        inputs = {'updated': updated, 'uncommitted_change': uncommitted_change}
+        out = self._run(executor, workflow_context, _test_node_instance_update_and_refresh,
+                        inputs=inputs)
+        props = out['instance']['runtime_properties']
+        expected_updated = expected_initial.copy()
+        expected_updated.update(updated)
+        expected_uncommitted_change = expected_updated.copy()
+        expected_uncommitted_change.update(uncommitted_change)
+        expected_refreshed = expected_updated
+        assert props['initial'] == expected_initial
+        assert props['after_update'] == expected_updated
+        assert props['after_change'] == expected_uncommitted_change
+        assert props['after_refresh'] == expected_refreshed
 
     @pytest.mark.skip('Pending ARIA feature implementation')
-    def test_node_instance_update_and_refresh(self, executor, workflow_context):
+    def test_plugin_prefix(self):
         assert False
 
     def _test_common(self, out, workflow_context):
@@ -325,7 +342,8 @@ class TestCloudifyContextAdapter(object):
     @pytest.fixture
     def workflow_context(self, tmpdir):
         result = mock.context.simple(storage.get_sqlite_api_kwargs(str(tmpdir)),
-                                     resources_dir=str(tmpdir.join('resources')))
+                                     resources_dir=str(tmpdir.join('resources')),
+                                     workdir=str(tmpdir.join('workdir')))
         yield result
         storage.release_sqlite_storage(result.model)
 
@@ -434,8 +452,23 @@ def _test_plugin(ctx):
         out['plugin'] = {
             'name': plugin.name,
             'package_name': plugin.package_name,
-            'package_version': plugin.package_version
+            'package_version': plugin.package_version,
+            'workdir': plugin.workdir
         }
+
+
+@operation
+def _test_node_instance_update_and_refresh(ctx, updated, uncommitted_change):
+    with _adapter(ctx) as (adapter, out):
+        runtime_properties = {'initial': copy.deepcopy(adapter.instance.runtime_properties)}
+        out['instance'] = {'runtime_properties': runtime_properties}
+        adapter.instance.runtime_properties.update(updated)
+        adapter.instance.update()
+        runtime_properties['after_update'] = copy.deepcopy(adapter.instance.runtime_properties)
+        adapter.instance.runtime_properties.update(uncommitted_change)
+        runtime_properties['after_change'] = copy.deepcopy(adapter.instance.runtime_properties)
+        adapter.instance.refresh()
+        runtime_properties['after_refresh'] = copy.deepcopy(adapter.instance.runtime_properties)
 
 
 @operation
