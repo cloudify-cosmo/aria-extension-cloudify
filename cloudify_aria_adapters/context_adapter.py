@@ -41,17 +41,17 @@ class CloudifyContext(object):
         self._source = None
         self._target = None
         if isinstance(ctx, operation.NodeOperationContext):
-            self._node = _Node(ctx, ctx.node)
-            self._instance = _NodeInstance(ctx, node_instance=ctx.node_instance)
+            self._node = _Node(ctx, ctx.node_template)
+            self._instance = _NodeInstance(ctx, node_instance=ctx.node)
         elif isinstance(ctx, operation.RelationshipOperationContext):
             self._source = _RelationshipSubject(
                 ctx,
                 node=ctx.source_node,
-                node_instance=ctx.source_node_instance)
+                node_instance=ctx.source_node)
             self._target = _RelationshipSubject(
                 ctx,
                 node=ctx.target_node,
-                node_instance=ctx.target_node_instance)
+                node_instance=ctx.target_node)
 
     @property
     def type(self):
@@ -100,7 +100,7 @@ class CloudifyContext(object):
 
     @property
     def task_name(self):
-        return self._ctx.task.operation_mapping
+        return self._ctx.task.implementation
 
     @property
     def task_target(self):
@@ -174,7 +174,7 @@ class _Blueprint(object):
 
     @property
     def id(self):
-        return self._ctx.blueprint.id
+        return self._ctx.service_template.id
 
 
 class _Deployment(object):
@@ -184,7 +184,7 @@ class _Deployment(object):
 
     @property
     def id(self):
-        return self._ctx.deployment.id
+        return self._ctx.service_instance.id
 
 
 class _Node(object):
@@ -207,7 +207,7 @@ class _Node(object):
 
     @property
     def type(self):
-        return self._node.type
+        return self._node.type_name
 
     @property
     def type_hierarchy(self):
@@ -233,10 +233,10 @@ class _NodeInstance(object):
         self._node_instance.runtime_properties = value
 
     def update(self, on_conflict=None):
-        self._ctx.model.node_instance.update(self._node_instance)
+        self._ctx.model.node.update(self._node_instance)
 
     def refresh(self, force=False):
-        self._ctx.model.node_instance.refresh(self._node_instance)
+        self._ctx.model.node.refresh(self._node_instance)
 
     @property
     def host_ip(self):
@@ -245,7 +245,7 @@ class _NodeInstance(object):
     @property
     def relationships(self):
         return [_Relationship(self._ctx, relationship_instance=relationship_instance) for
-                relationship_instance in self._node_instance.outbound_relationship_instances]
+                relationship_instance in self._node_instance.outbound_relationships]
 
 
 class _Relationship(object):
@@ -253,17 +253,17 @@ class _Relationship(object):
     def __init__(self, ctx, relationship_instance):
         self._ctx = ctx
         self._relationship_instance = relationship_instance
-        node_instance = relationship_instance.target_node_instance
-        node = node_instance.node
+        node_instance = relationship_instance.target_node
+        node = node_instance.node_template
         self.target = _RelationshipSubject(ctx, node=node, node_instance=node_instance)
 
     @property
     def type(self):
-        return self._relationship_instance.relationship.type
+        return self._relationship_instance.type_name
 
     @property
     def type_hierarchy(self):
-        return self._relationship_instance.relationship.type_hierarchy
+        return self._relationship_instance.type_hierarchy
 
 
 class _RelationshipSubject(object):

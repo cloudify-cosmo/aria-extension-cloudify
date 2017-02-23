@@ -22,6 +22,7 @@ import os
 import pytest
 
 from aria import workflow, operation
+from aria.storage import modeling
 from aria.orchestrator import events
 from aria.orchestrator.workflows import api
 from aria.orchestrator.workflows.exceptions import ExecutorException
@@ -30,50 +31,55 @@ from aria.orchestrator.workflows.core import engine
 from aria.orchestrator.exceptions import TaskAbortException, TaskRetryException
 
 import tests
-from tests import mock, storage
+from tests import mock, storage, conftest
 from tests.orchestrator.workflows.helpers import events_collector
 
 from cloudify_aria_adapters import context_adapter
 
 
+@pytest.fixture(autouse=True)
+def cleanup_logger(request):
+    conftest.logging_handler_cleanup(request)
+
+
 class TestCloudifyContextAdapter(object):
 
     def test_node_instance_operation(self, executor, workflow_context):
-        node = self._get_node(workflow_context)
-        node_properties = {'hello': 'world'}
+        node_template = self._get_node_template(workflow_context)
         node_type = 'test.nodes.App'
         node_type_hierarchy = [node_type]
-        node.properties = node_properties
-        node.type = node_type
-        node.type_hierarchy = node_type_hierarchy
-        node_instance = self._get_node_instance(workflow_context)
+        node_properties = [modeling.model.Parameter(name='hello', type='str', str_value='world')]
+        node_template.properties = node_properties
+        node_template.type_name = node_type
+        node_template.type_hierarchy = node_type_hierarchy
+        node = self._get_node(workflow_context)
         node_instance_runtime_properties = {'hello2': 'world2'}
-        node_instance.runtime_properties = node_instance_runtime_properties
-        workflow_context.model.node_instance.update(node_instance)
+        node.runtime_properties = node_instance_runtime_properties
         workflow_context.model.node.update(node)
+        workflow_context.model.node_template.update(node_template)
 
         out = self._run(executor, workflow_context, _test_node_instance_operation)
 
+        node_template = self._get_node_template(workflow_context)
         node = self._get_node(workflow_context)
-        node_instance = self._get_node_instance(workflow_context)
         assert out['type'] == context_adapter.NODE_INSTANCE
-        assert out['node']['id'] == node.id
-        assert out['node']['name'] == node.name
-        assert out['node']['properties'] == node_properties
+        assert out['node']['id'] == node_template.id
+        assert out['node']['name'] == node_template.name
+        assert out['node']['properties'] == [p.to_dict() for p in node_properties]
         assert out['node']['type'] == node_type
         assert out['node']['type_hierarchy'] == node_type_hierarchy
-        assert out['instance']['id'] == node_instance.id
+        assert out['instance']['id'] == node.id
         assert out['instance']['runtime_properties'] == node_instance_runtime_properties
         assert not out['source']
         assert not out['target']
 
     def test_node_instance_relationships(self, executor, workflow_context):
         relationship_node = self._get_dependency_node(workflow_context)
-        relationship = relationship_node.inbound_relationships[0]
-        relationship_node_instance = self._get_dependency_node_instance(workflow_context)
+        relationship_node_instance = self._get_dependency_node(workflow_context)
+        relationship = relationship_node_instance.inbound_relationships[0]
         relationship_type = 'test.relationships.Relationship'
+        relationship.type_name = relationship_type
         relationship_type_hierarchy = [relationship_type]
-        relationship.type = relationship_type
         relationship.type_hierarchy = relationship_type_hierarchy
         workflow_context.model.relationship.update(relationship)
 
@@ -98,10 +104,10 @@ class TestCloudifyContextAdapter(object):
         out = self._run(executor, workflow_context, _test_relationship_operation,
                         operation_end=operation_end)
 
-        source_node = self._get_node(workflow_context)
-        source_node_instance = self._get_node_instance(workflow_context)
-        target_node = self._get_dependency_node(workflow_context)
-        target_node_instance = self._get_dependency_node_instance(workflow_context)
+        source_node = self._get_node_template(workflow_context)
+        source_node_instance = self._get_node(workflow_context)
+        target_node = self._get_dependency_node_template(workflow_context)
+        target_node_instance = self._get_dependency_node(workflow_context)
         assert out['type'] == context_adapter.RELATIONSHIP_INSTANCE
         assert out['source']['node']['id'] == source_node.id
         assert out['source']['instance']['id'] == source_node_instance.id
@@ -111,14 +117,14 @@ class TestCloudifyContextAdapter(object):
         assert not out['instance']
 
     def test_host_ip(self, executor, workflow_context):
-        node = self._get_node(workflow_context)
+        node = self._get_node_template(workflow_context)
         node.type_hierarchy = ['aria.nodes.Compute']
-        node_instance = self._get_node_instance(workflow_context)
+        node_instance = self._get_node(workflow_context)
         node_instance.host_fk = node_instance.id
         node_instance_ip = '120.120.120.120'
         node_instance.runtime_properties = {'ip': node_instance_ip}
-        workflow_context.model.node.update(node)
-        workflow_context.model.node_instance.update(node_instance)
+        workflow_context.model.node_template.update(node)
+        workflow_context.model.node.update(node_instance)
 
         out = self._run(executor, workflow_context, _test_host_ip)
 
@@ -127,12 +133,12 @@ class TestCloudifyContextAdapter(object):
     def test_get_and_download_resource_and_render(self, tmpdir, executor, workflow_context):
         resource_path = 'resource'
         variable = 'VALUE'
-        content = '{{ctx.deployment.name}}-{{variable}}'
-        rendered = '{0}-{1}'.format(workflow_context.deployment.name, variable)
+        content = '{{ctx.service_instance.name}}-{{variable}}'
+        rendered = '{0}-{1}'.format(workflow_context.service_instance.name, variable)
         source = tmpdir.join(resource_path)
         source.write(content)
         workflow_context.resource.deployment.upload(
-            entry_id=str(workflow_context.deployment.id),
+            entry_id=str(workflow_context.service_instance.id),
             source=str(source),
             path=resource_path)
 
@@ -163,7 +169,7 @@ class TestCloudifyContextAdapter(object):
         assert exception.message == message
         assert exception.retry_interval == retry_interval
 
-        out = self._get_node_instance(workflow_context).runtime_properties['out']
+        out = self._get_node(workflow_context).runtime_properties['out']
         assert out['operation']['retry_number'] == 1
         assert out['operation']['max_retries'] == 1
 
@@ -186,15 +192,17 @@ class TestCloudifyContextAdapter(object):
             wheels=[],
         )
         workflow_context.model.plugin.put(plugin)
-        node = self._get_node(workflow_context)
+        node = self._get_node_template(workflow_context)
         node.plugins = [{'name': name,
                          'package_name': package_name,
                          'package_version': package_version}]
-        workflow_context.model.node.update(node)
+        workflow_context.model.node_template.update(node)
 
         out = self._run(executor, workflow_context, _test_plugin, plugin=name)
 
-        expected_workdir = tmpdir.join('workdir', 'plugins', str(workflow_context.deployment.id),
+        expected_workdir = tmpdir.join('workdir',
+                                       'plugins',
+                                       str(workflow_context.service_instance.id),
                                        name)
         assert out['plugin']['name'] == name
         assert out['plugin']['package_name'] == package_name
@@ -229,7 +237,7 @@ class TestCloudifyContextAdapter(object):
         assert exception.retry_interval == retry_interval
 
     def test_node_instance_update_and_refresh(self, executor, workflow_context):
-        expected_initial = self._get_node_instance(workflow_context).runtime_properties
+        expected_initial = self._get_node(workflow_context).runtime_properties
         updated = {'new': 'runtime', 'property': 'value'}
         uncommitted_change = {'newer': 'runtime', 'properties': 'and values'}
         inputs = {'updated': updated, 'uncommitted_change': uncommitted_change}
@@ -259,8 +267,8 @@ class TestCloudifyContextAdapter(object):
         assert out['task_target'] is None
         assert out['task_queue'] is None
         assert out['provider_context'] == {}
-        assert out['blueprint']['id'] == workflow_context.blueprint.id
-        assert out['deployment']['id'] == workflow_context.deployment.id
+        assert out['blueprint']['id'] == workflow_context.service_template.id
+        assert out['deployment']['id'] == workflow_context.service_instance.id
         assert out['operation']['name'][0] == out['operation']['name'][1]
         assert out['operation']['retry_number'][0] == out['operation']['retry_number'][1]
         assert out['operation']['max_retries'][0] == out['operation']['max_retries'][1] - 1
@@ -281,22 +289,32 @@ class TestCloudifyContextAdapter(object):
         @workflow
         def mock_workflow(ctx, graph):
             op = 'test.op'
-            op_dict = {'operation': '{0}.{1}'.format(__name__, func.__name__), 'plugin': plugin}
-            node_instance = self._get_node_instance(ctx)
+            op_dict = {
+                'implementation': '{0}.{1}'.format(__name__, func.__name__),
+                'plugin': plugin}
+            node = self._get_node(ctx)
+
             if operation_end:
-                relationship_instance = node_instance.outbound_relationship_instances[0]
-                relationship = relationship_instance.relationship
-                getattr(relationship, operation_end)[op] = op_dict
-                task = api.task.OperationTask.relationship_instance(
+                relationship_instance = node.outbound_relationships[0]
+                relationship_instance.interfaces = [mock.models.get_interface(
+                    op,
+                    operation_kwargs=op_dict,
+                    edge=operation_end
+                )]
+                workflow_context.model.relationship.update(relationship_instance)
+                task = api.task.OperationTask.relationship(
                     instance=relationship_instance,
                     name=op,
-                    operation_end=operation_end,
+                    edge=operation_end,
                     inputs=inputs or {},
                     max_attempts=max_attempts)
             else:
-                node_instance.node.operations[op] = op_dict
-                task = api.task.OperationTask.node_instance(
-                    instance=node_instance,
+                node.interfaces = [mock.models.get_interface(
+                    op,
+                    operation_kwargs=op_dict
+                )]
+                task = api.task.OperationTask.node(
+                    instance=node,
                     name=op,
                     inputs=inputs or {},
                     max_attempts=max_attempts)
@@ -307,23 +325,23 @@ class TestCloudifyContextAdapter(object):
             workflow_context=workflow_context,
             tasks_graph=tasks_graph)
         eng.execute()
-        out = self._get_node_instance(workflow_context).runtime_properties['out']
+        out = self._get_node(workflow_context).runtime_properties['out']
         if not skip_common_assert:
             self._test_common(out, workflow_context)
         return out
 
-    def _get_dependency_node(self, workflow_context):
-        return workflow_context.model.node.get_by_name(mock.models.DEPENDENCY_NODE_NAME)
+    def _get_dependency_node_template(self, workflow_context):
+        return workflow_context.model.node_template.get_by_name(mock.models.DEPENDENCY_NODE_NAME)
 
-    def _get_dependency_node_instance(self, workflow_context):
-        return workflow_context.model.node_instance.get_by_name(
+    def _get_dependency_node(self, workflow_context):
+        return workflow_context.model.node.get_by_name(
             mock.models.DEPENDENCY_NODE_INSTANCE_NAME)
 
-    def _get_node(self, workflow_context):
-        return workflow_context.model.node.get_by_name(mock.models.DEPENDENT_NODE_NAME)
+    def _get_node_template(self, workflow_context):
+        return workflow_context.model.node_template.get_by_name(mock.models.DEPENDENT_NODE_NAME)
 
-    def _get_node_instance(self, workflow_context):
-        return workflow_context.model.node_instance.get_by_name(
+    def _get_node(self, workflow_context):
+        return workflow_context.model.node.get_by_name(
             mock.models.DEPENDENT_NODE_INSTANCE_NAME)
 
     def _run_and_get_task_exceptions(self, *args, **kwargs):
@@ -341,9 +359,9 @@ class TestCloudifyContextAdapter(object):
 
     @pytest.fixture
     def workflow_context(self, tmpdir):
-        result = mock.context.simple(storage.get_sqlite_api_kwargs(str(tmpdir)),
-                                     resources_dir=str(tmpdir.join('resources')),
-                                     workdir=str(tmpdir.join('workdir')))
+        result = mock.context.simple(str(tmpdir),
+                                     context_kwargs=dict(workdir=str(tmpdir.join('workdir')))
+                                     )
         yield result
         storage.release_sqlite_storage(result.model)
 
@@ -357,7 +375,7 @@ def _test_node_instance_operation(ctx):
             'node': {
                 'id': node.id,
                 'name': node.name,
-                'properties': node.properties,
+                'properties': [p.to_dict() for p in node.properties],
                 'type': node.type,
                 'type_hierarchy': node.type_hierarchy
             },
@@ -499,7 +517,7 @@ def _test_common(out, ctx, adapter):
         'workflow_id': adapter.workflow_id,
         'rest_token': adapter.rest_token,
         'task_id': (adapter.task_id, ctx.task.id),
-        'task_name': (adapter.task_name, ctx.task.operation_mapping),
+        'task_name': (adapter.task_name, ctx.task.implementation),
         'task_target': adapter.task_target,
         'task_queue': adapter.task_queue,
         'provider_context': adapter.provider_context,
