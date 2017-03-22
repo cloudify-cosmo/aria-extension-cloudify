@@ -46,11 +46,11 @@ class CloudifyContext(object):
         elif isinstance(ctx, operation.RelationshipOperationContext):
             self._source = _RelationshipSubject(
                 ctx,
-                node=ctx.source_node,
+                node=ctx.source_node_template,
                 node_instance=ctx.source_node)
             self._target = _RelationshipSubject(
                 ctx,
-                node=ctx.target_node,
+                node=ctx.target_node_template,
                 node_instance=ctx.target_node)
 
     @property
@@ -184,7 +184,7 @@ class _Deployment(object):
 
     @property
     def id(self):
-        return self._ctx.service_instance.id
+        return self._ctx.service.id
 
 
 class _Node(object):
@@ -207,11 +207,11 @@ class _Node(object):
 
     @property
     def type(self):
-        return self._node.type_name
+        return self._node.type.name
 
     @property
     def type_hierarchy(self):
-        return self._node.type_hierarchy
+        return self._node.type.hierarchy
 
 
 class _NodeInstance(object):
@@ -259,11 +259,11 @@ class _Relationship(object):
 
     @property
     def type(self):
-        return self._relationship_instance.type_name
+        return self._relationship_instance.type.name
 
     @property
     def type_hierarchy(self):
-        return self._relationship_instance.type_hierarchy
+        return self._relationship_instance.type.hierarchy
 
 
 class _RelationshipSubject(object):
@@ -324,7 +324,7 @@ class _Plugin(object):
 
     @property
     def name(self):
-        return self._ctx.task.plugin_name
+        return self._ctx.task.plugin.name
 
     @property
     def package_name(self):
