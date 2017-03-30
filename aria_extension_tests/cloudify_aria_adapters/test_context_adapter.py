@@ -63,7 +63,7 @@ class TestCloudifyContextAdapter(object):
         assert out['type'] == context_adapter.NODE_INSTANCE
         assert out['node']['id'] == node_template.id
         assert out['node']['name'] == node_template.name
-        assert out['node']['properties'] == [node_property.to_dict()]
+        assert out['node']['properties'] == {node_property.name: node_property.value}
         assert out['node']['type'] == node_type
         assert out['node']['type_hierarchy'] == [node_type]
         assert out['instance']['id'] == node.id
@@ -176,63 +176,49 @@ class TestCloudifyContextAdapter(object):
                   inputs={'message': message, 'event': event})
 
     def test_plugin(self, executor, workflow_context, tmpdir):
-        name = 'PLUGIN'
-        archive_name = 'ARCHIVE'
-        package_name = 'PACKAGE'
-        package_version = '0.1.1'
-        plugin = models.Plugin(
-            name=name,
-            archive_name=archive_name,
-            package_name=package_name,
-            package_version=package_version,
-            uploaded_at=datetime.datetime.now(),
-            wheels=[],
-        )
-        workflow_context.model.plugin.put(plugin)
-
-        plugin_spec = models.PluginSpecification(
-            name=name,
-            archive_name=archive_name,
-            package_name=package_name,
-            package_version=package_version,
-
-        )
-        node = self._get_node_template(workflow_context)
-        node.plugin_specifications[name] = plugin_spec
-        workflow_context.model.node_template.update(node)
-
+        plugin_spec, plugin = self._put_plugin_and_spec(workflow_context)
         out = self._run(executor, workflow_context, _test_plugin, plugin=plugin_spec)
 
         expected_workdir = tmpdir.join(
-            'workdir', 'plugins', str(workflow_context.service.id), name)
-        assert out['plugin']['name'] == name
-        assert out['plugin']['package_name'] == package_name
-        assert out['plugin']['package_version'] == package_version
+            'workdir', 'plugins', str(workflow_context.service.id), plugin.name)
+        assert out['plugin']['name'] == plugin.name
+        assert out['plugin']['package_name'] == plugin.package_name
+        assert out['plugin']['package_version'] == plugin.package_version
         assert out['plugin']['workdir'] == str(expected_workdir)
 
     def test_importable_ctx_and_inputs(self, executor, workflow_context):
         test_inputs = {'input1': 1, 'input2': 2}
+        plugin_spec, plugin = self._put_plugin_and_spec(workflow_context, mock_cfy_plugin=True)
+
         out = self._run(executor, workflow_context, _test_importable_ctx_and_inputs,
                         inputs=test_inputs,
-                        skip_common_assert=True)
+                        skip_common_assert=True,
+                        plugin=plugin_spec)
         assert out['inputs'] == test_inputs
 
     def test_non_recoverable_error(self, executor, workflow_context):
         message = 'NON_RECOVERABLE_MESSAGE'
+        plugin_spec, _ = self._put_plugin_and_spec(workflow_context, mock_cfy_plugin=True)
+
         exception = self._run_and_get_task_exceptions(
             executor, workflow_context, _test_non_recoverable_error,
             inputs={'message': message},
-            skip_common_assert=True)[0]
+            skip_common_assert=True,
+            plugin=plugin_spec
+        )[0]
         assert isinstance(exception, TaskAbortException)
         assert exception.message == message
 
     def test_recoverable_error(self, executor, workflow_context):
         message = 'RECOVERABLE_MESSAGE'
+        plugin_spec, _ = self._put_plugin_and_spec(workflow_context, mock_cfy_plugin=True)
+
         retry_interval = 0.01
         exception = self._run_and_get_task_exceptions(
             executor, workflow_context, _test_recoverable_error,
             inputs={'message': message, 'retry_interval': retry_interval},
-            skip_common_assert=True)[0]
+            skip_common_assert=True,
+            plugin=plugin_spec)[0]
         assert isinstance(exception, TaskRetryException)
         assert message in exception.message
         assert exception.retry_interval == retry_interval
@@ -372,6 +358,30 @@ class TestCloudifyContextAdapter(object):
         yield result
         storage.release_sqlite_storage(result.model)
 
+    def _put_plugin_and_spec(self, workflow_context, mock_cfy_plugin=False):
+        name = 'PLUGIN'
+        archive_name = 'ARCHIVE'
+        package_name = 'PACKAGE'
+        package_version = '0.1.1'
+
+        plugin = models.Plugin(
+            name=name,
+            archive_name=archive_name,
+            package_name=package_name,
+            package_version=package_version,
+            uploaded_at=datetime.datetime.now(),
+            wheels=['cloudify_plugins_common'] if mock_cfy_plugin else [],
+        )
+
+        workflow_context.model.plugin.put(plugin)
+
+        plugin_spec = models.PluginSpecification(name=plugin.name, version=plugin.package_version)
+
+        service_template = workflow_context.model.service_template.list()[0]
+        service_template.plugin_specifications[plugin.name] = plugin_spec
+        workflow_context.model.service_template.update(service_template)
+
+        return plugin_spec, plugin
 
 @operation
 def _test_node_instance_operation(ctx):
@@ -382,7 +392,7 @@ def _test_node_instance_operation(ctx):
             'node': {
                 'id': node.id,
                 'name': node.name,
-                'properties': [item.to_dict() for item in node.properties.values()],
+                'properties': node.properties,
                 'type': node.type,
                 'type_hierarchy': [t.name for t in node.type_hierarchy]
             },

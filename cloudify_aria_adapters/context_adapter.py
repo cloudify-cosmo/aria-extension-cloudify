@@ -30,12 +30,12 @@ class CloudifyContext(object):
 
     def __init__(self, ctx):
         self._ctx = ctx
-        self.blueprint = _Blueprint(ctx)
-        self.deployment = _Deployment(ctx)
-        self.operation = _Operation(ctx)
-        self.bootstrap_context = _Bootstrap(ctx)
-        self.plugin = _Plugin(ctx)
-        self.agent = _CloudifyAgent()
+        self._blueprint = _Blueprint(ctx)
+        self._deployment = _Deployment(ctx)
+        self._operation = _Operation(ctx)
+        self._bootstrap_context = _Bootstrap(ctx)
+        self._plugin = _Plugin(ctx)
+        self._agent = _CloudifyAgent()
         self._node = None
         self._node_instance = None
         self._source = None
@@ -52,6 +52,30 @@ class CloudifyContext(object):
                 ctx,
                 node=ctx.target_node_template,
                 node_instance=ctx.target_node)
+
+    @property
+    def blueprint(self):
+        return self._blueprint
+
+    @property
+    def deployment(self):
+        return self._deployment
+
+    @property
+    def operation(self):
+        return self._operation
+
+    @property
+    def bootstrap_context(self):
+        return self._bootstrap_context
+
+    @property
+    def plugin(self):
+        return self._plugin
+
+    @property
+    def agent(self):
+        return self._agent
 
     @property
     def type(self):
@@ -203,7 +227,7 @@ class _Node(object):
 
     @property
     def properties(self):
-        return self._node.properties
+        return dict((p.name, p.value) for _, p in self._node.properties.items())
 
     @property
     def type(self):
@@ -360,19 +384,31 @@ class _Stub(object):
 class CloudifyExecutorExtension(object):
 
     def decorate(self):
-        from cloudify import state
+        from cloudify import state, context
         from cloudify.exceptions import NonRecoverableError, RecoverableError
 
         def decorator(function):
             @functools.wraps(function)
             def wrapper(ctx, **operation_inputs):
-                adapter = CloudifyContext(ctx)
-                with state.current_ctx.push(adapter, operation_inputs):
-                    try:
-                        function(ctx=ctx, **operation_inputs)
-                    except NonRecoverableError as e:
-                        ctx.task.abort(str(e))
-                    except RecoverableError as e:
-                        ctx.task.retry(str(e), retry_interval=e.retry_after)
+                # we assume that any cloudify based plugin would use the plugins-common, Thus two
+                # different paths are created.
+                is_cloudify_dependent = ctx.task.plugin and any(
+                    'cloudify_plugins_common' in w for w in ctx.task.plugin.wheels)
+
+                if is_cloudify_dependent:
+                    # We need to create a new class dynamically,
+                    # since CloudifyContext doesn't exist at runtime.
+                    adapter = type('AdaptedCloudifyContext',
+                                   (CloudifyContext, context.CloudifyContext),
+                                   {},)(ctx)
+                    with state.current_ctx.push(adapter, operation_inputs):
+                        try:
+                            function(ctx=adapter, **operation_inputs)
+                        except NonRecoverableError as e:
+                            ctx.task.abort(str(e))
+                        except RecoverableError as e:
+                            ctx.task.retry(str(e), retry_interval=e.retry_after)
+                else:
+                    function(ctx=ctx, **operation_inputs)
             return wrapper
         return decorator
