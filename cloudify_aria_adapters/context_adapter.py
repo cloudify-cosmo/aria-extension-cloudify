@@ -17,6 +17,7 @@
 import functools
 import os
 import tempfile
+from contextlib import contextmanager
 
 from aria import extension
 from aria.orchestrator.context import operation
@@ -384,7 +385,7 @@ class _Stub(object):
 class CloudifyExecutorExtension(object):
 
     def decorate(self):
-        from cloudify import state, context
+        from cloudify import context
         from cloudify.exceptions import NonRecoverableError, RecoverableError
 
         def decorator(function):
@@ -396,14 +397,15 @@ class CloudifyExecutorExtension(object):
                     'cloudify_plugins_common' in w for w in ctx.task.plugin.wheels)
 
                 if is_cloudify_dependent:
-                    # We need to create a new class dynamically,
-                    # since CloudifyContext doesn't exist at runtime.
-                    adapter = type('AdaptedCloudifyContext',
-                                   (CloudifyContext, context.CloudifyContext),
-                                   {},)(ctx)
-                    with state.current_ctx.push(adapter, operation_inputs):
+                    # We need to create a new class dynamically, since CloudifyContext doesn't exist
+                    # at runtime.
+                    adapted_ctx = type('AdaptedCloudifyContext',
+                                       (CloudifyContext, context.CloudifyContext),
+                                       {}, )(ctx)
+
+                    with _push_cfy_ctx(adapted_ctx, operation_inputs):
                         try:
-                            function(ctx=adapter, **operation_inputs)
+                            function(ctx=adapted_ctx, **operation_inputs)
                         except NonRecoverableError as e:
                             ctx.task.abort(str(e))
                         except RecoverableError as e:
@@ -412,3 +414,30 @@ class CloudifyExecutorExtension(object):
                     function(ctx=ctx, **operation_inputs)
             return wrapper
         return decorator
+
+
+@contextmanager
+def _push_cfy_ctx(ctx, params):
+    from cloudify import state
+
+    try:
+        # Support for > cloudify 4.0
+        with state.current_ctx.push(ctx, params) as current_ctx:
+            yield current_ctx
+
+    except AttributeError:
+        # support for < cloudify 4.0
+        try:
+            original_ctx = state.current_ctx.get_ctx()
+        except RuntimeError:
+            original_ctx = None
+        try:
+            original_params = state.current_ctx.get_parameters()
+        except RuntimeError:
+            original_params = None
+
+        state.current_ctx.set(ctx, params)
+        try:
+            yield state.current_ctx.get_ctx()
+        finally:
+            state.current_ctx.set(original_ctx, original_params)
