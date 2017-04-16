@@ -385,9 +385,6 @@ class _Stub(object):
 class CloudifyExecutorExtension(object):
 
     def decorate(self):
-        from cloudify import context
-        from cloudify.exceptions import NonRecoverableError, RecoverableError
-
         def decorator(function):
             @functools.wraps(function)
             def wrapper(ctx, **operation_inputs):
@@ -397,6 +394,9 @@ class CloudifyExecutorExtension(object):
                     'cloudify_plugins_common' in w for w in ctx.task.plugin.wheels)
 
                 if is_cloudify_dependent:
+                    from cloudify import context
+                    from cloudify.exceptions import NonRecoverableError, RecoverableError
+
                     # We need to create a new class dynamically, since CloudifyContext doesn't exist
                     # at runtime.
                     adapted_ctx = type('AdaptedCloudifyContext',
