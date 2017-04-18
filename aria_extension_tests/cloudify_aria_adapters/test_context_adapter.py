@@ -176,8 +176,8 @@ class TestCloudifyContextAdapter(object):
                   inputs={'message': message, 'event': event})
 
     def test_plugin(self, executor, workflow_context, tmpdir):
-        plugin_spec, plugin = self._put_plugin_and_spec(workflow_context)
-        out = self._run(executor, workflow_context, _test_plugin, plugin=plugin_spec)
+        plugin = self._put_plugin(workflow_context)
+        out = self._run(executor, workflow_context, _test_plugin, plugin=plugin)
 
         expected_workdir = tmpdir.join(
             'workdir', 'plugins', str(workflow_context.service.id), plugin.name)
@@ -188,37 +188,37 @@ class TestCloudifyContextAdapter(object):
 
     def test_importable_ctx_and_inputs(self, executor, workflow_context):
         test_inputs = {'input1': 1, 'input2': 2}
-        plugin_spec, plugin = self._put_plugin_and_spec(workflow_context, mock_cfy_plugin=True)
+        plugin = self._put_plugin(workflow_context, mock_cfy_plugin=True)
 
         out = self._run(executor, workflow_context, _test_importable_ctx_and_inputs,
                         inputs=test_inputs,
                         skip_common_assert=True,
-                        plugin=plugin_spec)
+                        plugin=plugin)
         assert out['inputs'] == test_inputs
 
     def test_non_recoverable_error(self, executor, workflow_context):
         message = 'NON_RECOVERABLE_MESSAGE'
-        plugin_spec, _ = self._put_plugin_and_spec(workflow_context, mock_cfy_plugin=True)
+        plugin = self._put_plugin(workflow_context, mock_cfy_plugin=True)
 
         exception = self._run_and_get_task_exceptions(
             executor, workflow_context, _test_non_recoverable_error,
             inputs={'message': message},
             skip_common_assert=True,
-            plugin=plugin_spec
+            plugin=plugin
         )[0]
         assert isinstance(exception, TaskAbortException)
         assert exception.message == message
 
     def test_recoverable_error(self, executor, workflow_context):
         message = 'RECOVERABLE_MESSAGE'
-        plugin_spec, _ = self._put_plugin_and_spec(workflow_context, mock_cfy_plugin=True)
+        plugin = self._put_plugin(workflow_context, mock_cfy_plugin=True)
 
         retry_interval = 0.01
         exception = self._run_and_get_task_exceptions(
             executor, workflow_context, _test_recoverable_error,
             inputs={'message': message, 'retry_interval': retry_interval},
             skip_common_assert=True,
-            plugin=plugin_spec)[0]
+            plugin=plugin)[0]
         assert isinstance(exception, TaskRetryException)
         assert message in exception.message
         assert exception.retry_interval == retry_interval
@@ -278,7 +278,7 @@ class TestCloudifyContextAdapter(object):
             interface_name = 'test'
             operation_name = 'op'
             op_dict = {'implementation': '{0}.{1}'.format(__name__, func.__name__),
-                       'plugin_specification': plugin}
+                       'plugin': plugin}
             node = self._get_node(ctx)
 
             if operation_end:
@@ -294,7 +294,6 @@ class TestCloudifyContextAdapter(object):
                     relationship,
                     interface_name,
                     operation_name,
-                    runs_on=operation_end,
                     inputs=inputs or {},
                     max_attempts=max_attempts)
             else:
@@ -358,7 +357,7 @@ class TestCloudifyContextAdapter(object):
         yield result
         storage.release_sqlite_storage(result.model)
 
-    def _put_plugin_and_spec(self, workflow_context, mock_cfy_plugin=False):
+    def _put_plugin(self, workflow_context, mock_cfy_plugin=False):
         name = 'PLUGIN'
         archive_name = 'ARCHIVE'
         package_name = 'PACKAGE'
@@ -375,13 +374,7 @@ class TestCloudifyContextAdapter(object):
 
         workflow_context.model.plugin.put(plugin)
 
-        plugin_spec = models.PluginSpecification(name=plugin.name, version=plugin.package_version)
-
-        service_template = workflow_context.model.service_template.list()[0]
-        service_template.plugin_specifications[plugin.name] = plugin_spec
-        workflow_context.model.service_template.update(service_template)
-
-        return plugin_spec, plugin
+        return plugin
 
 @operation
 def _test_node_instance_operation(ctx):

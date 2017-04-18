@@ -265,7 +265,7 @@ class _NodeInstance(object):
 
     @property
     def host_ip(self):
-        return self._node_instance.ip
+        return self._node_instance.host_address
 
     @property
     def relationships(self):
