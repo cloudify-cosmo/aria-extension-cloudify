@@ -29,6 +29,7 @@ from aria.orchestrator.workflows.exceptions import ExecutorException
 from aria.orchestrator.workflows.executor import process
 from aria.orchestrator.workflows.core import engine
 from aria.orchestrator.exceptions import TaskAbortException, TaskRetryException
+from aria.utils import formatting
 
 import tests
 from tests import mock, storage, conftest
@@ -124,7 +125,6 @@ class TestCloudifyContextAdapter(object):
 
         assert out['instance']['host_ip'] == node_instance_ip
 
-    # TODO: fix this
     def test_get_and_download_resource_and_render(self, tmpdir, executor, workflow_context):
         resource_path = 'resource'
         variable = 'VALUE'
@@ -132,7 +132,7 @@ class TestCloudifyContextAdapter(object):
         rendered = '{0}-{1}'.format(workflow_context.service.name, variable)
         source = tmpdir.join(resource_path)
         source.write(content)
-        workflow_context.resource.deployment.upload(
+        workflow_context.resource.service.upload(
             entry_id=str(workflow_context.service.id),
             source=str(source),
             path=resource_path)
@@ -303,6 +303,13 @@ class TestCloudifyContextAdapter(object):
                     operation_name,
                     operation_kwargs=op_dict
                 )
+                if inputs:
+                    operation_inputs = \
+                        node.interfaces[interface_name].operations[operation_name].inputs
+                    for input_name, input in inputs.iteritems():
+                        operation_inputs[input_name] = \
+                            models.Parameter(name=input_name,
+                                             type_name=formatting.full_type_name(input))
                 task = api.task.OperationTask.for_node(
                     node,
                     interface_name,
