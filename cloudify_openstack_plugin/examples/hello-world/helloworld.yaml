@@ -47,8 +47,8 @@ topology_template:
         resource_id: my_subnet
         create_if_missing: true
         subnet:
-          ip_version: "4"
-          cidr: "172.16.0.0/16"
+          ip_version: 4
+          cidr: '172.16.0.0/16'
       requirements:
         - router: router
         - network: network
@@ -66,7 +66,7 @@ topology_template:
     virtual_ip:
       type: aria.openstack.nodes.FloatingIP
       properties:
-        resource_id: 'my_floating_ip'
+        resource_id: my_floating_ip
         create_if_missing: true
         floatingip:
           floating_network_id: 6751cb30-0aef-4d7e-94c3-ee2a09e705eb
@@ -76,7 +76,7 @@ topology_template:
       properties:
         description: ...
         create_if_missing: true
-        resource_id: 'my_sg'
+        resource_id: my_sg
         rules:
           - remote_ip_prefix: 0.0.0.0/0
             port: 8080
@@ -89,16 +89,16 @@ topology_template:
       type: aria.openstack.nodes.KeyPair
       properties:
         create_if_missing: true
-        resource_id: 'my_kp'
-        private_key_path: '/home/maxim-pcu/Desktop/os_hw'
+        resource_id: my_kp
+        private_key_path: /home/maxim-pcu/Desktop/os_hw
 
     vm:
       type: aria.openstack.nodes.Server
       properties:
-        image: 'ubuntu-14.04'
-        flavor: 'dc1.8x16'
+        image: ubuntu-14.04
+        flavor: dc1.8x16
         create_if_missing: true
-        resource_id: 'my_vm'
+        resource_id: my_vm
         management_network_name: my_net
       requirements:
         - floating_ip: virtual_ip
@@ -106,6 +106,8 @@ topology_template:
         - key_pair: keypair
         - port: port
 
+    # Currently missing the host_string. thus no real executions can run until the intrinsic
+    # functions are implemented
     http_web_server:
       type: web_server_type
       properties:
@@ -120,18 +122,21 @@ topology_template:
               dependencies:
                 - ssh.user > ubuntu
                 - ssh.key_filename > /home/maxim-pcu/Desktop/os_hw
+                - ssh.address > { get_attribute: virtual_ip.floating_ip }
           start:
             implementation:
               primary: scripts/start.sh
               dependencies:
                 - ssh.user > ubuntu
                 - ssh.key_filename > /home/maxim-pcu/Desktop/os_hw
+                - ssh.address > { get_attribute: virtual_ip.floating_ip }
           stop:
             implementation:
               primary: scripts/stop.sh
               dependencies:
                 - ssh.user > ubuntu
                 - ssh.key_filename > /home/maxim-pcu/Desktop/os_hw
+                - ssh.address > { get_attribute: virtual_ip.floating_ip }
 
   policies:
     cloudify-openstack-plugin:
