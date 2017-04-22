@@ -47,7 +47,7 @@ topology_template:
         resource_id: my_subnet
         create_if_missing: true
         subnet:
-          ip_version: 4
+          ip_version: '4'
           cidr: '172.16.0.0/16'
       requirements:
         - router: router
@@ -122,21 +122,21 @@ topology_template:
               dependencies:
                 - ssh.user > ubuntu
                 - ssh.key_filename > /home/maxim-pcu/Desktop/os_hw
-                - ssh.address > { get_attribute: virtual_ip.floating_ip }
+                - "ssh.address > { get_attribute: virtual_ip.floating_ip }"
           start:
             implementation:
               primary: scripts/start.sh
               dependencies:
                 - ssh.user > ubuntu
                 - ssh.key_filename > /home/maxim-pcu/Desktop/os_hw
-                - ssh.address > { get_attribute: virtual_ip.floating_ip }
+                - "ssh.address > { get_attribute: virtual_ip.floating_ip }"
           stop:
             implementation:
               primary: scripts/stop.sh
               dependencies:
                 - ssh.user > ubuntu
                 - ssh.key_filename > /home/maxim-pcu/Desktop/os_hw
-                - ssh.address > { get_attribute: virtual_ip.floating_ip }
+                - "ssh.address > { get_attribute: virtual_ip.floating_ip }"
 
   policies:
     cloudify-openstack-plugin:
