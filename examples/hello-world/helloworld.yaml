@@ -1,0 +1,121 @@
+tosca_definitions_version: tosca_simple_yaml_1_0
+
+imports:
+  - https://raw.githubusercontent.com/cloudify-cosmo/cloudify-aria-extensions/master/plugins/openstack/plugin.yaml
+  - aria-1.0
+
+node_types:
+  web_app:
+    derived_from: tosca.nodes.WebApplication
+    properties:
+      port:
+        type: integer
+        default:
+
+topology_template:
+
+  node_templates:
+    network:
+      type: aria.openstack.nodes.Network
+      properties:
+        resource_id: aria_helloworld_network
+        create_if_missing: true
+
+    router:
+      type: aria.openstack.nodes.Router
+      properties:
+        external_network: external # should change to: { get_input: external_network_name }
+        create_if_missing: true
+        resource_id: aria_helloworld_rtr
+
+    subnet:
+      type: aria.openstack.nodes.Subnet
+      properties:
+        resource_id: aria_helloworld_subnet
+        create_if_missing: true
+      requirements:
+        - router: router
+        - network: network
+
+    port:
+      type: aria.openstack.nodes.Port
+      properties:
+        create_if_missing: true
+        resource_id: aria_helloworld_port
+      requirements:
+        - security_group: security_group
+        - floating_ip: virtual_ip
+        - subnet: subnet
+        - network: network
+
+    virtual_ip:
+      type: aria.openstack.nodes.FloatingIP
+      properties:
+        resource_id: aria_helloworld_floatingip
+        create_if_missing: true
+        floatingip:
+          floating_network_id: 6751cb30-0aef-4d7e-94c3-ee2a09e705eb # should change to: { get_input: external_network_id }
+
+    security_group:
+      type: aria.openstack.nodes.SecurityGroup
+      properties:
+        create_if_missing: true
+        resource_id: aria_helloworld_sg
+        rules:
+          - remote_ip_prefix: 0.0.0.0/0
+            port: 8080 # should chnage to: { get_input: port }
+          - port: 22
+            remote_ip_prefix: 0.0.0.0/0
+
+    keypair:
+      type: aria.openstack.nodes.KeyPair
+      properties:
+        create_if_missing: true
+        resource_id: aria_helloworld_kp
+        private_key_path: /tmp/aria-helloworld-os-keypair # should change to: { get_input: private_key_path }
+
+    vm:
+      type: aria.openstack.nodes.Server
+      properties:
+        image: ubuntu-14.04 # should change to: { get_input: image_name }
+        flavor: dc1.8x16 # should change to: { get_input: flavor_name }
+        create_if_missing: true
+        resource_id: aria_helloworld_vm
+        management_network_name: aria_helloworld_network
+      requirements:
+        - floating_ip: virtual_ip
+        - security_group: security_group
+        - key_pair: keypair
+        - port: port
+
+    # Currently missing the host_string. thus no real executions can run until the intrinsic
+    # functions are implemented
+    web_app:
+      type: web_app
+      properties:
+        port: 8080 # should chnage to: { get_input: port }
+      requirements:
+        - host: vm
+      interfaces:
+        Standard:
+          configure:
+            implementation:
+              primary: scripts/configure.sh
+              dependencies:
+                - ssh.user > ubuntu
+                - ssh.key_filename > /tmp/aria-helloworld-os-keypair # should change to: { concat: ['ssh.key_filename > ', { get_input: private_key_path} ] }
+                # this should be added: - { concat: ['ssh.address > ', { get_attribute: [ virtual_ip, floating_ip_address ] } ] }
+          start:
+            implementation:
+              primary: scripts/start.sh
+              dependencies:
+                - ssh.user > ubuntu
+                - ssh.key_filename > /tmp/aria-helloworld-os-keypair # should change to: { concat: ['ssh.key_filename > ', { get_input: private_key_path} ] }
+                # this should be added: - { concat: ['ssh.address > ', { get_attribute: [ virtual_ip, floating_ip_address ] } ] }
+          stop:
+            implementation:
+              primary: scripts/stop.sh
+              dependencies:
+                - ssh.user > ubuntu
+                - ssh.key_filename > /tmp/aria-helloworld-os-keypair # should change to: { concat: ['ssh.key_filename > ', { get_input: private_key_path} ] }
+                # this should be added: - { concat: ['ssh.address > ', { get_attribute: [ virtual_ip, floating_ip_address ] } ] }
