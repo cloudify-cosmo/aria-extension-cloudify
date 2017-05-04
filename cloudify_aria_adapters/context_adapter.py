@@ -310,7 +310,7 @@ class _Operation(object):
 
     @property
     def retry_number(self):
-        return self._ctx.task.retry_count
+        return self._ctx.task.max_attempts - 1
 
     @property
     def max_retries(self):

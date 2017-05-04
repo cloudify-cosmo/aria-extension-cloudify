@@ -290,7 +290,7 @@ class TestCloudifyContextAdapter(object):
                     operation_kwargs=op_dict,
                 )
                 workflow_context.model.relationship.update(relationship)
-                task = api.task.OperationTask.for_relationship(
+                task = api.task.OperationTask(
                     relationship,
                     interface_name,
                     operation_name,
@@ -310,7 +310,7 @@ class TestCloudifyContextAdapter(object):
                         operation_inputs[input_name] = \
                             models.Parameter(name=input_name,
                                              type_name=formatting.full_type_name(input))
-                task = api.task.OperationTask.for_node(
+                task = api.task.OperationTask(
                     node,
                     interface_name,
                     operation_name,
@@ -542,7 +542,7 @@ def _test_common(out, ctx, adapter):
         'deployment': {'id': adapter.deployment.id},
         'operation': {
             'name': (op.name, ctx.task.name),
-            'retry_number': (op.retry_number, ctx.task.retry_count),
+            'retry_number': (op.retry_number, ctx.task.max_attempts - 1),
             'max_retries': (op.max_retries, ctx.task.max_attempts)
         },
         'bootstrap_context': {
