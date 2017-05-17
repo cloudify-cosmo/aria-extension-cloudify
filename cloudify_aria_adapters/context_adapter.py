@@ -251,11 +251,11 @@ class _NodeInstance(object):
 
     @property
     def runtime_properties(self):
-        return self._node_instance.runtime_properties
+        return self._node_instance.attributes
 
     @runtime_properties.setter
     def runtime_properties(self, value):
-        self._node_instance.runtime_properties = value
+        self._node_instance.attributes = value
 
     def update(self, on_conflict=None):
         self._ctx.model.node.update(self._node_instance)

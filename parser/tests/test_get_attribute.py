@@ -108,13 +108,13 @@ class TestEvaluateFunctions(AbstractTestParser):
                 }
             })
             if node_instance_id == 'node1':
-                result.runtime_properties['a'] = 'a_val'
+                result.attributes['a'] = 'a_val'
             elif node_instance_id == 'node2':
-                result.runtime_properties['b'] = 'b_val'
+                result.attributes['b'] = 'b_val'
             elif node_instance_id == 'node3':
-                result.runtime_properties['c'] = 'c_val'
+                result.attributes['c'] = 'c_val'
             elif node_instance_id == 'node4':
-                result.runtime_properties['d'] = 'd_val'
+                result.attributes['d'] = 'd_val'
             return result
 
         def get_node(node_id):

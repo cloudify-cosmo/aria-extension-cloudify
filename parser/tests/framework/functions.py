@@ -273,7 +273,7 @@ class GetAttribute(Function):
             node_instance = self._resolve_node_instance_by_name(storage)
 
         value = _get_property_value(node_instance.node_id,
-                                    node_instance.runtime_properties,
+                                    node_instance.attributes,
                                     self.attribute_path,
                                     self.path,
                                     raise_if_not_found=False)

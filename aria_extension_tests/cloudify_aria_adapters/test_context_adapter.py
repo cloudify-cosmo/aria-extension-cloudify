@@ -29,7 +29,7 @@ from aria.orchestrator.workflows.exceptions import ExecutorException
 from aria.orchestrator.workflows.executor import process
 from aria.orchestrator.workflows.core import engine
 from aria.orchestrator.exceptions import TaskAbortException, TaskRetryException
-from aria.utils import formatting
+from aria.utils import type
 
 import tests
 from tests import mock, storage, conftest
@@ -52,8 +52,8 @@ class TestCloudifyContextAdapter(object):
         node_template.properties['hello'] = node_property
         node_template.type = models.Type(variant='variant', name=node_type)
         node = self._get_node(workflow_context)
-        node_instance_runtime_properties = {'hello2': 'world2'}
-        node.runtime_properties = node_instance_runtime_properties
+        node_instance_attribute = models.Parameter.wrap('hello2', 'world2')
+        node.attributes[node_instance_attribute.name] = node_instance_attribute
         workflow_context.model.node.update(node)
         workflow_context.model.node_template.update(node_template)
 
@@ -68,7 +68,8 @@ class TestCloudifyContextAdapter(object):
         assert out['node']['type'] == node_type
         assert out['node']['type_hierarchy'] == [node_type]
         assert out['instance']['id'] == node.id
-        assert out['instance']['runtime_properties'] == node_instance_runtime_properties
+        assert out['instance']['runtime_properties'] == \
+               {node_instance_attribute.name: node_instance_attribute.value}
         assert not out['source']
         assert not out['target']
 
@@ -117,7 +118,7 @@ class TestCloudifyContextAdapter(object):
         node_instance = self._get_node(workflow_context)
         node_instance.host_fk = node_instance.id
         node_instance_ip = '120.120.120.120'
-        node_instance.runtime_properties = {'ip': node_instance_ip}
+        node_instance.attributes['ip'] = models.Parameter.wrap('ip', node_instance_ip)
         workflow_context.model.node_template.update(node)
         workflow_context.model.node.update(node_instance)
 
@@ -164,7 +165,7 @@ class TestCloudifyContextAdapter(object):
         assert exception.message == message
         assert exception.retry_interval == retry_interval
 
-        out = self._get_node(workflow_context).runtime_properties['out']
+        out = self._get_node(workflow_context).attributes['out'].value
         assert out['operation']['retry_number'] == 1
         assert out['operation']['max_retries'] == 1
 
@@ -222,24 +223,6 @@ class TestCloudifyContextAdapter(object):
         assert isinstance(exception, TaskRetryException)
         assert message in exception.message
         assert exception.retry_interval == retry_interval
-
-    def test_node_instance_update_and_refresh(self, executor, workflow_context):
-        expected_initial = self._get_node(workflow_context).runtime_properties
-        updated = {'new': 'runtime', 'property': 'value'}
-        uncommitted_change = {'newer': 'runtime', 'properties': 'and values'}
-        inputs = {'updated': updated, 'uncommitted_change': uncommitted_change}
-        out = self._run(executor, workflow_context, _test_node_instance_update_and_refresh,
-                        inputs=inputs)
-        props = out['instance']['runtime_properties']
-        expected_updated = expected_initial.copy()
-        expected_updated.update(updated)
-        expected_uncommitted_change = expected_updated.copy()
-        expected_uncommitted_change.update(uncommitted_change)
-        expected_refreshed = expected_updated
-        assert props['initial'] == expected_initial
-        assert props['after_update'] == expected_updated
-        assert props['after_change'] == expected_uncommitted_change
-        assert props['after_refresh'] == expected_refreshed
 
     @pytest.mark.skip('Pending ARIA feature implementation')
     def test_plugin_prefix(self):
@@ -309,7 +292,7 @@ class TestCloudifyContextAdapter(object):
                     for input_name, input in inputs.iteritems():
                         operation_inputs[input_name] = \
                             models.Parameter(name=input_name,
-                                             type_name=formatting.full_type_name(input))
+                                             type_name=type.full_type_name(input))
                 task = api.task.OperationTask(
                     node,
                     interface_name,
@@ -324,7 +307,7 @@ class TestCloudifyContextAdapter(object):
             workflow_context=workflow_context,
             tasks_graph=tasks_graph)
         eng.execute()
-        out = self._get_node(workflow_context).runtime_properties['out']
+        out = self._get_node(workflow_context).attributes['out'].value
         if not skip_common_assert:
             self._test_common(out, workflow_context)
         return out
@@ -490,20 +473,6 @@ def _test_plugin(ctx):
             'package_version': plugin.package_version,
             'workdir': plugin.workdir
         }
-
-
-@operation
-def _test_node_instance_update_and_refresh(ctx, updated, uncommitted_change):
-    with _adapter(ctx) as (adapter, out):
-        runtime_properties = {'initial': copy.deepcopy(adapter.instance.runtime_properties)}
-        out['instance'] = {'runtime_properties': runtime_properties}
-        adapter.instance.runtime_properties.update(updated)
-        adapter.instance.update()
-        runtime_properties['after_update'] = copy.deepcopy(adapter.instance.runtime_properties)
-        adapter.instance.runtime_properties.update(uncommitted_change)
-        runtime_properties['after_change'] = copy.deepcopy(adapter.instance.runtime_properties)
-        adapter.instance.refresh()
-        runtime_properties['after_refresh'] = copy.deepcopy(adapter.instance.runtime_properties)
 
 
 @operation
