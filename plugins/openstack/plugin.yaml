@@ -310,6 +310,9 @@ data_types:
       floating_network_id:
         type: string
         required: false
+      floating_network_name:
+        type: string
+        required: false
       fixed_ip_address:
         type: string
         required: false
@@ -965,6 +968,9 @@ node_types:
 
   aria.openstack.nodes.FloatingIP:
     derived_from: tosca.nodes.Root
+    attributes:
+      floating_ip_address:
+        type: string
     properties:
       floatingip:
         type: aria.openstack.datatypes.FloatingIP

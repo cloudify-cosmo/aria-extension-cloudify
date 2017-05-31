@@ -14,25 +14,46 @@ node_types:
 
 topology_template:
 
+  inputs:
+    ssh_username:
+      type: string
+      default: ubuntu
+    external_network_name:
+      type: string
+    webserver_port:
+      type: integer
+    private_key_path:
+      type: string
+    image:
+      type: string
+    flavor:
+      type: string
+    openstack_config:
+      type: map
+      entry_schema: string
+
   node_templates:
     network:
       type: aria.openstack.nodes.Network
       properties:
         resource_id: aria_helloworld_network
         create_if_missing: true
+        openstack_config: { get_input: openstack_config }
 
     router:
       type: aria.openstack.nodes.Router
       properties:
-        external_network: external # should change to: { get_input: external_network_name }
+        external_network: { get_input: external_network_name }
         create_if_missing: true
         resource_id: aria_helloworld_rtr
+        openstack_config: { get_input: openstack_config }
 
     subnet:
       type: aria.openstack.nodes.Subnet
       properties:
         resource_id: aria_helloworld_subnet
         create_if_missing: true
+        openstack_config: { get_input: openstack_config }
       requirements:
         - router: router
         - network: network
@@ -42,6 +63,7 @@ topology_template:
       properties:
         create_if_missing: true
         resource_id: aria_helloworld_port
+        openstack_config: { get_input: openstack_config }
       requirements:
         - security_group: security_group
         - floating_ip: virtual_ip
@@ -53,17 +75,19 @@ topology_template:
       properties:
         resource_id: aria_helloworld_floatingip
         create_if_missing: true
+        openstack_config: { get_input: openstack_config }
         floatingip:
-          floating_network_id: 6751cb30-0aef-4d7e-94c3-ee2a09e705eb # should change to: { get_input: external_network_id }
+          floating_network_name: { get_input: external_network_name }
 
     security_group:
       type: aria.openstack.nodes.SecurityGroup
       properties:
         create_if_missing: true
         resource_id: aria_helloworld_sg
+        openstack_config: { get_input: openstack_config }
         rules:
           - remote_ip_prefix: 0.0.0.0/0
-            port: 8080 # should chnage to: { get_input: port }
+            port: { get_input: webserver_port }
           - port: 22
             remote_ip_prefix: 0.0.0.0/0
 
@@ -72,16 +96,18 @@ topology_template:
       properties:
         create_if_missing: true
         resource_id: aria_helloworld_kp
-        private_key_path: /tmp/aria-helloworld-os-keypair # should change to: { get_input: private_key_path }
+        private_key_path: { get_input: private_key_path }
+        openstack_config: { get_input: openstack_config }
 
     vm:
       type: aria.openstack.nodes.Server
       properties:
-        image: ubuntu-14.04 # should change to: { get_input: image_name }
-        flavor: dc1.8x16 # should change to: { get_input: flavor_name }
+        image: { get_input: image }
+        flavor: { get_input: flavor }
         create_if_missing: true
         resource_id: aria_helloworld_vm
         management_network_name: aria_helloworld_network
+        openstack_config: { get_input: openstack_config }
       requirements:
         - floating_ip: virtual_ip
         - security_group: security_group
@@ -93,7 +119,7 @@ topology_template:
     web_app:
       type: web_app
       properties:
-        port: 8080 # should chnage to: { get_input: port }
+        port: { get_input: webserver_port }
       requirements:
         - host: vm
       interfaces:
@@ -102,20 +128,20 @@ topology_template:
             implementation:
               primary: scripts/configure.sh
               dependencies:
-                - ssh.user > ubuntu
-                - ssh.key_filename > /tmp/aria-helloworld-os-keypair # should change to: { concat: ['ssh.key_filename > ', { get_input: private_key_path} ] }
-                # this should be added: - { concat: ['ssh.address > ', { get_attribute: [ virtual_ip, floating_ip_address ] } ] }
+                - "ssh.user > { get_input: ssh_username }"
+                - "ssh.key_filename > { get_input: private_key_path }"
+                - "ssh.address > { get_attribute: [ virtual_ip, floating_ip_address ] }"
           start:
             implementation:
               primary: scripts/start.sh
               dependencies:
-                - ssh.user > ubuntu
-                - ssh.key_filename > /tmp/aria-helloworld-os-keypair # should change to: { concat: ['ssh.key_filename > ', { get_input: private_key_path} ] }
-                # this should be added: - { concat: ['ssh.address > ', { get_attribute: [ virtual_ip, floating_ip_address ] } ] }
+                - "ssh.user > { get_input: ssh_username }"
+                - "ssh.key_filename > { get_input: private_key_path }"
+                - "ssh.address > { get_attribute: [ virtual_ip, floating_ip_address ] }"
           stop:
             implementation:
               primary: scripts/stop.sh
               dependencies:
-                - ssh.user > ubuntu
-                - ssh.key_filename > /tmp/aria-helloworld-os-keypair # should change to: { concat: ['ssh.key_filename > ', { get_input: private_key_path} ] }
-                # this should be added: - { concat: ['ssh.address > ', { get_attribute: [ virtual_ip, floating_ip_address ] } ] }
+                - "ssh.user > { get_input: ssh_username }"
+                - "ssh.key_filename > { get_input: private_key_path }"
+                - "ssh.address > { get_attribute: [ virtual_ip, floating_ip_address ] }"
