@@ -42,7 +42,7 @@ class CloudifyContext(object):
         self._source = None
         self._target = None
         if isinstance(ctx, operation.NodeOperationContext):
-            self._node = _Node(ctx, ctx.node_template)
+            self._node = _Node(ctx, ctx.node_template, ctx.node)
             self._instance = _NodeInstance(ctx, node_instance=ctx.node)
         elif isinstance(ctx, operation.RelationshipOperationContext):
             self._source = _RelationshipSubject(
@@ -53,6 +53,12 @@ class CloudifyContext(object):
                 ctx,
                 node=ctx.target_node_template,
                 node_instance=ctx.target_node)
+
+    def __getattr__(self, item):
+        try:
+            return getattr(self._ctx, item)
+        except AttributeError:
+            return super(CloudifyContext, self).__getattribute__(item)
 
     @property
     def blueprint(self):
@@ -125,7 +131,7 @@ class CloudifyContext(object):
 
     @property
     def task_name(self):
-        return self._ctx.task.implementation
+        return self._ctx.task.function
 
     @property
     def task_target(self):
@@ -214,9 +220,10 @@ class _Deployment(object):
 
 class _Node(object):
 
-    def __init__(self, ctx, node):
+    def __init__(self, ctx, node, node_instance):
         self._ctx = ctx
         self._node = node
+        self._node_instance = node_instance
 
     @property
     def id(self):
@@ -228,7 +235,7 @@ class _Node(object):
 
     @property
     def properties(self):
-        return dict((p.name, p.value) for _, p in self._node.properties.items())
+        return self._node_instance.properties
 
     @property
     def type(self):
@@ -295,7 +302,7 @@ class _RelationshipSubject(object):
 
     def __init__(self, ctx, node, node_instance):
         self._ctx = ctx
-        self.node = _Node(ctx, node=node)
+        self.node = _Node(ctx, node=node, node_instance=node_instance)
         self.instance = _NodeInstance(ctx, node_instance=node_instance)
 
 
@@ -397,19 +404,20 @@ class CloudifyExecutorExtension(object):
                     from cloudify import context
                     from cloudify.exceptions import NonRecoverableError, RecoverableError
 
-                    # We need to create a new class dynamically, since CloudifyContext doesn't exist
-                    # at runtime.
-                    adapted_ctx = type('AdaptedCloudifyContext',
-                                       (CloudifyContext, context.CloudifyContext),
-                                       {}, )(ctx)
+                    with ctx.model.instrument(*ctx.INSTRUMENTATION_FIELDS):
+                        # We need to create a new class dynamically, since CloudifyContext doesn't
+                        # exist at runtime.
+                        adapted_ctx = type('AdaptedCloudifyContext',
+                                           (CloudifyContext, context.CloudifyContext),
+                                           {}, )(ctx)
 
-                    with _push_cfy_ctx(adapted_ctx, operation_inputs):
-                        try:
-                            function(ctx=adapted_ctx, **operation_inputs)
-                        except NonRecoverableError as e:
-                            ctx.task.abort(str(e))
-                        except RecoverableError as e:
-                            ctx.task.retry(str(e), retry_interval=e.retry_after)
+                        with _push_cfy_ctx(adapted_ctx, operation_inputs):
+                            try:
+                                function(ctx=adapted_ctx, **operation_inputs)
+                            except NonRecoverableError as e:
+                                ctx.task.abort(str(e))
+                            except RecoverableError as e:
+                                ctx.task.retry(str(e), retry_interval=e.retry_after)
                 else:
                     function(ctx=ctx, **operation_inputs)
             return wrapper

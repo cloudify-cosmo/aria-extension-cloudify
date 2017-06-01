@@ -48,12 +48,12 @@ class TestCloudifyContextAdapter(object):
     def test_node_instance_operation(self, executor, workflow_context):
         node_template = self._get_node_template(workflow_context)
         node_type = 'test.nodes.App'
-        node_property = models.Parameter.wrap('hello', 'world')
-        node_template.properties['hello'] = node_property
+        node_instance_property = models.Property.wrap('hello', 'world')
         node_template.type = models.Type(variant='variant', name=node_type)
         node = self._get_node(workflow_context)
-        node_instance_attribute = models.Parameter.wrap('hello2', 'world2')
+        node_instance_attribute = models.Attribute.wrap('hello2', 'world2')
         node.attributes[node_instance_attribute.name] = node_instance_attribute
+        node.properties[node_instance_property.name] = node_instance_property
         workflow_context.model.node.update(node)
         workflow_context.model.node_template.update(node_template)
 
@@ -64,7 +64,8 @@ class TestCloudifyContextAdapter(object):
         assert out['type'] == context_adapter.NODE_INSTANCE
         assert out['node']['id'] == node_template.id
         assert out['node']['name'] == node_template.name
-        assert out['node']['properties'] == {node_property.name: node_property.value}
+        assert out['node']['properties'] == \
+               {node_instance_property.name: node_instance_property.value}
         assert out['node']['type'] == node_type
         assert out['node']['type_hierarchy'] == [node_type]
         assert out['instance']['id'] == node.id
@@ -118,7 +119,7 @@ class TestCloudifyContextAdapter(object):
         node_instance = self._get_node(workflow_context)
         node_instance.host_fk = node_instance.id
         node_instance_ip = '120.120.120.120'
-        node_instance.attributes['ip'] = models.Parameter.wrap('ip', node_instance_ip)
+        node_instance.attributes['ip'] = models.Attribute.wrap('ip', node_instance_ip)
         workflow_context.model.node_template.update(node)
         workflow_context.model.node.update(node_instance)
 
@@ -260,12 +261,13 @@ class TestCloudifyContextAdapter(object):
         def mock_workflow(ctx, graph):
             interface_name = 'test'
             operation_name = 'op'
-            op_dict = {'implementation': '{0}.{1}'.format(__name__, func.__name__),
-                       'plugin': plugin}
+            op_dict = {'function': '{0}.{1}'.format(__name__, func.__name__),
+                       'plugin': plugin,
+                       'arguments': inputs or {}}
             node = self._get_node(ctx)
 
             if operation_end:
-                relationship = node.outbound_relationships[0]
+                actor = relationship = node.outbound_relationships[0]
                 relationship.interfaces[interface_name] = mock.models.create_interface(
                     relationship.source_node.service,
                     interface_name,
@@ -277,28 +279,31 @@ class TestCloudifyContextAdapter(object):
                     relationship,
                     interface_name,
                     operation_name,
-                    inputs=inputs or {},
+                    arguments=inputs or {},
                     max_attempts=max_attempts)
             else:
+                actor = node
                 node.interfaces[interface_name] = mock.models.create_interface(
                     node.service,
                     interface_name,
                     operation_name,
                     operation_kwargs=op_dict
                 )
-                if inputs:
-                    operation_inputs = \
-                        node.interfaces[interface_name].operations[operation_name].inputs
-                    for input_name, input in inputs.iteritems():
-                        operation_inputs[input_name] = \
-                            models.Parameter(name=input_name,
-                                             type_name=type.full_type_name(input))
+
                 task = api.task.OperationTask(
                     node,
                     interface_name,
                     operation_name,
-                    inputs=inputs or {},
+                    arguments=inputs or {},
                     max_attempts=max_attempts)
+
+            if inputs:
+                operation_inputs = \
+                    actor.interfaces[interface_name].operations[operation_name].inputs
+                for input_name, input in inputs.iteritems():
+                    operation_inputs[input_name] = \
+                        models.Input(name=input_name,
+                                     type_name=type.full_type_name(input))
 
             graph.add_tasks(task)
         tasks_graph = mock_workflow(ctx=workflow_context)
@@ -366,6 +371,7 @@ class TestCloudifyContextAdapter(object):
 
         return plugin
 
+
 @operation
 def _test_node_instance_operation(ctx):
     with _adapter(ctx) as (adapter, out):
@@ -375,7 +381,7 @@ def _test_node_instance_operation(ctx):
             'node': {
                 'id': node.id,
                 'name': node.name,
-                'properties': node.properties,
+                'properties': copy.deepcopy(node.properties),
                 'type': node.type,
                 'type_hierarchy': [t.name for t in node.type_hierarchy]
             },
@@ -503,7 +509,7 @@ def _test_common(out, ctx, adapter):
         'workflow_id': adapter.workflow_id,
         'rest_token': adapter.rest_token,
         'task_id': (adapter.task_id, ctx.task.id),
-        'task_name': (adapter.task_name, ctx.task.implementation),
+        'task_name': (adapter.task_name, ctx.task.function),
         'task_target': adapter.task_target,
         'task_queue': adapter.task_queue,
         'provider_context': adapter.provider_context,
