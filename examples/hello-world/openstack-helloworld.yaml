@@ -114,8 +114,6 @@ topology_template:
         - key_pair: keypair
         - port: port
 
-    # Currently missing the host_string. thus no real executions can run until the intrinsic
-    # functions are implemented
     web_app:
       type: web_app
       properties:

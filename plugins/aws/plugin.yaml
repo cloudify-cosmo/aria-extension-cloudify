@@ -575,6 +575,9 @@ node_types:
           A dictionary of values to pass to authenticate with the AWS API.
         type: aria.aws.datatypes.Config
         required: false
+    attributes:
+      public_ip_address:
+        type: string
     interfaces:
       Standard:
         create:
@@ -615,7 +618,7 @@ node_types:
       - security_group:
           capability: tosca.capabilities.Node
           node: aria.aws.nodes.SecurityGroup
-          relationship: aria.aws.relationships.InstanceConnectedToSecurityGroup
+          relationship: aria.aws.relationships.instance_connected_to_security_group
           occurrences: [ 0, UNBOUNDED ]
       - load_balancer:
           capability: tosca.capabilities.Node
@@ -869,6 +872,9 @@ node_types:
           A dictionary of values to pass to authenticate with the AWS API.
         type: aria.aws.datatypes.Config
         required: false
+    attributes:
+      aws_resource_id:
+        type: string
     interfaces:
       Standard:
         create:
@@ -1554,7 +1560,10 @@ relationship_types:
   aria.aws.relationships.ConnectedToSecurityGroup:
     derived_from: tosca.relationships.ConnectsTo
 
-  aria.aws.relationships.InstanceConnectedToSecurityGroup:
+  # The name of this relationship is not in CamelCase since in order to attach security group to an
+  # instance using the Cloudify AWS plugin, the relationship between the instance and the security
+  # group must be include the string 'instance_connected_to_security_group' in its name.
+  aria.aws.relationships.instance_connected_to_security_group:
     derived_from: aria.aws.relationships.ConnectedToSecurityGroup
 
   aria.aws.relationships.InstanceConnectedToLoadBalancer:

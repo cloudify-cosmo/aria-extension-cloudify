@@ -29,7 +29,7 @@ from aria.orchestrator.workflows.exceptions import ExecutorException
 from aria.orchestrator.workflows.executor import process
 from aria.orchestrator.workflows.core import engine, graph_compiler
 from aria.orchestrator.exceptions import TaskAbortException, TaskRetryException
-from aria.utils import type
+from aria.utils import type as type_
 
 import tests
 from tests import mock, storage, conftest
@@ -47,7 +47,7 @@ class TestCloudifyContextAdapter(object):
 
     def test_node_instance_operation(self, executor, workflow_context):
         node_template = self._get_node_template(workflow_context)
-        node_type = 'test.nodes.App'
+        node_type = 'aria.plugin.nodes.App'
         node_instance_property = models.Property.wrap('hello', 'world')
         node_template.type = models.Type(variant='variant', name=node_type)
         node = self._get_node(workflow_context)
@@ -67,7 +67,7 @@ class TestCloudifyContextAdapter(object):
         assert out['node']['properties'] == \
                {node_instance_property.name: node_instance_property.value}
         assert out['node']['type'] == node_type
-        assert out['node']['type_hierarchy'] == [node_type]
+        assert out['node']['type_hierarchy'] == ['cloudify.plugin.nodes.App']
         assert out['instance']['id'] == node.id
         assert out['instance']['runtime_properties'] == \
                {node_instance_attribute.name: node_instance_attribute.value}
@@ -289,7 +289,7 @@ class TestCloudifyContextAdapter(object):
                 actor.interfaces[interface_name].operations[operation_name].inputs
             for input_name, input in inputs.iteritems():
                 operation_inputs[input_name] = models.Input(name=input_name,
-                                                            type_name=type.full_type_name(input))
+                                                            type_name=type_.full_type_name(input))
 
         @workflow
         def mock_workflow(graph, **kwargs):
@@ -376,7 +376,7 @@ def _test_node_instance_operation(ctx):
                 'name': node.name,
                 'properties': copy.deepcopy(node.properties),
                 'type': node.type,
-                'type_hierarchy': [t.name for t in node.type_hierarchy]
+                'type_hierarchy': node.type_hierarchy
             },
             'instance': {
                 'id': instance.id,
@@ -509,8 +509,8 @@ def _test_common(out, ctx, adapter):
         'blueprint': {'id': adapter.blueprint.id},
         'deployment': {'id': adapter.deployment.id},
         'operation': {
-            'name': (op.name, ctx.task.name),
-            'retry_number': (op.retry_number, ctx.task.max_attempts - 1),
+            'name': (op.name, ctx.name.split('@')[0].replace(':', '.')),
+            'retry_number': (op.retry_number, ctx.task.attempts_count - 1),
             'max_retries': (op.max_retries, ctx.task.max_attempts)
         },
         'bootstrap_context': {

@@ -1,0 +1,101 @@
+tosca_definitions_version: tosca_simple_yaml_1_0
+
+imports:
+  - https://raw.githubusercontent.com/cloudify-cosmo/cloudify-aria-extensions/master/plugins/aws/plugin.yaml
+  - aria-1.0
+
+node_types:
+  http_web_server:
+    derived_from: tosca.nodes.WebApplication
+    properties:
+      port:
+        type: integer
+
+topology_template:
+  inputs:
+    webserver_port:
+      description: The HTTP web server port
+      type: integer
+      default: 8080
+    image_id:
+      description: AWS EC2 image id to use for the server
+      type: string
+    instance_type:
+      description: AWS EC2 instance type to use for the server
+      type: string
+      default: m3.medium
+    ssh_username:
+      type: string
+      default: ubuntu
+    ssh_port:
+      type: integer
+      default: 22
+    private_key_path:
+      description: Path to the private key used to authenticate into the instance
+      type: string
+
+  node_templates:
+    elastic_ip:
+      type: aria.aws.nodes.ElasticIP
+
+    security_group:
+      type: aria.aws.nodes.SecurityGroup
+      properties:
+        description: Security group for Hello World VM
+        rules:
+          - ip_protocol: tcp
+            cidr_ip: 0.0.0.0/0
+            from_port: { get_property: [ http_web_server, port ] }
+            to_port: { get_property: [ http_web_server, port ] }
+          - ip_protocol: tcp
+            cidr_ip: 0.0.0.0/0
+            from_port: { get_input: ssh_port }
+            to_port: { get_input: ssh_port }
+
+    vm:
+      type: aria.aws.nodes.Instance
+      properties:
+        image_id: { get_input: image_id }
+        instance_type: { get_input: instance_type }
+        name: aria-aws-hello-world-instance
+        parameters:
+          key_name: { get_attribute: [ keypair, aws_resource_id ] }
+      requirements:
+        - elastic_ip: elastic_ip
+        - security_group: security_group
+        - keypair: keypair
+
+    keypair:
+      type: aria.aws.nodes.KeyPair
+      properties:
+        private_key_path: { get_input: private_key_path }
+
+    http_web_server:
+      type: http_web_server
+      properties:
+        port: { get_input: webserver_port }
+      requirements:
+        - host: vm
+      interfaces:
+        Standard:
+          configure:
+            implementation:
+              primary: scripts/configure.sh
+              dependencies:
+                - "ssh.user > { get_input: ssh_username }"
+                - "ssh.key_filename > { get_input: private_key_path }"
+                - "ssh.address > { get_attribute: [ vm, public_ip_address ] }"
+          start:
+            implementation:
+              primary: scripts/start.sh
+              dependencies:
+                - "ssh.user > { get_input: ssh_username }"
+                - "ssh.key_filename > { get_input: private_key_path }"
+                - "ssh.address > { get_attribute: [ vm, public_ip_address ] }"
+          stop:
+            implementation:
+              primary: scripts/stop.sh
+              dependencies:
+                - "ssh.user > { get_input: ssh_username }"
+                - "ssh.key_filename > { get_input: private_key_path }"
+                - "ssh.address > { get_attribute: [ vm, public_ip_address ] }"

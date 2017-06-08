@@ -243,7 +243,16 @@ class _Node(object):
 
     @property
     def type_hierarchy(self):
-        return self._node.type.hierarchy
+        # We needed to modify the type hierarchy to be a list of strings that include the word
+        # 'cloudify' in each one of them instead of 'aria', since in the Cloudify AWS plugin, that
+        # we currently wish to support, if we want to attach an ElasticIP to a node, this node's
+        # type_hierarchy property must be a list of strings only, and it must contain either the
+        # string 'cloudify.aws.nodes.Instance', or the string 'cloudify.aws.nodes.Interface'.
+        # In any other case, we won't be able to attach an ElasticIP to a node using the Cloudify
+        # AWS plugin.
+        type_hierarchy_names = [type_.name for type_ in self._node.type.hierarchy
+                                if type_.name is not None]
+        return [type_name.replace('aria', 'cloudify') for type_name in type_hierarchy_names]
 
 
 class _NodeInstance(object):
@@ -313,11 +322,16 @@ class _Operation(object):
 
     @property
     def name(self):
-        return self._ctx.task.name
+        # We needed to modify the operation's 'name' property in order to support the Cloudify AWS
+        # plugin. It can't use ARIA's operation naming convention, as any operation we want to run
+        # using the Cloudify AWS plugin must have its name in the format:
+        # '<something>.<operation_name>'.
+        aria_name = self._ctx.task.name
+        return aria_name.split('@')[0].replace(':', '.')
 
     @property
     def retry_number(self):
-        return self._ctx.task.max_attempts - 1
+        return self._ctx.task.attempts_count - 1
 
     @property
     def max_retries(self):
