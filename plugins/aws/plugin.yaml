@@ -1,0 +1,1745 @@
+#
+# Copyright (c) 2017 GigaSpaces Technologies Ltd. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+
+tosca_definitions_version: tosca_simple_yaml_1_0
+
+topology_template:
+  policies:
+    cloudify-aws-plugin:
+      description: >-
+        aws plugin executes operations.
+      type: aria.Plugin
+      properties:
+        version: 1.4.10
+
+
+data_types:
+  aria.aws.datatypes.Config:
+    properties:
+    # Partially based on: http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html
+      aws_access_key_id:
+        description: >
+          The ID of your AWS ACCESS KEY.
+        type: string
+        required: false
+      aws_secret_access_key:
+        description: >
+          The ID of your AWS SECRET KEY.
+        type: string
+        required: false
+      region:
+        description: >
+          This is for backward compatibility with version 1.2.
+        type: string
+        required: false
+      ec2_region_name:
+        description: >
+          The EC2 Region RegionName, such as us-east-1.
+          (Not us-east-1b, which is an availability zone, or US East, which is a Region.)
+        type: string
+        required: false
+      ec2_region_endpoint:
+        description: >
+          The endpoint for the given region.
+        type: string
+        required: false
+      elb_region_name:
+        description: >
+          The ELB Region RegionName, such as us-east-1.
+          (Not us-east-1b, which is an availability zone, or US East, which is a Region.)
+          Required for aws_config for node type aria.aws.nodes.ElasticLoadBalancer.
+        type: string
+        required: false
+      elb_region_endpoint:
+        description: >
+          The endpoint for the given ELB region.
+        type: string
+        required: false
+
+  aria.aws.datatypes.Route:
+    properties:
+    # Based on: http://docs.aws.amazon.com/cli/latest/reference/ec2/create-route.html
+      route_table_id:
+        description: >
+          In most cases, leave this blank, because the route table is implicit from the node or
+          relationship that is creating the route.
+        type: string
+        required: false
+      destination_cidr_block:
+        description: >
+          This is the cidr_block that you want to route traffic for to the device.
+        type: string
+      gateway_id:
+        description: >
+          The id of the gateway (either internet gateway, customer gateway, or vpn gateway).
+        type: string
+        required: false
+      instance_id:
+        description: >
+          The id of the instance (if you are routing to a NAT instance).
+        type: string
+        required: false
+      interface_id:
+        description: >
+          The id of an attached network interface.
+        type: string
+        required: false
+      vpc_peering_connection_id:
+        description: >
+          The id of a VPC peering connection.
+        type: string
+        required: false
+
+  aria.aws.datatypes.NetworkAclEntry:
+    # Based on: http://docs.aws.amazon.com/cli/latest/reference/ec2/create-network-acl-entry.html
+    properties:
+      rule_number:
+        description: >
+          Some number to identify this rule. Cannot duplicate an existing rule number.
+        type: integer
+      protocol:
+        description: >
+          The Assigned Internet Protocol Number for the protocol (e.g. 1 is ICMP, 6 is TCP, and 17 is UDP).
+        type: integer
+      rule_action:
+        description: Either ALLOW or DENY.
+        type: string
+        constraints:
+          - valid_values: [ ALLOW, DENY ]
+      cidr_block:
+        description: >
+          The cidr_block.
+        type: string
+      egress:
+        description: >
+          Whether the rule applies to egress traffic from the subnet.
+        type: boolean
+        default: false
+        required: false
+      icmp_type:
+        description: >
+          If in protocol you chose 1 for ICMP, the ICMP type, -1 for all ICMP types.
+        type: integer
+        required: false
+      icmp_code:
+        description: >
+          If in protocol you chose 1 for ICMP, the ICMP code, -1 for all ICMP codes.
+        type: integer
+        required: false
+      port_range_from:
+        description: >
+          The first port in the range.
+        type: integer
+        constraints:
+          - in_range: [ 1, 65535 ]
+      port_range_to:
+        description: >
+          The last port in the range.
+        type: integer
+        constraints:
+          - in_range: [ 1, 65535 ]
+
+  aria.aws.datatypes.SecurityGroupRule:
+    # Based on: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-security-group-rule.html
+    properties:
+      egress:
+        description: >
+          Whether the rule applies to egress traffic.
+        type: boolean
+        default: false
+        required: false
+      ip_protocol:
+        description: >
+          The Assigned Internet Protocol Number for the protocol.
+        type: string
+        required: false
+      from_port:
+        description: >
+          The first port in the range.
+        type: integer
+        required: false
+        constraints:
+          - in_range: [ 1, 65535 ]
+      to_port:
+        description: >
+          The last port in the range.
+        type: integer
+        required: false
+        constraints:
+          - in_range: [ 1, 65535 ]
+      cidr_ip:
+        description: >
+          The cidr_block.
+        type: string
+        required: false
+      src_group_id:
+        description: >
+          The security group ID.
+        type: string
+        required: false
+
+  aria.aws.datatypes.BlockDeviceMapping:
+    derived_from: tosca.datatypes.Root
+    properties:
+    # Based on: http://docs.aws.amazon.com/cli/latest/reference/ec2/run-instances.html#options
+      virtual_name:
+        type: string
+        required: false
+      device_name:
+        type: string
+        required: false
+      ebs:
+        type: aria.aws.datatypes.Ebs
+        required: false
+      no_device:
+        type: string
+        required: false
+
+  aria.aws.datatypes.Ebs:
+    derived_from: tosca.datatypes.Root
+    properties:
+    # Based on: http://docs.aws.amazon.com/cli/latest/reference/ec2/run-instances.html#options
+      snapshot_id:
+        type: string
+        required: false
+      volume_size:
+        type: integer
+        required: false
+      delete_on_termination:
+        type: boolean
+        required: false
+      volume_type:
+        type: string
+        required: false
+        constraints:
+          - valid_values: [ standard, io1, gp2, sc1, st1]
+        required: false
+      iops:
+        type: integer
+        required: false
+      encrypted:
+        type: boolean
+        required: false
+
+  aria.aws.datatypes.NetworkInterfacePrivateIPAddress:
+  # Based on: http://docs.aws.amazon.com/cli/latest/reference/ec2/create-network-interface.html
+  # Specifically, look under --private-ip-addresses, and notice the differences from
+  # --private-ip-address.
+    derived_from: tosca.datatypes.Root
+    properties:
+      private_ip_address:
+        type: string
+        required: false
+      primary:
+        type: boolean
+        required: false
+
+  aria.aws.datatypes.NetworkInterface:
+    # Based on: http://docs.aws.amazon.com/cli/latest/reference/ec2/create-network-interface.html
+    derived_from: tosca.datatypes.Root
+    properties:
+      description:
+        type: string
+        required: false
+      dry_run:
+        type: boolean
+        required: false
+      groups:
+        type: list
+        entry_schema:
+          type: string
+        required: false
+      ipv6_address_count:
+        type: integer
+        required: false
+      ipv6_addresses:
+        type: map
+        entry_schema:
+          type: string
+        required: false
+      private_ip_address:
+        type: string
+        required: false
+      private_ip_addresses:
+        type: map
+        entry_schema:
+          type: aria.aws.datatypes.NetworkInterfacePrivateIPAddress
+        required: false
+      secondary_private_ip_address_count:
+        type: integer
+        required: false
+      subnet_id:
+        type: string
+        required: false
+      cli_input_json:
+        type: string
+        required: false
+      generate_cli_skeleton:
+        type: string
+        required: false
+
+  aria.aws.datatypes.RunInstancesParameters:
+    derived_from: tosca.datatypes.Root
+    properties:
+      # These properties were derived from the parameters of boto.e2c.connection.run_instances:
+      # https://github.com/boto/boto/blob/master/boto/ec2/connection.py#L738
+      # In the corresponding aws documentation,
+      # http://docs.aws.amazon.com/cli/latest/reference/ec2/run-instances.html,
+      # The properties 'placement', 'placement_group' and 'tenancy' of the boto api are part of a
+      # structure called 'placement', in addition to 'affinity' and 'host_id' which do not exist
+      # in the boto api.
+      image_id:
+        type: string
+        required: false
+      min_count:
+        type: integer
+        required: false
+      max_count:
+        type: integer
+        required: false
+      key_name:
+        type: string
+        required: false
+      security_groups:
+        type: list
+        entry_schema:
+          type: string
+        required: false
+      user_data:
+        type: string
+        required: false
+      addressing_type:
+        type: string
+        required: false
+      instance_type:
+        type: string
+        required: false
+      placement:
+        type: string
+        required: false
+      kernel_id:
+        type: string
+        required: false
+      ramdisk_id:
+        type: string
+        required: false
+      monitoring_enabled:
+        type: boolean
+        required: false
+      subnet_id:
+        type: string
+        required: false
+      block_device_map:
+        type: list
+        entry_schema:
+          type: aria.aws.datatypes.BlockDeviceMapping
+        required: false
+      disable_api_termination:
+        type: boolean
+        required: false
+      instance_initiated_shutdown_behavior:
+        type: string
+        constraints:
+          - valid_values: [ stop, terminate ]
+        required: false
+      private_id_address:
+        type: string
+        required: false
+      placement_group:
+        type: string
+        required: false
+      client_token:
+        type: string
+        required: false
+      security_group_ids:
+        type: list
+        entry_schema:
+          type: string
+        required: false
+      additional_info:
+        type: string
+        required: false
+      instance_profile_name:
+        type: string
+        required: false
+      instance_profile_arn:
+        type: string
+        required: false
+      tenancy:
+        type: string
+        required: false
+        constraints:
+          - valid_values: [ default, dedicated]
+      ebs_optimized:
+        type: boolean
+        required: false
+      network_interfaces:
+        type: list
+        entry_schema:
+          type: aria.aws.datatypes.NetworkInterface
+        required: false
+      dry_run:
+        type: boolean
+        required: false
+
+  aria.aws.datatypes.LoadBalancerListener:
+  # According to the description of the 'listeners' property of aria.aws.node.LoadBalancer
+    derived_from: tosca.datatypes.Root
+    properties:
+      LoadBalancerPortNumber:
+        type: integer
+        constraints:
+          - in_range: [ 1, 65535 ]
+      InstancePortNumber:
+        type: integer
+        constraints:
+          - in_range: [ 1, 65535 ]
+      protocol:
+        type: string
+        constraints:
+          - valid_values: [ tcp, ssl, http, https ]
+      SSLCertificateID:
+        type: string
+        required: false
+
+  aria.aws.datatypes.LoadBalancerComplexListener:
+    # According to the description of the 'complex_listeners' property of aria.aws.node.LoadBalancer
+    derived_from: aria.aws.datatypes.LoadBalancerListener
+    properties:
+      InstanceProtocol:
+        type: integer
+        constraints:
+          - in_range: [ 1, 65535 ]
+
+  aria.aws.datatypes.LoadBalancerHealthCheck:
+    # Based on: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-elb-health-check.html
+    derived_from: tosca.datatypes.Root
+    properties:
+      healthy_threshold:
+        type: string
+        required: false
+      interval:
+        type: string
+        required: false
+      target:
+        type: string
+        required: false
+      timeout:
+        type: string
+        required: false
+      unhealthy_threshold:
+        type: string
+        required: false
+
+  aria.aws.datatypes.NetworkInterfaceCreateParameters:
+    # These properties were derived from the parameters of boto.e2c.connection.create_network_interface
+    # https://github.com/boto/boto/blob/master/boto/ec2/connection.py#L4286, that are based on:
+    # http://docs.aws.amazon.com/cli/latest/reference/ec2/create-network-interface.html
+    derived_from: tosca.datatypes.Root
+    properties:
+      subnet_id:
+        type: string
+        required: false
+      private_ip_address:
+        type: string
+        required: false
+      description:
+        type: string
+        required: false
+      groups:
+        type: list
+        entry_schema:
+          type: string
+        required: false
+      dry_run:
+        type: boolean
+        required: false
+
+  aria.aws.datatypes.VolumeCreateParameters:
+    # Based on http://docs.aws.amazon.com/cli/latest/reference/ec2/create-volume.html#synopsis
+    derived_from: tosca.datatypes.Root
+    properties:
+      size:
+        type: integer
+        required: false
+      zone:
+        type: string
+        required: false
+      snapshot:
+        type: string
+        required: false
+      volume_type:
+        type: string
+        required: false
+      iops:
+        type: integer
+        required: false
+      encrypted:
+        type: boolean
+        required: false
+      kms_key_id:
+        type: string
+        required: false
+      dry_run:
+        type: boolean
+        required: false
+
+  aria.aws.datatypes.VolumeDeleteParameters:
+    # Based on: http://docs.aws.amazon.com/cli/latest/reference/ec2/delete-volume.html
+    derived_from: tosca.datatypes.Root
+    properties:
+      volume_id:
+        type: string
+        required: false
+      dry_run:
+        type: boolean
+        required: false
+
+interface_types:
+  aria.aws.interfaces.Validation:
+    derived_from: tosca.interfaces.Root
+    creation:
+      description: >
+        creation operation for the aws validation interface
+  aria.aws.interfaces.Snapshot:
+    derived_from: tosca.interfaces.Root
+    create:
+      description: >
+        creation operation for the aws snapshot interface
+
+
+node_types:
+  aria.aws.nodes.Instance:
+    derived_from: tosca.nodes.Compute
+    properties:
+      use_external_resource:
+        description: >
+          Indicate whether the resource exists or it should be created,
+          true if you are bringing an existing resource, false if you want to create it.
+        type: boolean
+        default: false
+      resource_id:
+        description: >
+          The AWS resource ID of the external resource, if use_external_resource is true.
+          Otherwise it is an empty string.
+        type: string
+        default: ''
+      tags:
+        description: >
+          A dictionary of key/value pairs of tags you want to add.
+        type: map
+        default: {}
+        entry_schema:
+          type: string  # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html
+      name:
+        description: >
+          Optional field if you want to add a specific name to the instance.
+        type: string
+        default: ''
+        required: false
+      image_id:
+        description: >
+          The ID of the AMI image in your Amazon account.
+        type: string
+      instance_type:
+        description: >
+          The instance's size.
+        type: string
+      use_password:
+        type: boolean
+        default: false
+      parameters:
+        description: >
+          The key value pair parameters allowed by Amazon API to the
+          ec2.connection.EC2Connection.run_instances command. It should be mentioned that
+          although this field is listed as optional, A non-trivial use case requires
+          that both the key_name parameter and the security_groups parameter be specified.
+        type: aria.aws.datatypes.RunInstancesParameters
+        default: {}
+        required: false
+      aws_config:
+        description: >
+          A dictionary of values to pass to authenticate with the AWS API.
+        type: aria.aws.datatypes.Config
+        required: false
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.instance.create
+        start:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.instance.start
+          inputs:
+            start_retry_interval:
+              description: Polling interval until the server is active in seconds
+              type: integer
+              default: 30
+            private_key_path:
+              description: >
+                Path to private key which matches the server's
+                public key. Will be used to decrypt password in case
+                the "use_password" property is set to "true"
+              type: string
+              default: ''
+        stop:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.instance.stop
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.instance.delete
+      Validation:
+        type: aria.aws.interfaces.Validation
+        creation:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.instance.creation_validation
+    requirements:
+      - elastic_ip:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.ElasticIP
+          relationship: aria.aws.relationships.InstanceConnectedToElasticIP
+          occurrences: [ 0, UNBOUNDED ]
+      - keypair:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.KeyPair
+          relationship: aria.aws.relationships.InstanceConnectedToKeypair
+          occurrences: [ 0, UNBOUNDED ]
+      - security_group:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.SecurityGroup
+          relationship: aria.aws.relationships.InstanceConnectedToSecurityGroup
+          occurrences: [ 0, UNBOUNDED ]
+      - load_balancer:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.ElasticLoadBalancer
+          relationship: aria.aws.relationships.InstanceConnectedToLoadBalancer
+          occurrences: [ 0, UNBOUNDED ]
+      - subnet_to_be_contained_in:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.Subnet
+          relationship: aria.aws.relationships.InstanceContainedInSubnet
+          occurrences: [ 0, UNBOUNDED ]
+      - subnet_to_connect_to:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.Subnet
+          relationship: aria.aws.relationships.InstanceConnectedToSubnet
+          occurrences: [ 0, UNBOUNDED ]
+      - eni:
+          capability: tosca.capabilities.Root
+          node: aria.aws.nodes.Interface
+          relationship: aria.aws.relationships.InstanceConnectedToENI
+          occurrences: [ 0, UNBOUNDED ]
+
+  aria.aws.nodes.WindowsInstance:
+    derived_from: aria.aws.nodes.Instance
+    properties:
+      use_password:
+        type: boolean
+        default: true
+      os_family:
+        type: string
+        default: windows
+
+  aria.aws.nodes.ElasticIP:
+    derived_from: tosca.nodes.Root
+    properties:
+      use_external_resource:
+        description: >
+          Indicate whether the resource exists or it should be created,
+          true if you are bringing an existing resource, false if you want to create it.
+        type: boolean
+        default: false
+      resource_id:
+        description: >
+          The AWS resource ID of the external resource, if use_external_resource is true.
+          Otherwise it is an empty string.
+        type: string
+        default: ''
+      tags:
+        description: >
+          A dictionary of key/value pairs of tags you want to add.
+        type: map
+        default: {}
+        entry_schema:
+          type: string  # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html
+      domain:
+        description: >
+          Set this to 'vpc' if you want to use VPC.
+        type: string
+        required: false
+      aws_config:
+        description: >
+          A dictionary of values to pass to authenticate with the AWS API.
+        type: aria.aws.datatypes.Config
+        required: false
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.elasticip.create
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.elasticip.delete
+      Validation:
+        type: aria.aws.interfaces.Validation
+        creation:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.elasticip.creation_validation
+
+  aria.aws.nodes.SecurityGroup:
+    derived_from: tosca.nodes.Root
+    properties:
+      use_external_resource:
+        description: >
+          Indicate whether the resource exists or it should be created,
+          true if you are bringing an existing resource, false if you want to create it.
+        type: boolean
+        default: false
+      resource_id:
+        description: >
+          The AWS resource ID of the external resource, if use_external_resource is true.
+          Otherwise it is an empty string.
+        type: string
+        default: ''
+      tags:
+        description: >
+          A dictionary of key/value pairs of tags you want to add.
+        type: map
+        default: {}
+        entry_schema:
+          type: string  # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html
+      description:
+        description: >
+          The description field that is required for every security group that you create
+          in Amazon.
+        type: string
+      rules:
+        description: >
+          You need to pass in either src_group_id (security group ID) OR cidr_ip,
+          and then the following three: ip_protocol, from_port and to_port.
+        type: list
+        entry_schema:
+          type: aria.aws.datatypes.SecurityGroupRule
+        default: []
+      aws_config:
+        description: >
+          A dictionary of values to pass to authenticate with the AWS API.
+        type: aria.aws.datatypes.Config
+        required: false
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.securitygroup.create
+        start:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.securitygroup.start
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.securitygroup.delete
+      Validation:
+        type: aria.aws.interfaces.Validation
+        creation:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.securitygroup.creation_validation
+    requirements:
+      - vpc:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.VPC
+          relationship: aria.aws.relationships.SecurityGroupContainedInVPC
+          occurrences: [ 0, UNBOUNDED ]
+      - security_group_rule:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.SecurityGroupRule
+          relationship: aria.aws.relationships.SecurityGroupUsesRule
+          occurrences: [ 0, UNBOUNDED ]
+
+  aria.aws.nodes.Volume:
+    derived_from: tosca.nodes.Root
+    properties:
+      use_external_resource:
+        description: >
+          Indicate whether the resource exists or it should be created,
+          true if you are bringing an existing resource, false if you want to create it.
+        type: boolean
+        default: false
+      resource_id:
+        description: >
+          The AWS resource ID of the external resource, if use_external_resource is true.
+          Otherwise it is an empty string.
+        type: string
+        default: ''
+      tags:
+        description: >
+          A dictionary of key/value pairs of tags you want to add.
+        type: map
+        default: {}
+        entry_schema:
+          type: string  # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html
+      size:
+        description: >
+          The size of the volume in GB.
+        type: string
+      zone:
+        description: >
+          A string representing the AWS availability zone.
+        type: string
+      device:
+        description: >
+          The device on the instance
+        type: string
+      aws_config:
+        description: >
+          A dictionary of values to pass to authenticate with the AWS API.
+        type: aria.aws.datatypes.Config
+        required: false
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.ebs.create
+          inputs:
+            args:
+              type: map
+              entry_schema:
+                type: aria.aws.datatypes.VolumeCreateParameters
+              default: {}
+        start:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.ebs.start
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.ebs.delete
+          inputs:
+            args:
+              type: map
+              entry_schema:
+                type: aria.aws.datatypes.VolumeDeleteParameters
+              default: {}
+      Validation:
+        type: aria.aws.interfaces.Validation
+        creation:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.ebs.creation_validation
+      Snapshot:
+        type: aria.aws.interfaces.Snapshot
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.ebs.create_snapshot
+          inputs:
+            args:
+              type: map
+              entry_schema:
+                type: string
+              default: {}
+    requirements:
+      - instance:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.Instance
+          relationship: aria.aws.relationships.VolumeConnectedToInstance
+          occurrences: [ 0, UNBOUNDED ]
+
+  aria.aws.nodes.KeyPair:
+    derived_from: tosca.nodes.Root
+    properties:
+      use_external_resource:
+        description: >
+          Indicate whether the resource exists or if the resource should be created.
+        type: boolean
+        default: false
+      resource_id:
+        description: >
+          The AWS resource ID of the external resource, if use_external_resource is true.
+          If use_external_resource is false, this will be the keys name and ID in AWS.
+          If left blank, the plugin will set a name for you.
+          Otherwise it is an empty string.
+        type: string
+        default: ''
+      tags:
+        description: >
+          A dictionary of key/value pairs of tags you want to add.
+        type: map
+        default: {}
+        entry_schema:
+          type: string  # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html
+      private_key_path:
+        description: >
+          The path where the key should be saved on the machine. If this is a bootstrap
+          process, this refers to the local computer. If this will run on the manager,
+          this will be saved on the manager.
+        type: string
+      aws_config:
+        description: >
+          A dictionary of values to pass to authenticate with the AWS API.
+        type: aria.aws.datatypes.Config
+        required: false
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.keypair.create
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.keypair.delete
+      Validation:
+        type: aria.aws.interfaces.Validation
+        creation:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.keypair.creation_validation
+
+  aria.aws.nodes.ElasticLoadBalancer:
+    derived_from: tosca.nodes.LoadBalancer
+    properties:
+      use_external_resource:
+        description: >
+          Indicate whether the resource exists or it should be created,
+          true if you are bringing an existing resource, false if you want to create it.
+        type: boolean
+        default: false
+      resource_id:
+        description: >
+          The AWS resource ID of the external resource, if use_external_resource is true.
+          Otherwise it is an empty string.
+        type: string
+        default: ''
+      tags:
+        description: >
+          A dictionary of key/value pairs of tags you want to add.
+        type: map
+        default: {}
+        entry_schema:
+          type: string  # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html
+      elb_name:
+        description: >
+          The mnemonic name associated with the new load balancer
+        type: string
+      zones:
+        description: >
+          zones (List of strings) - The names of the availability zone(s) to add.
+          example: ['us-east-1b','us-east-1b']
+        type: string
+      security_groups:
+        description: >
+          security_groups (list of strings) - The security groups assigned to your LoadBalancer
+          within your VPC.
+          example: ['sg-123456','sg-7891011']
+          FYI: security groups only supported with vpc
+        type: list
+        entry_schema:
+          type: string
+        default: []
+        required: false
+      listeners:
+        description: >
+          listeners (List of tuples) - Each tuple contains three or four values, (LoadBalancerPortNumber,
+          InstancePortNumber, Protocol, [SSLCertificateId]) where LoadBalancerPortNumber and
+          InstancePortNumber are integer values between 1 and 65535, Protocol is a string containing
+          either 'TCP', 'SSL', 'HTTP', or 'HTTPS'; SSLCertificateID is the ARN of a AWS IAM certificate,
+          and must be specified when doing HTTPS.
+          example: [[80, 8080, 'http'], [443, 8443, 'tcp']]
+        type: list
+        entry_schema:
+          type: aria.aws.datatypes.LoadBalancerListener
+      health_checks:
+        description: >
+          list of healthchecks (dicts) to use as criteria for instance health
+          example: [{'target': 'HTTP:8080/health'}, {'target': 'HTTP:80/alive'}]
+        type: list
+        entry_schema:
+          type: aria.aws.datatypes.LoadBalancerHealthCheck
+        default: []
+        required: false
+      scheme:
+        description: >
+          The type of a LoadBalancer. By default, Elastic Load Balancing creates an internet-facing
+          LoadBalancer with a publicly resolvable DNS name, which resolves to public IP addresses.
+          Specify the value internal for this option to create an internal LoadBalancer with a DNS
+          name that resolves to private IP addresses.
+          This option is only available for LoadBalancers attached to an Amazon VPC.
+        type: string
+        default: ''
+        required: false
+      subnets:
+        description: >
+          list of strings - A list of subnet IDs in your VPC to attach to your LoadBalancer.
+          example:
+        type: list
+        entry_schema:
+          type: string
+        default: []
+        required: false
+      complex_listeners:
+        description: >
+          List of tuples - Each tuple contains four or five values, (LoadBalancerPortNumber,
+          InstancePortNumber, Protocol, InstanceProtocol, SSLCertificateId).
+          Where:
+          LoadBalancerPortNumber and InstancePortNumber are integer values between 1 and 65535
+          Protocol and InstanceProtocol is a string containing either 'TCP', 'SSL', 'HTTP', or 'HTTPS'
+          SSLCertificateId is the ARN of an SSL certificate loaded into AWS IAM
+        type: list
+        entry_schema:
+          type: aria.aws.datatypes.LoadBalancerComplexListener
+        default: []
+        required: false
+      aws_config:
+        description: >
+          A dictionary of values to pass to authenticate with the AWS API.
+        type: aria.aws.datatypes.Config
+        required: false
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.elasticloadbalancer.create
+        start:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.elasticloadbalancer.start
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.elasticloadbalancer.delete
+      Validation:
+        type: aria.aws.interfaces.Validation
+        creation:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.elasticloadbalancer.creation_validation
+
+  aria.aws.nodes.VPC:
+    derived_from: tosca.nodes.network.Network
+    properties:
+      use_external_resource:
+        description: >
+          Indicate whether the resource exists or it should be created,
+          true if you are bringing an existing resource, false if you want to create it.
+        type: boolean
+        default: false
+      resource_id:
+        description: >
+          The AWS resource ID of the external resource, if use_external_resource is true.
+          Otherwise it is an empty string.
+        type: string
+        default: ''
+      tags:
+        description: >
+          A dictionary of key/value pairs of tags you want to add.
+        type: map
+        default: {}
+        entry_schema:
+          type: string  # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html
+      cidr_block:
+        description: >
+          The CIDR Block that you will split this VPCs subnets across.
+        type: string
+      instance_tenancy:
+        description: >
+          Default or dedicated.
+        type: string
+        default: default
+        required: false
+      aws_config:
+        description: >
+          A dictionary of values to pass to authenticate with the AWS API.
+        type: aria.aws.datatypes.Config
+        required: false
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.vpc.create_vpc
+        start:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.vpc.start
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.vpc.delete
+      Validation:
+        type: aria.aws.interfaces.Validation
+        creation:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.vpc.creation_validation
+    requirements:
+      - vpc:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.VPC
+          relationship: aria.aws.relationships.RouteTableOfSourceVPCConnectedToTargetPeerVPC
+          occurrences: [ 0, UNBOUNDED ]
+
+  aria.aws.nodes.Subnet:
+    derived_from: tosca.nodes.Root
+    properties:
+      use_external_resource:
+        description: >
+          Indicate whether the resource exists or it should be created,
+          true if you are bringing an existing resource, false if you want to create it.
+        type: boolean
+        default: false
+      resource_id:
+        description: >
+          The AWS resource ID of the external resource, if use_external_resource is true.
+          Otherwise it is an empty string.
+        type: string
+        default: ''
+      tags:
+        description: >
+          A dictionary of key/value pairs of tags you want to add.
+        type: map
+        default: {}
+        entry_schema:
+          type: string  # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html
+      cidr_block:
+        description: >
+          The CIDR Block that instances will be on.
+        type: string
+      availability_zone:
+        description: >
+          The availability zone that you want your subnet in.
+        type: string
+        default: ''
+        required: false
+      aws_config:
+        description: >
+          A dictionary of values to pass to authenticate with the AWS API.
+        type: aria.aws.datatypes.Config
+        required: false
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.subnet.create_subnet
+        start:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.subnet.start_subnet
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.subnet.delete_subnet
+      Validation:
+        type: aria.aws.interfaces.Validation
+        creation:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.subnet.creation_validation
+    requirements:
+      - vpc:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.VPC
+          relationship: aria.aws.relationships.SubnetContainedInVPC
+          occurrences: [ 0, UNBOUNDED ]
+
+  aria.aws.nodes.Gateway:
+    derived_from: tosca.nodes.Root
+    properties:
+      use_external_resource:
+        description: >
+          Indicate whether the resource exists or it should be created,
+          true if you are bringing an existing resource, false if you want to create it.
+        type: boolean
+        default: false
+      resource_id:
+        description: >
+          The AWS resource ID of the external resource, if use_external_resource is true.
+          Otherwise it is an empty string.
+        type: string
+        default: ''
+      tags:
+        description: >
+          A dictionary of key/value pairs of tags you want to add.
+        type: map
+        default: {}
+        entry_schema:
+          type: string  # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html
+      aws_config:
+        description: >
+          A dictionary of values to pass to authenticate with the AWS API.
+        type: aria.aws.datatypes.Config
+        required: false
+    interfaces:
+      Validation:
+        type: aria.aws.interfaces.Validation
+        creation:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.gateway.creation_validation
+    requirements:
+      - vpc:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.VPC
+          relationship: aria.aws.relationships.GatewayConnectedToVPC
+          occurrences: [ 0, UNBOUNDED ]
+
+  aria.aws.nodes.InternetGateway:
+    derived_from: aria.aws.nodes.Gateway
+    properties:
+      cidr_block:
+        description: >
+          The cidr_block that you want this internet gateway to service. Default is for all internet
+          traffic.
+        type: string
+        default: '0.0.0.0/0'
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.gateway.create_internet_gateway
+        start:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.gateway.start_internet_gateway
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.gateway.delete_internet_gateway
+
+  aria.aws.nodes.VPNGateway:
+    derived_from: aria.aws.nodes.Gateway
+    properties:
+      type:
+        description: >
+          Type of VPN Connection. Only valid value currently is ipsec.1
+        type: string
+        default: ipsec.1
+      availability_zone:
+        description: >
+          The Availability Zone where you want the VPN gateway.
+        type: string
+        default: ''
+        required: false
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.gateway.create_vpn_gateway
+        start:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.gateway.start_vpn_gateway
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.gateway.delete_vpn_gateway
+
+  aria.aws.nodes.CustomerGateway:
+    derived_from: aria.aws.nodes.Gateway
+    properties:
+      type:
+        description: >
+          Type of VPN Connection. Only valid value currently is ipsec.1
+        type: string
+        default: ipsec.1
+      ip_address:
+        description: >
+          Internet-routable IP address for customers gateway. Must be a static address
+        type: string
+      bgp_asn:
+        description: >
+          Customer gateways Border Gateway Protocol (BGP) Autonomous System Number (ASN)
+        type: integer
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.gateway.create_customer_gateway
+        start:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.gateway.start_customer_gateway
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.gateway.delete_customer_gateway
+    requirements:
+      - vpn_gateway:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.VPNGateway
+          relationship: aria.aws.relationships.CustomerGatewayConnectedToVPNGateway
+          occurrences: [ 0, UNBOUNDED ]
+
+  aria.aws.nodes.ACL:
+    derived_from: tosca.nodes.Root
+    properties:
+      use_external_resource:
+        description: >
+          Indicate whether the resource exists or it should be created,
+          true if you are bringing an existing resource, false if you want to create it.
+        type: boolean
+        default: false
+      resource_id:
+        description: >
+          The AWS resource ID of the external resource, if use_external_resource is true.
+          Otherwise it is an empty string.
+        type: string
+        default: ''
+      tags:
+        description: >
+          A dictionary of key/value pairs of tags you want to add.
+        type: map
+        default: {}
+        entry_schema:
+          type: string  # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html
+      acl_network_entries:
+        description: >
+          A list of rules of data type aria.datatypes.aws.NetworkAclEntry (see above).
+        type: list
+        entry_schema:
+          type: aria.aws.datatypes.NetworkAclEntry
+        default: []
+        required: false
+      aws_config:
+        description: >
+          A dictionary of values to pass to authenticate with the AWS API.
+        type: aria.aws.datatypes.Config
+        required: false
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.networkacl.create_network_acl
+        start:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.networkacl.start_network_acl
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.networkacl.delete_network_acl
+      Validation:
+        type: aria.aws.interfaces.Validation
+        creation:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.networkacl.creation_validation
+    requirements:
+      - vpc:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.VPC
+          relationship: aria.aws.relationships.NetworkACLContainedInVPC
+          occurrences: [ 0, UNBOUNDED ]
+      - subnet:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.Subnet
+          relationship: aria.aws.relationships.NetworkACLAssociatedWithSubnet
+          occurrences: [ 0, UNBOUNDED ]
+
+  aria.aws.nodes.DHCPOptions:
+    derived_from: tosca.nodes.Root
+    properties:
+      use_external_resource:
+        description: >
+          Indicate whether the resource exists or it should be created,
+          true if you are bringing an existing resource, false if you want to create it.
+        type: boolean
+        default: false
+      resource_id:
+        description: >
+          The AWS resource ID of the external resource, if use_external_resource is true.
+          Otherwise it is an empty string.
+        type: string
+        default: ''
+      tags:
+        description: >
+          A dictionary of key/value pairs of tags you want to add.
+        type: map
+        default: {}
+        entry_schema:
+          type: string  # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html
+      domain_name:
+        description: >
+          A domain name.
+        type: string
+        required: false
+      domain_name_servers:
+        description: >
+          A list of up to four DNS servers.
+        type: list
+        entry_schema:
+          type: string
+        default: []
+        required: false
+      ntp_servers:
+        description: >
+          A list of up to four NTP servers.
+        type: list
+        entry_schema:
+          type: string
+        default: []
+        required: false
+      netbios_name_servers:
+        description: >
+          A list of up to four netbios servers.
+        type: list
+        entry_schema:
+          type: string
+        default: []
+        required: false
+      netbios_node_type:
+        description: >
+          netbios type. recommended two.
+        type: string
+        default: ''
+        required: false
+      aws_config:
+        description: >
+          A dictionary of values to pass to authenticate with the AWS API.
+        type: aria.aws.datatypes.Config
+        required: false
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.dhcp.create_dhcp_options
+        start:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.dhcp.start_dhcp_options
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.dhcp.delete_dhcp_options
+      Validation:
+        type: aria.aws.interfaces.Validation
+        creation:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.dhcp.creation_validation
+    requirements:
+      - vpc:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.VPC
+          relationship: aria.aws.relationships.DHCPOptionsAssociatedWithVPC
+          occurrences: [ 0, UNBOUNDED ]
+
+  aria.aws.nodes.RouteTable:
+    derived_from: tosca.nodes.Root
+    properties:
+      use_external_resource:
+        description: >
+          Indicate whether the resource exists or it should be created,
+          true if you are bringing an existing resource, false if you want to create it.
+        type: boolean
+        default: false
+        required: true
+      resource_id:
+        description: >
+          The AWS resource ID of the external resource, if use_external_resource is true.
+          Otherwise it is an empty string.
+        type: string
+        default: ''
+      tags:
+        description: >
+          A dictionary of key/value pairs of tags you want to add.
+        type: map
+        default: {}
+        entry_schema:
+          type: string  # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html
+      aws_config:
+        description: >
+          A dictionary of values to pass to authenticate with the AWS API.
+        type: aria.aws.datatypes.Config
+        required: false
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify_aws.vpc.routetable.create_route_table
+          inputs:
+            routes:
+              description: >
+                A list of aria.aws.datatypes.Route.
+              type: list
+              entry_schema:
+                type: aria.aws.datatypes.Route
+              default: []
+        start:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.routetable.start_route_table
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.routetable.delete_route_table
+      Validation:
+        type: aria.aws.interfaces.Validation
+        creation:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.routetable.creation_validation
+    requirements:
+      - vpc:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.VPC
+          relationship: aria.aws.relationships.SubnetContainedInVPC
+          occurrences: [ 0, UNBOUNDED ]
+      - subnet:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.Subnet
+          relationship: aria.aws.relationships.RoutetableAssociatedWithSubnet
+          occurrences: [ 0, UNBOUNDED ]
+      - gateway:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.Gateway
+          relationship: aria.aws.relationships.RouteTableToGateway
+          occurrences: [ 0, UNBOUNDED ]
+
+  aria.aws.nodes.Interface:
+    derived_from: tosca.nodes.network.Port
+    properties:
+      use_external_resource:
+        description: >
+          Indicate whether the resource exists or it should be created,
+          true if you are bringing an existing resource, false if you want to create it.
+        type: boolean
+        default: false
+      resource_id:
+        description: >
+          The AWS resource ID of the external resource, if use_external_resource is true.
+          Otherwise it is an empty string.
+        type: string
+        default: ''
+      tags:
+        description: >
+          A dictionary of key/value pairs of tags you want to add.
+        type: map
+        default: {}
+        entry_schema:
+          type: string  # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html
+      parameters:
+        description: >
+          Any parameters accepted by the create_network_interface operation.
+        type: aria.aws.datatypes.NetworkInterfaceCreateParameters
+        required: false
+      aws_config:
+        description: >
+          A dictionary of values to pass to authenticate with the AWS API.
+        type: aria.aws.datatypes.Config
+        required: false
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.eni.create
+          inputs:
+            args:
+              type: aria.aws.datatypes.NetworkInterfaceCreateParameters
+              default: {}
+        start:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.eni.start
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.eni.delete
+          inputs:
+            args:
+              type: map
+              entry_schema:
+                type: string
+              default: {}
+    requirements:
+      - instance:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.Instance
+          relationship: aria.aws.relationships.ENIConnectedToInstance
+          occurrences: [ 0, UNBOUNDED ]
+
+  aria.aws.nodes.SecurityGroupRule:
+    derived_from: tosca.nodes.Root
+    properties:
+      use_external_resource:
+        type: boolean
+        default: False
+      resource_id:
+        description: >
+          The resource ID.
+        type: string
+        default: ''
+        required: false
+      rule:
+        description: >
+          A list of rules of data type aria.aws.datatypes.SecurityGroupRule (see above).
+        type: list
+        entry_schema:
+          type: aria.aws.datatypes.SecurityGroupRule
+        default: []
+        required: false
+      aws_config:
+        description: >
+          A dictionary of values to pass to authenticate with the AWS API.
+        type: aria.aws.datatypes.Config
+    requirements:
+      - security_group_to_depend_on:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.SecurityGroup
+          relationship: aria.aws.relationships.RuleDependsOnSecurityGroup
+          occurrences: [ 0, UNBOUNDED ]
+      - security_group_to_be_contained_in:
+          capability: tosca.capabilities.Node
+          node: aria.aws.nodes.SecurityGroup
+          relationship: aria.aws.relationships.RuleContainedInSecurityGroup
+          occurrences: [ 0, UNBOUNDED ]
+
+  aria.aws.nodes.SecurityGroupRule.Multi:
+    derived_from: aria.aws.nodes.SecurityGroupRule
+    interfaces:
+      Standard:
+        create:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.securitygroup.create_rule
+          inputs:
+            args:
+              type: map
+              entry_schema:
+                type: aria.aws.datatypes.SecurityGroupRule
+              default: {}
+        delete:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.securitygroup.delete_rule
+          inputs:
+            args:
+              type: map
+              entry_schema:
+                type: aria.aws.datatypes.SecurityGroupRule
+              default: {}
+
+
+relationship_types:
+  aria.aws.relationships.ConnectedToElasticIP:
+    derived_from: tosca.relationships.ConnectsTo
+    interfaces:
+      Configure:
+        add_source:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.elasticip.associate
+        remove_source:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.elasticip.disassociate
+
+  aria.aws.relationships.InstanceConnectedToElasticIP:
+    derived_from: aria.aws.relationships.ConnectedToElasticIP
+
+  aria.aws.relationships.InstanceConnectedToKeypair:
+    derived_from: tosca.relationships.ConnectsTo
+
+  aria.aws.relationships.ConnectedToSecurityGroup:
+    derived_from: tosca.relationships.ConnectsTo
+
+  aria.aws.relationships.InstanceConnectedToSecurityGroup:
+    derived_from: aria.aws.relationships.ConnectedToSecurityGroup
+
+  aria.aws.relationships.InstanceConnectedToLoadBalancer:
+    derived_from: tosca.relationships.ConnectsTo
+    interfaces:
+      Configure:
+        add_source:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.elasticloadbalancer.associate
+        remove_source:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.elasticloadbalancer.disassociate
+
+  aria.aws.relationships.VolumeConnectedToInstance:
+    derived_from: tosca.relationships.ConnectsTo
+    interfaces:
+      Configure:
+        add_source:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.ebs.associate
+          inputs:
+            args:
+              type: map
+              entry_schema:
+                type: string
+              default: {}
+            force:
+              type: boolean
+              default: False
+        remove_source:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.ebs.disassociate
+          inputs:
+            args:
+              type: map
+              entry_schema:
+                type: string
+              default: {}
+            force:
+              type: boolean
+              default: False
+
+  aria.aws.relationships.SubnetContainedInVPC:
+    derived_from: tosca.relationships.HostedOn
+
+  aria.aws.relationships.RoutetableContainedInVPC:
+    derived_from: tosca.relationships.HostedOn
+
+  aria.aws.relationships.RoutetableAssociatedWithSubnet:
+    derived_from: tosca.relationships.ConnectsTo
+    interfaces:
+      Configure:
+        add_target:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.routetable.associate_route_table
+        remove_target:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.routetable.disassociate_route_table
+
+  aria.aws.relationships.RouteTableToGateway:
+    derived_from: tosca.relationships.ConnectsTo
+    interfaces:
+      Configure:
+        add_target:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.routetable.create_route_to_gateway
+          inputs:
+            destination_cidr_block:
+              description: >
+                Provide a specific value for the destination cidr block.
+                If the target is an internet gateway, then this is not necessary.
+                It will resolve to the cidr_block node property.
+                Otherwise, you need to provide this value.
+              type: string
+              default: ''
+        remove_target:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.routetable.delete_route_from_gateway
+
+  aria.aws.relationships.GatewayConnectedToVPC:
+    derived_from: tosca.relationships.ConnectsTo
+    interfaces:
+      Configure:
+        add_target:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.gateway.attach_gateway
+        remove_target:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.gateway.detach_gateway
+
+  aria.aws.relationships.NetworkACLContainedInVPC:
+    derived_from: tosca.relationships.HostedOn
+
+  aria.aws.relationships.NetworkACLAssociatedWithSubnet:
+    derived_from: tosca.relationships.ConnectsTo
+    interfaces:
+      Configure:
+        add_target:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.networkacl.associate_network_acl
+        remove_target:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.networkacl.disassociate_network_acl
+
+  aria.aws.relationships.RouteTableOfSourceVPCConnectedToTargetPeerVPC:
+    derived_from: tosca.relationships.ConnectsTo
+    interfaces:
+      Configure:
+        pre_configure_target:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.vpc.create_vpc_peering_connection
+          inputs:
+            target_account_id:
+              description: >
+                The 12 digit account ID that the target VPC belongs to.
+              type: string
+              default: ''
+            routes:
+              description: >
+                A list of aria.aws.datatypes.Route for assignment to the source Route Table.
+              type: list
+              entry_schema:
+                type: aria.aws.datatypes.Route
+              default: []
+        post_configure_target:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.vpc.accept_vpc_peering_connection
+        remove_target:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.vpc.delete_vpc_peering_connection
+
+  aria.aws.relationships.DHCPOptionsAssociatedWithVPC:
+    derived_from: tosca.relationships.ConnectsTo
+    interfaces:
+      Configure:
+        add_target:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.dhcp.associate_dhcp_options
+        remove_target:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.dhcp.restore_dhcp_options
+
+  aria.aws.relationships.CustomerGatewayConnectedToVPNGateway:
+    derived_from: tosca.relationships.ConnectsTo
+    interfaces:
+      Configure:
+        add_target:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.gateway.create_vpn_connection
+          inputs:
+            routes:
+              description: >
+                A list of static routes to add to this vpn_connection.
+                The routes will be of type aria.aws.datatypes.Route.
+                However, you can only provide the destination_cidr_block and a vpn_connection_id.
+              type: list
+              entry_schema:
+                type: aria.aws.datatypes.Route
+              default: []
+        remove_target:
+          implementation: cloudify-aws-plugin > cloudify_aws.vpc.gateway.delete_vpn_connection
+
+  aria.aws.relationships.InstanceContainedInSubnet:
+    derived_from: tosca.relationships.HostedOn
+
+  aria.aws.relationships.InstanceConnectedToSubnet:
+    derived_from: tosca.relationships.ConnectsTo
+
+  aria.aws.relationships.SecurityGroupContainedInVPC:
+    derived_from: tosca.relationships.HostedOn
+
+  aria.aws.relationships.ConnectedToSubnet:  # ARIA NOTE: I don't see a use for this relationship
+    derived_from: tosca.relationships.ConnectsTo
+
+  aria.aws.relationships.ENIConnectedToInstance:
+    derived_from: tosca.relationships.ConnectsTo
+    interfaces:
+      Configure:
+        add_source:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.eni.associate
+          inputs:
+            args:
+              type: map
+              entry_schema:
+                type: string
+              default: {}
+        remove_source:
+          implementation: cloudify-aws-plugin > cloudify_aws.ec2.eni.disassociate
+          inputs:
+            args:
+              type: map
+              entry_schema:
+                type: string
+              default: {}
+
+  aria.aws.relationships.InstanceConnectedToENI:
+    derived_from: tosca.relationships.ConnectsTo
+
+  aria.aws.relationships.SecurityGroupUsesRule:
+    derived_from: tosca.relationships.DependsOn
+
+  aria.aws.relationships.RuleDependsOnSecurityGroup:
+    derived_from: tosca.relationships.DependsOn
+
+  aria.aws.relationships.RuleContainedInSecurityGroup:
+    derived_from: tosca.relationships.HostedOn
