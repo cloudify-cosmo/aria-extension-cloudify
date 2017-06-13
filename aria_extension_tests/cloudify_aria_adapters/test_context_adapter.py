@@ -257,55 +257,50 @@ class TestCloudifyContextAdapter(object):
              skip_common_assert=False,
              operation_end=None,
              plugin=None):
+        interface_name = 'test'
+        operation_name = 'op'
+        op_dict = {'function': '{0}.{1}'.format(__name__, func.__name__),
+                   'plugin': plugin,
+                   'arguments': inputs or {}}
+        node = self._get_node(workflow_context)
+
+        if operation_end:
+            actor = relationship = node.outbound_relationships[0]
+            relationship.interfaces[interface_name] = mock.models.create_interface(
+                relationship.source_node.service,
+                interface_name,
+                operation_name,
+                operation_kwargs=op_dict,
+            )
+            workflow_context.model.relationship.update(relationship)
+
+        else:
+            actor = node
+            node.interfaces[interface_name] = mock.models.create_interface(
+                node.service,
+                interface_name,
+                operation_name,
+                operation_kwargs=op_dict
+            )
+            workflow_context.model.node.update(node)
+
+        if inputs:
+            operation_inputs = \
+                actor.interfaces[interface_name].operations[operation_name].inputs
+            for input_name, input in inputs.iteritems():
+                operation_inputs[input_name] = models.Input(name=input_name,
+                                                            type_name=type.full_type_name(input))
+
         @workflow
-        def mock_workflow(ctx, graph):
-            interface_name = 'test'
-            operation_name = 'op'
-            op_dict = {'function': '{0}.{1}'.format(__name__, func.__name__),
-                       'plugin': plugin,
-                       'arguments': inputs or {}}
-            node = self._get_node(ctx)
-
-            if operation_end:
-                actor = relationship = node.outbound_relationships[0]
-                relationship.interfaces[interface_name] = mock.models.create_interface(
-                    relationship.source_node.service,
-                    interface_name,
-                    operation_name,
-                    operation_kwargs=op_dict,
-                )
-                workflow_context.model.relationship.update(relationship)
-                task = api.task.OperationTask(
-                    relationship,
-                    interface_name,
-                    operation_name,
-                    arguments=inputs or {},
-                    max_attempts=max_attempts)
-            else:
-                actor = node
-                node.interfaces[interface_name] = mock.models.create_interface(
-                    node.service,
-                    interface_name,
-                    operation_name,
-                    operation_kwargs=op_dict
-                )
-
-                task = api.task.OperationTask(
-                    node,
-                    interface_name,
-                    operation_name,
-                    arguments=inputs or {},
-                    max_attempts=max_attempts)
-
-            if inputs:
-                operation_inputs = \
-                    actor.interfaces[interface_name].operations[operation_name].inputs
-                for input_name, input in inputs.iteritems():
-                    operation_inputs[input_name] = \
-                        models.Input(name=input_name,
-                                     type_name=type.full_type_name(input))
-
+        def mock_workflow(graph, **kwargs):
+            task = api.task.OperationTask(
+                actor,
+                interface_name,
+                operation_name,
+                arguments=inputs or {},
+                max_attempts=max_attempts)
             graph.add_tasks(task)
+
         tasks_graph = mock_workflow(ctx=workflow_context)
         eng = engine.Engine(
             executor=executor,
