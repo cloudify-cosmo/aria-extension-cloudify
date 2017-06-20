@@ -27,7 +27,7 @@ from aria.orchestrator import events
 from aria.orchestrator.workflows import api
 from aria.orchestrator.workflows.exceptions import ExecutorException
 from aria.orchestrator.workflows.executor import process
-from aria.orchestrator.workflows.core import engine
+from aria.orchestrator.workflows.core import engine, compile
 from aria.orchestrator.exceptions import TaskAbortException, TaskRetryException
 from aria.utils import type
 
@@ -302,11 +302,9 @@ class TestCloudifyContextAdapter(object):
             graph.add_tasks(task)
 
         tasks_graph = mock_workflow(ctx=workflow_context)
-        eng = engine.Engine(
-            executor=executor,
-            workflow_context=workflow_context,
-            tasks_graph=tasks_graph)
-        eng.execute()
+        compile.create_execution_tasks(workflow_context, tasks_graph, executor.__class__)
+        eng = engine.Engine(executors={executor.__class__: executor})
+        eng.execute(workflow_context)
         out = self._get_node(workflow_context).attributes['out'].value
         if not skip_common_assert:
             self._test_common(out, workflow_context)
