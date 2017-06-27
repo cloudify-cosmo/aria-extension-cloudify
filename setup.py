@@ -38,7 +38,7 @@ setup(
              find_packages(where='parser',
                            include=['aria_extension_cloudify*',
                                     'old_parser_components*']),
-    install_requires=['aria==0.1.0'],
+    install_requires=['apache-ariatosca==0.1.0'],
     entry_points={
         'aria_extension': [
             'adapter = cloudify_aria_adapters.context_adapter',
