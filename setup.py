@@ -26,7 +26,7 @@ if (sys.version_info[0], sys.version_info[1]) not in _PYTHON_SUPPORTED_VERSIONS:
 
 setup(
     name=_PACKAGE_NAME,
-    version='4.3.dev1',
+    version='4.3',
     description='Integration of Cloudify with ARIA',
     author='Gigaspaces',
     author_email='cosmo-admin@gigaspaces.com',
