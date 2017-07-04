@@ -27,21 +27,17 @@ if (sys.version_info[0], sys.version_info[1]) not in _PYTHON_SUPPORTED_VERSIONS:
 setup(
     name=_PACKAGE_NAME,
     version='4.1',
-    description='Integration of Cloudify with ARIA',
+    description="Enable ARIA to utilize some of Cloudify's abilities, such as interfacing with AWS "
+                "and Openstack.",
     author='Gigaspaces',
     author_email='cosmo-admin@gigaspaces.com',
     license='LICENSE',
-    package_dir={
-        'aria_extension_cloudify': 'parser/aria_extension_cloudify',
-        'old_parser_components': 'parser/old_parser_components'},
-    packages=find_packages(include=['cloudify_aria_adapters*']) +
-             find_packages(where='parser',
-                           include=['aria_extension_cloudify*',
-                                    'old_parser_components*']),
-    install_requires=['apache-ariatosca==0.1.0'],
+
+    packages=find_packages(include=['adapters*']),
+    install_requires=['apache-ariatosca'],
     entry_points={
         'aria_extension': [
-            'adapter = cloudify_aria_adapters.context_adapter',
+            'adapter = adapters.context_adapter',
         ],
     }
 )
