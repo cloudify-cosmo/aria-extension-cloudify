@@ -1,0 +1,4 @@
+aws_access_key_id: X 
+aws_secret_access_key: Y 
+image_id: ami-810f3297
+private_key_path: ~/tmp/private_key.pem

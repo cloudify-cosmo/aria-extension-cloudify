@@ -4,6 +4,11 @@ imports:
   - https://raw.githubusercontent.com/cloudify-cosmo/aria-extension-cloudify/master/plugins/aws/plugin.yaml
   - aria-1.0
 
+dsl_definitions:
+  aws_config: &aws_config
+      aws_access_key_id: { get_input: aws_access_key_id}
+      aws_secret_access_key: { get_input: aws_secret_access_key}
+
 node_types:
   http_web_server:
     derived_from: tosca.nodes.WebApplication
@@ -13,6 +18,10 @@ node_types:
 
 topology_template:
   inputs:
+    aws_access_key_id:
+      type: string
+    aws_secret_access_key:
+      type: string
     webserver_port:
       description: The HTTP web server port
       type: integer
@@ -37,11 +46,14 @@ topology_template:
   node_templates:
     elastic_ip:
       type: aria.aws.nodes.ElasticIP
+      properties:
+        aws_config: *aws_config
 
     security_group:
       type: aria.aws.nodes.SecurityGroup
       properties:
         description: Security group for Hello World VM
+        aws_config: *aws_config
         rules:
           - ip_protocol: tcp
             cidr_ip: 0.0.0.0/0
@@ -60,6 +72,7 @@ topology_template:
         name: aria-aws-hello-world-instance
         parameters:
           key_name: { get_attribute: [ keypair, aws_resource_id ] }
+        aws_config: *aws_config
       requirements:
         - elastic_ip: elastic_ip
         - security_group: security_group
@@ -69,6 +82,7 @@ topology_template:
       type: aria.aws.nodes.KeyPair
       properties:
         private_key_path: { get_input: private_key_path }
+        aws_config: *aws_config
 
     http_web_server:
       type: http_web_server
