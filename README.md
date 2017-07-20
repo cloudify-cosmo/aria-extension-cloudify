@@ -6,7 +6,7 @@ Using an adapter that serves as a translation layer between the Cloudify and ARI
 
 1. clone the repository
 
-`git clone https://github.com/cloudify-cosmo/cloudify-aria-extensions.git`
+`git clone https://github.com/cloudify-cosmo/aria-extension-cloudify.git`
 
 2. install the requirements:
 

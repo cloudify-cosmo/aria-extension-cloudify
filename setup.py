@@ -18,7 +18,7 @@ import sys
 
 from setuptools import setup, find_packages
 
-_PACKAGE_NAME = 'cloudify-aria-extensions'
+_PACKAGE_NAME = 'aria-extension-cloudify'
 _PYTHON_SUPPORTED_VERSIONS = [(2, 6), (2, 7)]
 
 if (sys.version_info[0], sys.version_info[1]) not in _PYTHON_SUPPORTED_VERSIONS:
