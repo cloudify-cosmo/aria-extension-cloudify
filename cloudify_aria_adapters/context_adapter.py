@@ -42,17 +42,27 @@ class CloudifyContext(object):
         self._source = None
         self._target = None
         if isinstance(ctx, operation.NodeOperationContext):
-            self._node = _Node(ctx, ctx.node_template)
-            self._instance = _NodeInstance(ctx, node_instance=ctx.node)
+            self._node = _Node(ctx, node_template=ctx.node_template)
+            self._instance = _NodeInstance(ctx, node=ctx.node)
         elif isinstance(ctx, operation.RelationshipOperationContext):
             self._source = _RelationshipSubject(
                 ctx,
-                node=ctx.source_node_template,
-                node_instance=ctx.source_node)
+                node_template=ctx.source_node_template,
+                node=ctx.source_node)
             self._target = _RelationshipSubject(
                 ctx,
-                node=ctx.target_node_template,
-                node_instance=ctx.target_node)
+                node_template=ctx.target_node_template,
+                node=ctx.target_node)
+
+    @property
+    def model(self):
+        # Instrumentation needs access to this
+        return self._ctx.model
+
+    @property
+    def INSTRUMENTATION_FIELDS(self):
+        # Instrumentation needs access to this
+        return self._ctx.INSTRUMENTATION_FIELDS
 
     @property
     def blueprint(self):
@@ -125,7 +135,7 @@ class CloudifyContext(object):
 
     @property
     def task_name(self):
-        return self._ctx.task.implementation
+        return self._ctx.task.function
 
     @property
     def task_target(self):
@@ -214,6 +224,33 @@ class _Deployment(object):
 
 class _Node(object):
 
+    def __init__(self, ctx, node_template):
+        self._ctx = ctx
+        self._node_template = node_template
+
+    @property
+    def id(self):
+        return self._node_template.id
+
+    @property
+    def name(self):
+        return self._node_template.name
+
+    @property
+    def properties(self):
+        return self._node_template.properties
+
+    @property
+    def type(self):
+        return self._node_template.type.name
+
+    @property
+    def type_hierarchy(self):
+        return self._node_template.type.hierarchy
+
+
+class _NodeInstance(object):
+
     def __init__(self, ctx, node):
         self._ctx = ctx
         self._node = node
@@ -223,80 +260,53 @@ class _Node(object):
         return self._node.id
 
     @property
-    def name(self):
-        return self._node.name
-
-    @property
-    def properties(self):
-        return dict((p.name, p.value) for _, p in self._node.properties.items())
-
-    @property
-    def type(self):
-        return self._node.type.name
-
-    @property
-    def type_hierarchy(self):
-        return self._node.type.hierarchy
-
-
-class _NodeInstance(object):
-
-    def __init__(self, ctx, node_instance):
-        self._ctx = ctx
-        self._node_instance = node_instance
-
-    @property
-    def id(self):
-        return self._node_instance.id
-
-    @property
     def runtime_properties(self):
-        return self._node_instance.runtime_properties
+        return self._node.attributes
 
     @runtime_properties.setter
     def runtime_properties(self, value):
-        self._node_instance.runtime_properties = value
+        self._node.attributes = value
 
     def update(self, on_conflict=None):
-        self._ctx.model.node.update(self._node_instance)
+        self._ctx.model.node.update(self._node)
 
     def refresh(self, force=False):
-        self._ctx.model.node.refresh(self._node_instance)
+        self._ctx.model.node.refresh(self._node)
 
     @property
     def host_ip(self):
-        return self._node_instance.ip
+        return self._node.host_address
 
     @property
     def relationships(self):
-        return [_Relationship(self._ctx, relationship_instance=relationship_instance) for
-                relationship_instance in self._node_instance.outbound_relationships]
+        return [_Relationship(self._ctx, relationship=relationship) for
+                relationship in self._node.outbound_relationships]
 
 
 class _Relationship(object):
 
-    def __init__(self, ctx, relationship_instance):
+    def __init__(self, ctx, relationship):
         self._ctx = ctx
-        self._relationship_instance = relationship_instance
-        node_instance = relationship_instance.target_node
-        node = node_instance.node_template
-        self.target = _RelationshipSubject(ctx, node=node, node_instance=node_instance)
+        self._relationship = relationship
+        node = relationship.target_node
+        node_template = node.node_template
+        self.target = _RelationshipSubject(ctx, node_template=node_template, node=node)
 
     @property
     def type(self):
-        return self._relationship_instance.type.name
+        return self._relationship.type.name
 
     @property
     def type_hierarchy(self):
-        return self._relationship_instance.type.hierarchy
+        return self._relationship.type.hierarchy
 
 
 class _RelationshipSubject(object):
 
-    def __init__(self, ctx, node, node_instance):
+    def __init__(self, ctx, node_template, node):
         self._ctx = ctx
-        self.node = _Node(ctx, node=node)
-        self.instance = _NodeInstance(ctx, node_instance=node_instance)
+        self.node = _Node(ctx, node_template=node_template)
+        self.instance = _NodeInstance(ctx, node=node)
 
 
 class _Operation(object):
@@ -310,7 +320,7 @@ class _Operation(object):
 
     @property
     def retry_number(self):
-        return self._ctx.task.retry_count
+        return self._ctx.task.attempts_count - 1 if self._ctx.task.attempts_count > 0 else 0
 
     @property
     def max_retries(self):
@@ -388,7 +398,7 @@ class CloudifyExecutorExtension(object):
         def decorator(function):
             @functools.wraps(function)
             def wrapper(ctx, **operation_inputs):
-                # we assume that any cloudify based plugin would use the plugins-common, Thus two
+                # We assume that any Cloudify based plugin would use the plugins-common, rhus two
                 # different paths are created.
                 is_cloudify_dependent = ctx.task.plugin and any(
                     'cloudify_plugins_common' in w for w in ctx.task.plugin.wheels)
@@ -403,6 +413,7 @@ class CloudifyExecutorExtension(object):
                                        (CloudifyContext, context.CloudifyContext),
                                        {}, )(ctx)
 
+                    exception = None
                     with _push_cfy_ctx(adapted_ctx, operation_inputs):
                         try:
                             function(ctx=adapted_ctx, **operation_inputs)
@@ -410,6 +421,13 @@ class CloudifyExecutorExtension(object):
                             ctx.task.abort(str(e))
                         except RecoverableError as e:
                             ctx.task.retry(str(e), retry_interval=e.retry_after)
+                        except BaseException as e:
+                            # Cannot rethrow exceptions from inside a contextmanager
+                            exception = e
+                            import traceback
+                            traceback.print_exc()
+                    if exception is not None:
+                        raise exception
                 else:
                     function(ctx=ctx, **operation_inputs)
             return wrapper
@@ -421,12 +439,12 @@ def _push_cfy_ctx(ctx, params):
     from cloudify import state
 
     try:
-        # Support for > cloudify 4.0
+        # Support for > Cloudify 4.0
         with state.current_ctx.push(ctx, params) as current_ctx:
             yield current_ctx
 
     except AttributeError:
-        # support for < cloudify 4.0
+        # Support for < Cloudify 4.0
         try:
             original_ctx = state.current_ctx.get_ctx()
         except RuntimeError:
