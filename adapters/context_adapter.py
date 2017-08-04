@@ -14,51 +14,51 @@
 # under the License.
 #
 
-import functools
 import os
 import tempfile
-from contextlib import contextmanager
 
-from aria import extension
 from aria.orchestrator.context import operation
+
 
 DEPLOYMENT = 'deployment'
 NODE_INSTANCE = 'node-instance'
 RELATIONSHIP_INSTANCE = 'relationship-instance'
 
 
-class CloudifyContext(object):
+class CloudifyContextAdapter(object):
 
     def __init__(self, ctx):
         self._ctx = ctx
-        self._blueprint = _Blueprint(ctx)
-        self._deployment = _Deployment(ctx)
-        self._operation = _Operation(ctx)
-        self._bootstrap_context = _Bootstrap(ctx)
-        self._plugin = _Plugin(ctx)
-        self._agent = _CloudifyAgent()
+        self._blueprint = BlueprintAdapter(ctx)
+        self._deployment = DeploymentAdapter(ctx)
+        self._operation = OperationAdapter(ctx)
+        self._bootstrap_context = BootstrapAdapter(ctx)
+        self._plugin = PluginAdapter(ctx)
+        self._agent = CloudifyAgentAdapter()
         self._node = None
         self._node_instance = None
         self._source = None
         self._target = None
         if isinstance(ctx, operation.NodeOperationContext):
-            self._node = _Node(ctx, ctx.node_template, ctx.node)
-            self._instance = _NodeInstance(ctx, node_instance=ctx.node)
+            self._node = NodeAdapter(ctx, ctx.node_template, ctx.node)
+            self._instance = NodeInstanceAdapter(ctx, ctx.node)
         elif isinstance(ctx, operation.RelationshipOperationContext):
-            self._source = _RelationshipSubject(
+            self._source = RelationshipTargetAdapter(
                 ctx,
-                node=ctx.source_node_template,
-                node_instance=ctx.source_node)
-            self._target = _RelationshipSubject(
+                ctx.source_node_template,
+                ctx.source_node
+            )
+            self._target = RelationshipTargetAdapter(
                 ctx,
-                node=ctx.target_node_template,
-                node_instance=ctx.target_node)
+                ctx.target_node_template,
+                ctx.target_node
+            )
 
     def __getattr__(self, item):
         try:
             return getattr(self._ctx, item)
         except AttributeError:
-            return super(CloudifyContext, self).__getattribute__(item)
+            return super(CloudifyContextAdapter, self).__getattribute__(item)
 
     @property
     def blueprint(self):
@@ -162,7 +162,8 @@ class CloudifyContext(object):
         target_path = self._get_target_path(target_path, resource_path)
         self._ctx.download_resource(
             destination=target_path,
-            path=resource_path)
+            path=resource_path
+        )
         return target_path
 
     def download_resource_and_render(self,
@@ -173,7 +174,8 @@ class CloudifyContext(object):
         self._ctx.download_resource_and_render(
             destination=target_path,
             path=resource_path,
-            variables=template_variables)
+            variables=template_variables
+        )
         return target_path
 
     @staticmethod
@@ -188,17 +190,19 @@ class CloudifyContext(object):
         if self.type != NODE_INSTANCE:
             self._ctx.task.abort(
                 'ctx.node/ctx.instance can only be used in a {0} context but '
-                'used in a {1} context.'.format(NODE_INSTANCE, self.type))
+                'used in a {1} context.'.format(NODE_INSTANCE, self.type)
+            )
 
     def _verify_in_relationship_operation(self):
         if self.type != RELATIONSHIP_INSTANCE:
             self._ctx.task.abort(
                 'ctx.source/ctx.target can only be used in a {0} context but '
                 'used in a {1} context.'.format(RELATIONSHIP_INSTANCE,
-                                                self.type))
+                                                self.type)
+            )
 
 
-class _Blueprint(object):
+class BlueprintAdapter(object):
 
     def __init__(self, ctx):
         self._ctx = ctx
@@ -208,7 +212,7 @@ class _Blueprint(object):
         return self._ctx.service_template.id
 
 
-class _Deployment(object):
+class DeploymentAdapter(object):
 
     def __init__(self, ctx):
         self._ctx = ctx
@@ -218,28 +222,28 @@ class _Deployment(object):
         return self._ctx.service.id
 
 
-class _Node(object):
+class NodeAdapter(object):
 
-    def __init__(self, ctx, node, node_instance):
+    def __init__(self, ctx, node_template, node):
         self._ctx = ctx
+        self._node_template = node_template
         self._node = node
-        self._node_instance = node_instance
 
     @property
     def id(self):
-        return self._node.id
+        return self._node_template.id
 
     @property
     def name(self):
-        return self._node.name
+        return self._node_template.name
 
     @property
     def properties(self):
-        return self._node_instance.properties
+        return self._node.properties
 
     @property
     def type(self):
-        return self._node.type.name
+        return self._node_template.type.name
 
     @property
     def type_hierarchy(self):
@@ -250,72 +254,72 @@ class _Node(object):
         # string 'cloudify.aws.nodes.Instance', or the string 'cloudify.aws.nodes.Interface'.
         # In any other case, we won't be able to attach an ElasticIP to a node using the Cloudify
         # AWS plugin.
-        type_hierarchy_names = [type_.name for type_ in self._node.type.hierarchy
+        type_hierarchy_names = [type_.name for type_ in self._node_template.type.hierarchy
                                 if type_.name is not None]
         return [type_name.replace('aria', 'cloudify') for type_name in type_hierarchy_names]
 
 
-class _NodeInstance(object):
+class NodeInstanceAdapter(object):
 
-    def __init__(self, ctx, node_instance):
+    def __init__(self, ctx, node):
         self._ctx = ctx
-        self._node_instance = node_instance
+        self._node = node
 
     @property
     def id(self):
-        return self._node_instance.id
+        return self._node.id
 
     @property
     def runtime_properties(self):
-        return self._node_instance.attributes
+        return self._node.attributes
 
     @runtime_properties.setter
     def runtime_properties(self, value):
-        self._node_instance.attributes = value
+        self._node.attributes = value
 
     def update(self, on_conflict=None):
-        self._ctx.model.node.update(self._node_instance)
+        self._ctx.model.node.update(self._node)
 
     def refresh(self, force=False):
-        self._ctx.model.node.refresh(self._node_instance)
+        self._ctx.model.node.refresh(self._node)
 
     @property
     def host_ip(self):
-        return self._node_instance.host_address
+        return self._node.host_address
 
     @property
     def relationships(self):
-        return [_Relationship(self._ctx, relationship_instance=relationship_instance) for
-                relationship_instance in self._node_instance.outbound_relationships]
+        return [RelationshipAdapter(self._ctx, relationship=relationship) for
+                relationship in self._node.outbound_relationships]
 
 
-class _Relationship(object):
+class RelationshipAdapter(object):
 
-    def __init__(self, ctx, relationship_instance):
+    def __init__(self, ctx, relationship):
         self._ctx = ctx
-        self._relationship_instance = relationship_instance
-        node_instance = relationship_instance.target_node
-        node = node_instance.node_template
-        self.target = _RelationshipSubject(ctx, node=node, node_instance=node_instance)
+        self._relationship = relationship
+        node = relationship.target_node
+        node_template = node.node_template
+        self.target = RelationshipTargetAdapter(ctx, node_template, node)
 
     @property
     def type(self):
-        return self._relationship_instance.type.name
+        return self._relationship.type.name
 
     @property
     def type_hierarchy(self):
-        return self._relationship_instance.type.hierarchy
+        return self._relationship.type.hierarchy
 
 
-class _RelationshipSubject(object):
+class RelationshipTargetAdapter(object):
 
-    def __init__(self, ctx, node, node_instance):
+    def __init__(self, ctx, node_template, node):
         self._ctx = ctx
-        self.node = _Node(ctx, node=node, node_instance=node_instance)
-        self.instance = _NodeInstance(ctx, node_instance=node_instance)
+        self.node = NodeAdapter(ctx, node_template=node_template, node=node)
+        self.instance = NodeInstanceAdapter(ctx, node=node)
 
 
-class _Operation(object):
+class OperationAdapter(object):
 
     def __init__(self, ctx):
         self._ctx = ctx
@@ -339,13 +343,13 @@ class _Operation(object):
         if task.max_attempts == task.INFINITE_RETRIES:
             return task.INFINITE_RETRIES
         else:
-            return task.max_attempts - 1
+            return task.max_attempts - 1 if task.max_attempts > 0 else 0
 
     def retry(self, message=None, retry_after=None):
         self._ctx.task.retry(message, retry_after)
 
 
-class _Bootstrap(object):
+class BootstrapAdapter(object):
 
     def __init__(self, ctx):
         self._ctx = ctx
@@ -356,13 +360,13 @@ class _Bootstrap(object):
         return {}
 
 
-class _CloudifyAgent(object):
+class CloudifyAgentAdapter(object):
 
     def init_script(self, *args, **kwargs):
         return None
 
 
-class _Plugin(object):
+class PluginAdapter(object):
 
     def __init__(self, ctx):
         self._ctx = ctx
@@ -398,68 +402,5 @@ class _Plugin(object):
 
 
 class _Stub(object):
-    def __getattr__(self, item):
+    def __getattr__(self, _):
         return None
-
-
-@extension.process_executor
-class CloudifyExecutorExtension(object):
-
-    def decorate(self):
-        def decorator(function):
-            @functools.wraps(function)
-            def wrapper(ctx, **operation_inputs):
-                # we assume that any cloudify based plugin would use the plugins-common, Thus two
-                # different paths are created.
-                is_cloudify_dependent = ctx.task.plugin and any(
-                    'cloudify_plugins_common' in w for w in ctx.task.plugin.wheels)
-
-                if is_cloudify_dependent:
-                    from cloudify import context
-                    from cloudify.exceptions import NonRecoverableError, RecoverableError
-
-                    with ctx.model.instrument(*ctx.INSTRUMENTATION_FIELDS):
-                        # We need to create a new class dynamically, since CloudifyContext doesn't
-                        # exist at runtime.
-                        adapted_ctx = type('AdaptedCloudifyContext',
-                                           (CloudifyContext, context.CloudifyContext),
-                                           {}, )(ctx)
-
-                        with _push_cfy_ctx(adapted_ctx, operation_inputs):
-                            try:
-                                function(ctx=adapted_ctx, **operation_inputs)
-                            except NonRecoverableError as e:
-                                ctx.task.abort(str(e))
-                            except RecoverableError as e:
-                                ctx.task.retry(str(e), retry_interval=e.retry_after)
-                else:
-                    function(ctx=ctx, **operation_inputs)
-            return wrapper
-        return decorator
-
-
-@contextmanager
-def _push_cfy_ctx(ctx, params):
-    from cloudify import state
-
-    try:
-        # Support for > cloudify 4.0
-        with state.current_ctx.push(ctx, params) as current_ctx:
-            yield current_ctx
-
-    except AttributeError:
-        # support for < cloudify 4.0
-        try:
-            original_ctx = state.current_ctx.get_ctx()
-        except RuntimeError:
-            original_ctx = None
-        try:
-            original_params = state.current_ctx.get_parameters()
-        except RuntimeError:
-            original_params = None
-
-        state.current_ctx.set(ctx, params)
-        try:
-            yield state.current_ctx.get_ctx()
-        finally:
-            state.current_ctx.set(original_ctx, original_params)

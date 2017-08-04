@@ -22,7 +22,8 @@ _PACKAGE_NAME = 'aria-extension-cloudify'
 _PYTHON_SUPPORTED_VERSIONS = [(2, 6), (2, 7)]
 
 if (sys.version_info[0], sys.version_info[1]) not in _PYTHON_SUPPORTED_VERSIONS:
-    raise NotImplementedError('{0} Package support Python version 2.6 & 2.7 Only'.format(_PACKAGE_NAME))
+    raise NotImplementedError('{0} Package support Python version 2.6 & 2.7 Only'
+                              .format(_PACKAGE_NAME))
 
 setup(
     name=_PACKAGE_NAME,
@@ -37,7 +38,7 @@ setup(
     install_requires=['apache-ariatosca'],
     entry_points={
         'aria_extension': [
-            'adapter = adapters.context_adapter',
-        ],
+            'adapter = adapters.extension'
+        ]
     }
 )

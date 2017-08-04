@@ -21,15 +21,21 @@ python:
   - '2.6'
 
 env:
-- TOX_ENV=flake8
-- TOX_ENV=py27
-- TOX_ENV=py26
+  - TOX_ENV=flake8
+  - TOX_ENV=py27
+  - TOX_ENV=py26
 
 install:
-- pip install --upgrade pip
-- pip install tox
+  - pip install --upgrade pip
+  - pip install tox
 
 script:
-- pip --version
-- tox --version
-- tox -v -e $TOX_ENV
+  - pip --version
+  - tox --version
+  - PYTEST_PROCESSES=1 tox -e $TOX_ENV
+
+# The PYTEST_PROCESSES environment var is used in tox.ini to override the --numprocesses argument
+# for PyTest's xdist plugin. The reason this is necessary is that conventional Travis environments
+# may report a large amount of available CPUs, but they they are greatly restricted. Through trial
+# and error we found that more than 1 process may result in failures.
+  

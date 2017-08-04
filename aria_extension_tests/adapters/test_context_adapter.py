@@ -14,25 +14,25 @@
 # under the License.
 #
 
-import copy
-import contextlib
-import datetime
 import os
+import copy
+import datetime
+import contextlib
 
 import pytest
 
-from aria import workflow, operation
+from aria import (workflow, operation)
 from aria.modeling import models
 from aria.orchestrator import events
 from aria.orchestrator.workflows import api
 from aria.orchestrator.workflows.exceptions import ExecutorException
 from aria.orchestrator.workflows.executor import process
-from aria.orchestrator.workflows.core import engine, graph_compiler
-from aria.orchestrator.exceptions import TaskAbortException, TaskRetryException
+from aria.orchestrator.workflows.core import (engine, graph_compiler)
+from aria.orchestrator.exceptions import (TaskAbortException, TaskRetryException)
 from aria.utils import type as type_
 
 import tests
-from tests import mock, storage, conftest
+from tests import (mock, storage, conftest)
 from tests.orchestrator.workflows.helpers import events_collector
 
 from adapters import context_adapter
@@ -160,7 +160,8 @@ class TestCloudifyContextAdapter(object):
         exception = self._run_and_get_task_exceptions(
             executor, workflow_context, _test_retry,
             inputs={'message': message, 'retry_interval': retry_interval},
-            max_attempts=2)[-1]
+            max_attempts=2
+        )[-1]
 
         assert isinstance(exception, TaskRetryException)
         assert exception.message == message
@@ -220,7 +221,8 @@ class TestCloudifyContextAdapter(object):
             executor, workflow_context, _test_recoverable_error,
             inputs={'message': message, 'retry_interval': retry_interval},
             skip_common_assert=True,
-            plugin=plugin)[0]
+            plugin=plugin
+        )[0]
         assert isinstance(exception, TaskRetryException)
         assert message in exception.message
         assert exception.retry_interval == retry_interval
@@ -266,7 +268,7 @@ class TestCloudifyContextAdapter(object):
                 relationship.source_node.service,
                 interface_name,
                 operation_name,
-                operation_kwargs=op_dict,
+                operation_kwargs=op_dict
             )
             workflow_context.model.relationship.update(relationship)
 
@@ -294,7 +296,8 @@ class TestCloudifyContextAdapter(object):
                 interface_name,
                 operation_name,
                 arguments=inputs or {},
-                max_attempts=max_attempts)
+                max_attempts=max_attempts
+            )
             graph.add_tasks(task)
 
         tasks_graph = mock_workflow(ctx=workflow_context)
@@ -335,9 +338,10 @@ class TestCloudifyContextAdapter(object):
 
     @pytest.fixture
     def workflow_context(self, tmpdir):
-        result = mock.context.simple(str(tmpdir),
-                                     context_kwargs=dict(workdir=str(tmpdir.join('workdir')))
-                                     )
+        result = mock.context.simple(
+            str(tmpdir),
+            context_kwargs=dict(workdir=str(tmpdir.join('workdir')))
+        )
         yield result
         storage.release_sqlite_storage(result.model)
 
@@ -353,7 +357,7 @@ class TestCloudifyContextAdapter(object):
             package_name=package_name,
             package_version=package_version,
             uploaded_at=datetime.datetime.now(),
-            wheels=['cloudify_plugins_common'] if mock_cfy_plugin else [],
+            wheels=['cloudify_plugins_common'] if mock_cfy_plugin else []
         )
 
         workflow_context.model.plugin.put(plugin)
@@ -376,8 +380,8 @@ def _test_node_instance_operation(ctx):
             },
             'instance': {
                 'id': instance.id,
-                'runtime_properties': copy.deepcopy(instance.runtime_properties),
-            },
+                'runtime_properties': copy.deepcopy(instance.runtime_properties)
+            }
         })
         try:
             assert adapter.source
@@ -435,11 +439,12 @@ def _test_get_and_download_resource_and_render(ctx, resource, variable):
         out.update({
             'get_resource': adapter.get_resource(resource),
             'get_resource_and_render': adapter.get_resource_and_render(
-                resource, template_variables={'variable': variable}),
+                resource, template_variables={'variable': variable}
+            ),
             'download_resource': adapter.download_resource(resource),
             'download_resource_and_render': adapter.download_resource_and_render(
                 resource, template_variables={'variable': variable}
-            ),
+            )
         })
 
 
@@ -453,7 +458,7 @@ def _test_retry(ctx, message, retry_interval):
 
 @operation
 def _test_logger_and_send_event(ctx, message, event):
-    with _adapter(ctx) as (adapter, out):
+    with _adapter(ctx) as (adapter, _):
         adapter.logger.info(message)
         adapter.send_event(event)
 
@@ -505,9 +510,9 @@ def _test_common(out, ctx, adapter):
         'blueprint': {'id': adapter.blueprint.id},
         'deployment': {'id': adapter.deployment.id},
         'operation': {
-            'name': (op.name, ctx.name.split('@')[0].replace(':', '.')),
-            'retry_number': (op.retry_number, ctx.task.attempts_count - 1),
-            'max_retries': (op.max_retries, ctx.task.max_attempts)
+            'name': [op.name, ctx.name.split('@')[0].replace(':', '.')],
+            'retry_number': [op.retry_number, ctx.task.attempts_count - 1],
+            'max_retries': [op.max_retries, ctx.task.max_attempts]
         },
         'bootstrap_context': {
             'broker_config': bootstrap_context.broker_config('arg1', 'arg2', arg3='arg3'),
@@ -524,7 +529,7 @@ def _test_common(out, ctx, adapter):
 @contextlib.contextmanager
 def _adapter(ctx):
     out = {}
-    adapter = context_adapter.CloudifyContext(ctx)
+    adapter = context_adapter.CloudifyContextAdapter(ctx)
     _test_common(out, ctx, adapter)
     try:
         yield adapter, out
