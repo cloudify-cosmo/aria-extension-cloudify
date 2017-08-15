@@ -34,25 +34,21 @@ data_types:
     properties:
       username:
         type: string
-        default: ''
       password:
         type: string
-        default: ''
       tenant_name:
         type: string
-        default: ''
       auth_url:
         type: string
-        default: ''
       region:
         type: string
-        default: ''
+        required: false
       nova_url:
         type: string
-        default: ''
+        required: false
       neutron_url:
         type: string
-        default: ''
+        required: false
 
   aria.openstack.datatypes.Rules:
     description: >-
@@ -419,10 +415,6 @@ node_types:
               required: false
               default: {}
               type: aria.openstack.datatypes.Server
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
         start:
           implementation: cloudify-openstack-plugin > nova_plugin.server.start
           inputs:
@@ -433,24 +425,8 @@ node_types:
               type: string
               default: ''
               required: true
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
-        stop:
-          implementation: cloudify-openstack-plugin > nova_plugin.server.stop
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
-        delete:
-          implementation: cloudify-openstack-plugin > nova_plugin.server.delete
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        stop: cloudify-openstack-plugin > nova_plugin.server.stop
+        delete: cloudify-openstack-plugin > nova_plugin.server.delete
       Validation:
         type: aria.openstack.interfaces.validation
         creation:
@@ -460,10 +436,6 @@ node_types:
               required: false
               default: {}
               type: aria.openstack.datatypes.Server
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
 
     requirements:
       - floating_ip:
@@ -559,28 +531,12 @@ node_types:
               required: false
               default: {}
               type: aria.openstack.datatypes.Keypair
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
 
-        delete:
-          implementation: cloudify-openstack-plugin > nova_plugin.keypair.delete
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        delete: cloudify-openstack-plugin > nova_plugin.keypair.delete
 
       Validation:
         type: aria.openstack.interfaces.validation
-        creation:
-          implementation: cloudify-openstack-plugin > nova_plugin.keypair.creation_validation
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        creation: cloudify-openstack-plugin > nova_plugin.keypair.creation_validation
 
     capabilities:
       keypair:
@@ -625,17 +581,7 @@ node_types:
               type: aria.openstack.datatypes.Subnet
               default:
                 cidr: 172.16.0.0/16
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
-        delete:
-          implementation: cloudify-openstack-plugin > neutron_plugin.subnet.delete
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        delete: cloudify-openstack-plugin > neutron_plugin.subnet.delete
       Validation:
         type: aria.openstack.interfaces.validation
         creation:
@@ -646,10 +592,6 @@ node_types:
               required: false
               default:
                 cidr: 172.16.0.0/16
-            openstack_config:
-              default: {}
-              type: aria.openstack.datatypes.Config
-              required: false
 
     requirements:
       - router:
@@ -715,27 +657,11 @@ node_types:
               type: aria.openstack.datatypes.SecurityGroup
               required: false
               default: {}
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
-        delete:
-          implementation: cloudify-openstack-plugin > neutron_plugin.security_group.delete
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        delete: cloudify-openstack-plugin > neutron_plugin.security_group.delete
 
       Validation:
         type: aria.openstack.interfaces.validation
-        creation:
-          implementation: cloudify-openstack-plugin > neutron_plugin.security_group.creation_validation
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        creation: cloudify-openstack-plugin > neutron_plugin.security_group.creation_validation
 
     capabilities:
       security:
@@ -785,28 +711,10 @@ node_types:
               default: {}
               type: aria.openstack.datatypes.Router
               required: false
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
-
-        delete:
-          implementation: cloudify-openstack-plugin > neutron_plugin.router.delete
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
-
+        delete: cloudify-openstack-plugin > neutron_plugin.router.delete
       Validation:
         type: aria.openstack.interfaces.validation
-        creation:
-          implementation: cloudify-openstack-plugin > neutron_plugin.router.creation_validation
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        creation: cloudify-openstack-plugin > neutron_plugin.router.creation_validation
 
     capabilities:
       gateway:
@@ -858,27 +766,12 @@ node_types:
               default: {}
               type: aria.openstack.datatypes.Port
               required: false
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
 
-        delete:
-          implementation: cloudify-openstack-plugin > neutron_plugin.port.delete
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        delete: cloudify-openstack-plugin > neutron_plugin.port.delete
+
       Validation:
         type: aria.openstack.interfaces.validation
-        creation:
-          implementation: cloudify-openstack-plugin > neutron_plugin.port.creation_validation
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        creation: cloudify-openstack-plugin > neutron_plugin.port.creation_validation
 
     requirements:
       - security_group:
@@ -890,6 +783,7 @@ node_types:
           capability: tosca.capabilities.Node
           node: aria.openstack.nodes.FloatingIP
           relationship: aria.openstack.port_connected_to_floating_ip
+          occurrences: [ 0, UNBOUNDED ]
       - subnet:
           capability: tosca.capabilities.Node
           node: aria.openstack.nodes.Subnet
@@ -939,27 +833,12 @@ node_types:
               default: {}
               type: aria.openstack.datatypes.Network
               required: false
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
 
-        delete:
-          implementation: cloudify-openstack-plugin > neutron_plugin.network.delete
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        delete: cloudify-openstack-plugin > neutron_plugin.network.delete
+
       Validation:
         type: aria.openstack.interfaces.validation
-        creation:
-          implementation: cloudify-openstack-plugin > neutron_plugin.network.creation_validation
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        creation: cloudify-openstack-plugin > neutron_plugin.network.creation_validation
 
     capabilities:
       address_space:
@@ -1007,28 +886,12 @@ node_types:
               default: {}
               type: aria.openstack.datatypes.FloatingIP
               required: false
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
 
-        delete:
-          implementation: cloudify-openstack-plugin > neutron_plugin.floatingip.delete
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        delete: cloudify-openstack-plugin > neutron_plugin.floatingip.delete
 
       Validation:
         type: aria.openstack.interfaces.validation
-        creation:
-          implementation: cloudify-openstack-plugin > neutron_plugin.floatingip.creation_validation
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        creation: cloudify-openstack-plugin > neutron_plugin.floatingip.creation_validation
 
     capabilities:
       address:
@@ -1089,10 +952,6 @@ node_types:
               default: {}
               type: aria.openstack.datatypes.Volume
               required: false
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
 
             status_attempts:
               description: >-
@@ -1105,23 +964,11 @@ node_types:
                 status
               type: integer
               default: 15
-        delete:
-          implementation: cloudify-openstack-plugin > cinder_plugin.volume.delete
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        delete: cloudify-openstack-plugin > cinder_plugin.volume.delete
 
       Validation:
         type: aria.openstack.interfaces.validation
-        creation:
-          implementation: cloudify-openstack-plugin > cinder_plugin.volume.creation_validation
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        creation: cloudify-openstack-plugin > cinder_plugin.volume.creation_validation
 
     requirements:
       - server:
@@ -1170,40 +1017,20 @@ node_types:
         default: {}
     interfaces:
       Standard:
-        create:
-          implementation: cloudify-openstack-plugin > glance_plugin.image.create
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        create: cloudify-openstack-plugin > glance_plugin.image.create
+
         start:
           implementation: cloudify-openstack-plugin > glance_plugin.image.start
           inputs:
             start_retry_interval:
               default: 30
               type: integer
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
 
-        delete:
-          implementation: cloudify-openstack-plugin > glance_plugin.image.delete
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        delete: cloudify-openstack-plugin > glance_plugin.image.delete
+
       Validation:
         type: aria.openstack.interfaces.validation
-        creation:
-          implementation: cloudify-openstack-plugin > glance_plugin.image.creation_validation
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        creation: cloudify-openstack-plugin > glance_plugin.image.creation_validation
 
   aria.openstack.nodes.Project:
     derived_from: tosca.nodes.Root
@@ -1269,33 +1096,14 @@ relationship_types:
     derived_from: ConnectsTo
     interfaces:
       Configure:
-        add_source:
-          implementation: cloudify-openstack-plugin > neutron_plugin.port.connect_security_group
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        add_source: cloudify-openstack-plugin > neutron_plugin.port.connect_security_group
 
   aria.openstack.subnet_connected_to_router:
     derived_from: ConnectsTo
     interfaces:
       Configure:
-        add_target:
-          implementation: cloudify-openstack-plugin > neutron_plugin.router.connect_subnet
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
-
-        remove_target:
-          implementation: cloudify-openstack-plugin > neutron_plugin.router.disconnect_subnet
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        add_target: cloudify-openstack-plugin > neutron_plugin.router.connect_subnet
+        remove_target: cloudify-openstack-plugin > neutron_plugin.router.disconnect_subnet
 
   aria.openstack.server_connected_to_floating_ip:
     derived_from: ConnectsTo
@@ -1310,70 +1118,27 @@ relationship_types:
                 If omitted, Openstack will choose which port to associate.
               type: string
               default: ''
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
-
-        remove_source:
-          implementation: cloudify-openstack-plugin > nova_plugin.server.disconnect_floatingip
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        remove_source: cloudify-openstack-plugin > nova_plugin.server.disconnect_floatingip
 
   aria.openstack.port_connected_to_floating_ip:
     derived_from: ConnectsTo
     interfaces:
       Configure:
-        add_source:
-          implementation: cloudify-openstack-plugin > neutron_plugin.floatingip.connect_port
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
-
-        remove_source:
-          implementation: cloudify-openstack-plugin > neutron_plugin.floatingip.disconnect_port
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        add_source: cloudify-openstack-plugin > neutron_plugin.floatingip.connect_port
+        remove_source: cloudify-openstack-plugin > neutron_plugin.floatingip.disconnect_port
 
   aria.openstack.server_connected_to_security_group:
     derived_from: ConnectsTo
     interfaces:
       Configure:
-        add_source:
-          implementation: cloudify-openstack-plugin > nova_plugin.server.connect_security_group
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
-
-        remove_source:
-          implementation: cloudify-openstack-plugin > nova_plugin.server.disconnect_security_group
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        add_source: cloudify-openstack-plugin > nova_plugin.server.connect_security_group
+        remove_source: cloudify-openstack-plugin > nova_plugin.server.disconnect_security_group
 
   aria.openstack.server_connected_to_port:
     derived_from: ConnectsTo
     interfaces:
       Configure:
-        remove_source:
-          implementation: cloudify-openstack-plugin > neutron_plugin.port.detach
-          inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
+        remove_source: cloudify-openstack-plugin > neutron_plugin.port.detach
 
   aria.openstack.server_connected_to_keypair:
     derived_from: ConnectsTo
@@ -1388,10 +1153,6 @@ relationship_types:
         add_target:
           implementation: cloudify-openstack-plugin > nova_plugin.server.attach_volume
           inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
 
             status_attempts:
               description: >
@@ -1407,10 +1168,6 @@ relationship_types:
         remove_target:
           implementation: cloudify-openstack-plugin > nova_plugin.server.detach_volume
           inputs:
-            openstack_config:
-              type: aria.openstack.datatypes.Config
-              required: false
-              default: {}
 
             status_attempts:
               description: >

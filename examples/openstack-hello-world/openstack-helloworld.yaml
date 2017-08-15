@@ -66,7 +66,6 @@ topology_template:
         openstack_config: { get_input: openstack_config }
       requirements:
         - security_group: security_group
-        - floating_ip: virtual_ip
         - subnet: subnet
         - network: network
 
