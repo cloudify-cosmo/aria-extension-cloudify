@@ -74,6 +74,9 @@ data_types:
       availability_zone:
         type: string
         required: false
+      userdata:
+        type: string
+        required: false
 
   aria.openstack.datatypes.Keypair:
     description: >-
@@ -403,7 +406,6 @@ node_types:
       openstack_config:
         type: aria.openstack.datatypes.Config
         required: false
-        default: {}
         description: >-
             see Openstack Configuraion
     interfaces:
@@ -521,7 +523,6 @@ node_types:
       openstack_config:
         type: aria.openstack.datatypes.Config
         required: false
-        default: {}
     interfaces:
       Standard:
         create:
@@ -570,7 +571,6 @@ node_types:
       openstack_config:
         type: aria.openstack.datatypes.Config
         required: false
-        default: {}
     interfaces:
       Standard:
         create:
@@ -638,7 +638,6 @@ node_types:
       openstack_config:
         type: aria.openstack.datatypes.Config
         required: false
-        default: {}
       rules:
         default: []
         type: list
@@ -700,7 +699,6 @@ node_types:
       openstack_config:
         type: aria.openstack.datatypes.Config
         required: false
-        default: {}
 
     interfaces:
       Standard:
@@ -755,7 +753,6 @@ node_types:
       openstack_config:
         type: aria.openstack.datatypes.Config
         required: false
-        default: {}
 
     interfaces:
       Standard:
@@ -823,7 +820,6 @@ node_types:
       openstack_config:
         type: aria.openstack.datatypes.Config
         required: false
-        default: {}
     interfaces:
       Standard:
         create:
@@ -875,7 +871,6 @@ node_types:
       openstack_config:
         type: aria.openstack.datatypes.Config
         required: false
-        default: {}
 
     interfaces:
       Standard:
@@ -936,7 +931,6 @@ node_types:
       openstack_config:
         type: aria.openstack.datatypes.Config
         required: false
-        default: {}
       boot:
         type: boolean
         default: false
@@ -1014,7 +1008,6 @@ node_types:
       openstack_config:
         type: aria.openstack.datatypes.Config
         required: false
-        default: {}
     interfaces:
       Standard:
         create: cloudify-openstack-plugin > glance_plugin.image.create
@@ -1079,7 +1072,6 @@ node_types:
       openstack_config:
         type: aria.openstack.datatypes.Config
         required: false
-        default: {}
     interfaces:
       Standard:
         create: openstack.keystone_plugin.project.create
