@@ -25,8 +25,20 @@ env:
   - TOX_ENV=py27
   - TOX_ENV=py26
 
+matrix:
+  # since python2.6 no longer comes with the default travis machine, we need to specify it
+  # explicitly. Since it doesn't make sense to require a machine with python 2.6 to run python2.7
+  # tests, we remove any redundant tests via the exclude matrix.
+  exclude:
+  - python: '2.6'
+    env: TOX_ENV=flake8
+  - python: '2.6'
+    env: TOX_ENV=py27
+  - python: '2.7'
+    env: TOX_ENV=py26
+
+
 install:
-  - if [ $TOX_ENV = py26 ]; then sudo add-apt-repository -y ppa:fkrull/deadsnakes && sudo apt-get update && sudo apt-get install python2.6 python2.6-dev; fi
   - pip install --upgrade pip
   - pip install tox
 
