@@ -27,15 +27,18 @@ if (sys.version_info[0], sys.version_info[1]) not in _PYTHON_SUPPORTED_VERSIONS:
 
 setup(
     name=_PACKAGE_NAME,
-    version='4.1',
+    version='4.2',
     description="Enable ARIA to utilize some of Cloudify's abilities, such as interfacing with AWS "
                 "and Openstack.",
     author='Gigaspaces',
     author_email='cosmo-admin@gigaspaces.com',
     license='LICENSE',
-
     packages=find_packages(include=['adapters*']),
-    install_requires=['apache-ariatosca'],
+    install_requires=[
+        'apache-ariatosca[ssh]==0.2.0'
+    ],
+
+
     entry_points={
         'aria_extension': [
             'adapter = adapters.extension'

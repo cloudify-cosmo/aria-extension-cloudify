@@ -302,7 +302,7 @@ class TestCloudifyContextAdapter(object):
 
         tasks_graph = mock_workflow(ctx=workflow_context)
         graph_compiler.GraphCompiler(workflow_context, executor.__class__).compile(tasks_graph)
-        eng = engine.Engine(executors={executor.__class__: executor})
+        eng = engine.Engine(executor)
         eng.execute(workflow_context)
         out = self._get_node(workflow_context).attributes['out'].value
         if not skip_common_assert:

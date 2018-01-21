@@ -59,7 +59,7 @@ data_types:
         default: 0.0.0.0/0
       port:
         type: integer
-        default:
+        default: 9090
 
   # source: https://developer.openstack.org/api-ref/compute/
 
@@ -347,7 +347,7 @@ node_types:
         type: aria.openstack.datatypes.Server
         required: false
       ip:
-        default:
+        default: ''
         type: string
       os_family:
         description: >-
@@ -410,6 +410,7 @@ node_types:
             see Openstack Configuraion
     interfaces:
       Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
         create:
           implementation: cloudify-openstack-plugin > nova_plugin.server.create
           inputs:
@@ -525,6 +526,7 @@ node_types:
         required: false
     interfaces:
       Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
         create:
           implementation: cloudify-openstack-plugin > nova_plugin.keypair.create
           inputs:
@@ -573,6 +575,7 @@ node_types:
         required: false
     interfaces:
       Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
         create:
           implementation: cloudify-openstack-plugin > neutron_plugin.subnet.create
           inputs:
@@ -649,6 +652,7 @@ node_types:
           a flag for removing the default rules which https://wiki.openstack.org/wiki/Neutron/SecurityGroups#Behavior. If not set to `true`, these rules will remain, and exist alongside any additional rules passed using the `rules` property.
     interfaces:
       Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
         create:
           implementation: cloudify-openstack-plugin > neutron_plugin.security_group.create
           inputs:
@@ -702,6 +706,7 @@ node_types:
 
     interfaces:
       Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
         create:
           implementation: cloudify-openstack-plugin > neutron_plugin.router.create
           inputs:
@@ -756,6 +761,7 @@ node_types:
 
     interfaces:
       Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
         create:
           implementation: cloudify-openstack-plugin > neutron_plugin.port.create
           inputs:
@@ -822,6 +828,7 @@ node_types:
         required: false
     interfaces:
       Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
         create:
           implementation: cloudify-openstack-plugin > neutron_plugin.network.create
           inputs:
@@ -863,7 +870,6 @@ node_types:
           If use_external_resource is ``true`` and the resource is missing,
           create it instead of failing.
       resource_id:
-        description: IP address of the floating IP
         default: ''
         type: string
         description: >-
@@ -874,6 +880,7 @@ node_types:
 
     interfaces:
       Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
         create:
           implementation: cloudify-openstack-plugin > neutron_plugin.floatingip.create
           inputs:
@@ -913,7 +920,7 @@ node_types:
           If use_external_resource is ``true`` and the resource is missing,
           create it instead of failing.
       resource_id:
-        default:
+        default: ''
         type: string
         description: >-
           name to give to the new resource or the name or ID of an existing resource when the ``use_external_resource`` property is set to ``true`` (see the using existing resources section). Defaults to '' (empty string).
@@ -939,6 +946,7 @@ node_types:
           this volume will be used as the boot volume for that Server.
     interfaces:
       Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
         create:
           implementation: cloudify-openstack-plugin > cinder_plugin.volume.create
           inputs:
@@ -1010,6 +1018,7 @@ node_types:
         required: false
     interfaces:
       Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
         create: cloudify-openstack-plugin > glance_plugin.image.create
 
         start:
@@ -1074,6 +1083,7 @@ node_types:
         required: false
     interfaces:
       Standard:
+        type: tosca.interfaces.node.lifecycle.Standard
         create: openstack.keystone_plugin.project.create
         start: openstack.keystone_plugin.project.start
         delete: openstack.keystone_plugin.project.delete
@@ -1088,12 +1098,14 @@ relationship_types:
     derived_from: ConnectsTo
     interfaces:
       Configure:
+        type: tosca.interfaces.relationship.Configure
         add_source: cloudify-openstack-plugin > neutron_plugin.port.connect_security_group
 
   aria.openstack.subnet_connected_to_router:
     derived_from: ConnectsTo
     interfaces:
       Configure:
+        type: tosca.interfaces.relationship.Configure
         add_target: cloudify-openstack-plugin > neutron_plugin.router.connect_subnet
         remove_target: cloudify-openstack-plugin > neutron_plugin.router.disconnect_subnet
 
@@ -1101,6 +1113,7 @@ relationship_types:
     derived_from: ConnectsTo
     interfaces:
       Configure:
+        type: tosca.interfaces.relationship.Configure
         add_source:
           implementation: cloudify-openstack-plugin > nova_plugin.server.connect_floatingip
           inputs:
@@ -1116,6 +1129,7 @@ relationship_types:
     derived_from: ConnectsTo
     interfaces:
       Configure:
+        type: tosca.interfaces.relationship.Configure
         add_source: cloudify-openstack-plugin > neutron_plugin.floatingip.connect_port
         remove_source: cloudify-openstack-plugin > neutron_plugin.floatingip.disconnect_port
 
@@ -1123,6 +1137,7 @@ relationship_types:
     derived_from: ConnectsTo
     interfaces:
       Configure:
+        type: tosca.interfaces.relationship.Configure
         add_source: cloudify-openstack-plugin > nova_plugin.server.connect_security_group
         remove_source: cloudify-openstack-plugin > nova_plugin.server.disconnect_security_group
 
@@ -1130,6 +1145,7 @@ relationship_types:
     derived_from: ConnectsTo
     interfaces:
       Configure:
+        type: tosca.interfaces.relationship.Configure
         remove_source: cloudify-openstack-plugin > neutron_plugin.port.detach
 
   aria.openstack.server_connected_to_keypair:
@@ -1142,6 +1158,7 @@ relationship_types:
     derived_from: ConnectsTo
     interfaces:
       Configure:
+        type: tosca.interfaces.relationship.Configure
         add_target:
           implementation: cloudify-openstack-plugin > nova_plugin.server.attach_volume
           inputs:

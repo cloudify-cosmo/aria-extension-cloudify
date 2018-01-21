@@ -10,7 +10,12 @@ node_types:
     properties:
       port:
         type: integer
-        default:
+        default: 9090
+    requirements:
+      - host:
+          capability: tosca.capabilities.Container
+          node: tosca.nodes.Compute
+          relationship: tosca.relationships.HostedOn
 
 topology_template:
 
